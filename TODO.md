@@ -144,40 +144,40 @@
 
 ### 1.11 — Module Publications
 
-- [ ] **1.11.1** `publication.repository.js` — CRUD avec tenant filtering
-- [ ] **1.11.2** `publication.service.js` — Gestion par internal, visible par client
-- [ ] **1.11.3** Controller, validation, routes, swagger
+- [x] **1.11.1** `publication.repository.js` — CRUD avec tenant filtering
+- [x] **1.11.2** `publication.service.js` — Gestion par internal, visible par client
+- [x] **1.11.3** Controller, validation, routes, swagger
 
 ### 1.12 — Module Calendar
 
-- [ ] **1.12.1** `calendar.repository.js` — CRUD + filtrage visibility (client = `client_visible` seulement)
-- [ ] **1.12.2** `calendar.service.js` — Filtres : month/week, type, projectId, organizationId, status
-- [ ] **1.12.3** Controller, validation, routes, swagger
+- [x] **1.12.1** `calendar.repository.js` — CRUD + filtrage visibility (client = `client_visible` seulement)
+- [x] **1.12.2** `calendar.service.js` — Filtres : month/week, type, projectId, organizationId, status
+- [x] **1.12.3** Controller, validation, routes, swagger
 
 ### 1.13 — Module Médiathèque
 
-- [ ] **1.13.1** `media.repository.js` — CRUD + logique is_global / organization_id
-- [ ] **1.13.2** `media.service.js` — Upload (Multer), filtrage par type/tags/search, téléchargement sécurisé
-- [ ] **1.13.3** Controller, validation, routes, swagger (dont GET /:id/download)
+- [x] **1.13.1** `media.repository.js` — CRUD + logique is_global / organization_id
+- [x] **1.13.2** `media.service.js` — Upload (Multer), filtrage par type/tags/search, téléchargement sécurisé
+- [x] **1.13.3** Controller, validation, routes, swagger (dont GET /:id/download)
 
 ### 1.14 — Module Reporting
 
-- [ ] **1.14.1** `reporting.repository.js` — Requêtes agrégées (COUNT, AVG, GROUP BY)
-- [ ] **1.14.2** `reporting.service.js` — KPIs :
+- [x] **1.14.1** `reporting.repository.js` — Requêtes agrégées (COUNT, AVG, GROUP BY)
+- [x] **1.14.2** `reporting.service.js` — KPIs :
   - Overview (projets en cours, en attente, urgents, publications programmées)
   - Stats projets par statut/période
   - Stats utilisateurs (internal admin+ only)
   - Stats publications par canal/période
   - Stats validations (délais moyens, taux approbation)
   - Adapté user_type : internal = global, client = sa propre org
-- [ ] **1.14.3** Export PDF (pdfkit) + Export Excel (exceljs)
-- [ ] **1.14.4** Controller, validation, routes, swagger
+- [x] **1.14.3** Export PDF (pdfkit) + Export Excel (exceljs)
+- [x] **1.14.4** Controller, validation, routes, swagger
 
 ### 1.15 — Module Audit
 
-- [ ] **1.15.1** `audit.repository.js` — Lecture seule (GET uniquement, JAMAIS delete/update)
-- [ ] **1.15.2** `audit.service.js` — Journal filtrable (userId, organizationId, action, entityType, dateRange, pagination)
-- [ ] **1.15.3** Controller, routes, swagger (internal admin+ seulement)
+- [x] **1.15.1** `audit.repository.js` — Lecture seule (GET uniquement, JAMAIS delete/update)
+- [x] **1.15.2** `audit.service.js` — Journal filtrable (userId, organizationId, action, entityType, dateRange, pagination)
+- [x] **1.15.3** Controller, routes, swagger (internal admin+ seulement)
 
 ### 1.16 — Swagger Global
 

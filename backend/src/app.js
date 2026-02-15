@@ -83,6 +83,11 @@ const projectRoutes = require('./modules/projects/project.routes');
 const briefRoutes = require('./modules/briefs/brief.routes');
 const taskRoutes = require('./modules/tasks/task.routes');
 const proposalRoutes = require('./modules/proposals/proposal.routes');
+const publicationRoutes = require('./modules/publications/publication.routes');
+const calendarRoutes = require('./modules/calendar/calendar.routes');
+const mediaRoutes = require('./modules/media/media.routes');
+const reportingRoutes = require('./modules/reporting/reporting.routes');
+const auditRoutes = require('./modules/audit/audit.routes');
 require('./modules/auth/auth.swagger');
 require('./modules/organizations/organization.swagger');
 require('./modules/users/user.swagger');
@@ -90,6 +95,11 @@ require('./modules/projects/project.swagger');
 require('./modules/briefs/brief.swagger');
 require('./modules/tasks/task.swagger');
 require('./modules/proposals/proposal.swagger');
+require('./modules/publications/publication.swagger');
+require('./modules/calendar/calendar.swagger');
+require('./modules/media/media.swagger');
+require('./modules/reporting/reporting.swagger');
+require('./modules/audit/audit.swagger');
 app.use(`${env.API_PREFIX}/auth`, authRoutes);
 app.use(`${env.API_PREFIX}/organizations`, orgRoutes);
 app.use(`${env.API_PREFIX}/users`, userRoutes);
@@ -97,6 +107,11 @@ app.use(`${env.API_PREFIX}/projects`, projectRoutes);
 app.use(`${env.API_PREFIX}/projects/:projectId/briefs`, briefRoutes);
 app.use(`${env.API_PREFIX}/tasks`, taskRoutes);
 app.use(`${env.API_PREFIX}/projects/:projectId/proposals`, proposalRoutes);
+app.use(`${env.API_PREFIX}/projects/:projectId/publications`, publicationRoutes);
+app.use(`${env.API_PREFIX}/calendar`, calendarRoutes);
+app.use(`${env.API_PREFIX}/media`, mediaRoutes);
+app.use(`${env.API_PREFIX}/reporting`, reportingRoutes);
+app.use(`${env.API_PREFIX}/audit`, auditRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────
 app.use((_req, res) => {
