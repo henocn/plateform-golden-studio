@@ -122,11 +122,11 @@
 
 ### 1.9 — Module Tasks
 
-- [ ] **1.9.1** `task.repository.js` — CRUD + filtrage visibility (client ne voit pas `internal_only`)
-- [ ] **1.9.2** `task.service.js` — Logique métier : création (internal only), filtrage auto visibility pour clients, commentaires (is_internal auto selon user_type)
-- [ ] **1.9.3** `task.validation.js` — Schémas Joi
-- [ ] **1.9.4** `task.controller.js` — GET /, POST /, GET /:id, PUT /:id, PATCH /:id/status, DELETE /:id, GET /:id/comments, POST /:id/comments, DELETE /:id/comments/:cid
-- [ ] **1.9.5** `task.routes.js` + `task.swagger.js`
+- [x] **1.9.1** `task.repository.js` — CRUD + filtrage visibility (client ne voit pas `internal_only`)
+- [x] **1.9.2** `task.service.js` — Logique métier : création (internal only), filtrage auto visibility pour clients, commentaires (is_internal auto selon user_type)
+- [x] **1.9.3** `task.validation.js` — Schémas Joi
+- [x] **1.9.4** `task.controller.js` — GET /, POST /, GET /:id, PUT /:id, PATCH /:id/status, DELETE /:id, GET /:id/comments, POST /:id/comments, DELETE /:id/comments/:cid
+- [x] **1.9.5** `task.routes.js` + `task.swagger.js`
 
 ### 1.10 — Module Proposals + Validations
 
