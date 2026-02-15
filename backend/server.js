@@ -1,0 +1,70 @@
+'use strict';
+
+const app = require('./src/app');
+const env = require('./src/config/env');
+const logger = require('./src/utils/logger');
+const { Sequelize } = require('sequelize');
+
+const dbConfig = require('./src/config/database')[env.NODE_ENV];
+
+// ─── Database Connection ─────────────────────────────────────
+const sequelize = new Sequelize(
+  dbConfig.database,
+  dbConfig.username,
+  dbConfig.password,
+  {
+    host: dbConfig.host,
+    port: dbConfig.port,
+    dialect: dbConfig.dialect,
+    logging: dbConfig.logging,
+    pool: dbConfig.pool,
+    dialectOptions: dbConfig.dialectOptions,
+    define: dbConfig.define,
+  },
+);
+
+// ─── Start Server ────────────────────────────────────────────
+async function startServer() {
+  try {
+    // Test DB connection
+    await sequelize.authenticate();
+    logger.info(`Database connected: ${dbConfig.database}@${dbConfig.host}:${dbConfig.port}`);
+
+    // Start Express
+    app.listen(env.PORT, () => {
+      logger.info(`GovCom API running on port ${env.PORT} [${env.NODE_ENV}]`);
+      logger.info(`API prefix: ${env.API_PREFIX}`);
+
+      if (env.SWAGGER_ENABLED) {
+        logger.info(`Swagger: http://localhost:${env.PORT}${env.API_PREFIX}/api-docs`);
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// ─── Graceful Shutdown ───────────────────────────────────────
+function gracefulShutdown(signal) {
+  logger.info(`${signal} received. Shutting down gracefully...`);
+  sequelize.close().then(() => {
+    logger.info('Database connection closed.');
+    process.exit(0);
+  });
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Erreurs non gérées
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled Rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+startServer();
