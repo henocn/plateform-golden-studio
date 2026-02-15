@@ -1,0 +1,70 @@
+'use strict';
+
+const { DataTypes } = require('sequelize');
+
+module.exports = (sequelize) => {
+  const Proposal = sequelize.define('Proposal', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
+    project_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+    },
+    organization_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+    },
+    version_number: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    title: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    file_path: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    author_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
+    validator_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
+    status: {
+      type: DataTypes.ENUM('draft', 'submitted', 'pending_client_validation', 'approved', 'needs_revision', 'rejected'),
+      allowNull: false,
+      defaultValue: 'draft',
+    },
+    submitted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+  }, {
+    tableName: 'proposals',
+    timestamps: true,
+    underscored: true,
+  });
+
+  Proposal.associate = (models) => {
+    Proposal.belongsTo(models.Project, { as: 'project', foreignKey: 'project_id' });
+    Proposal.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
+    Proposal.belongsTo(models.User, { as: 'author', foreignKey: 'author_id' });
+    Proposal.belongsTo(models.User, { as: 'validatorUser', foreignKey: 'validator_id' });
+    Proposal.hasMany(models.ProposalComment, { as: 'comments', foreignKey: 'proposal_id' });
+    Proposal.hasMany(models.Validation, { as: 'validations', foreignKey: 'proposal_id' });
+    Proposal.hasMany(models.Publication, { as: 'publications', foreignKey: 'proposal_id' });
+  };
+
+  return Proposal;
+};

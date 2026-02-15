@@ -10,8 +10,8 @@
 
 ### 1.1 — Setup & Infrastructure
 
-- [ ] **1.1.1** Initialiser le projet Node.js (`npm init`, `.gitignore`, `.editorconfig`)
-- [ ] **1.1.2** Installer toutes les dépendances :
+- [x] **1.1.1** Initialiser le projet Node.js (`npm init`, `.gitignore`, `.editorconfig`)
+- [x] **1.1.2** Installer toutes les dépendances :
   - Express, Sequelize, pg, pg-hstore
   - jsonwebtoken, bcrypt, speakeasy, qrcode
   - joi, multer, winston, helmet, cors, express-rate-limit
@@ -20,38 +20,38 @@
   - pdfkit, exceljs
   - uuid
   - Dev : jest, supertest, nodemon, sequelize-cli
-- [ ] **1.1.3** Créer la structure de dossiers complète (`src/config`, `src/modules`, `src/models`, `src/middlewares`, `src/utils`, `database/migrations`, `database/seeders`, `uploads`, `tests`)
-- [ ] **1.1.4** Configurer les variables d'environnement : `.env.example`, `src/config/env.js` (validation avec envalid)
-- [ ] **1.1.5** Configurer Sequelize : `.sequelizerc`, `src/config/database.js` (connection pool, dialectOptions)
-- [ ] **1.1.6** Configurer Winston : `src/utils/logger.js` (console + file transports, pas de données sensibles)
-- [ ] **1.1.7** Créer les utilitaires de base :
+- [x] **1.1.3** Créer la structure de dossiers complète (`src/config`, `src/modules`, `src/models`, `src/middlewares`, `src/utils`, `database/migrations`, `database/seeders`, `uploads`, `tests`)
+- [x] **1.1.4** Configurer les variables d'environnement : `.env.example`, `src/config/env.js` (validation avec envalid)
+- [x] **1.1.5** Configurer Sequelize : `.sequelizerc`, `src/config/database.js` (connection pool, dialectOptions)
+- [x] **1.1.6** Configurer Winston : `src/utils/logger.js` (console + file transports, pas de données sensibles)
+- [x] **1.1.7** Créer les utilitaires de base :
   - `src/utils/ApiResponse.js` (format standardisé succès)
   - `src/utils/ApiError.js` (codes erreur métier personnalisés)
   - `src/utils/pagination.js` (helper pagination default 20, max 100)
-- [ ] **1.1.8** Configurer Express (`src/app.js`) : helmet, cors, rate-limit, json parser, routes prefix `/api/v1`
-- [ ] **1.1.9** Créer `server.js` (point d'entrée, connexion DB, écoute port)
-- [ ] **1.1.10** Configurer les scripts npm : `dev`, `start`, `db:migrate`, `db:seed:all`, `db:migrate:undo`, `test`
-- [ ] **1.1.11** Vérifier que `npm run dev` démarre sans erreur (serveur + connexion DB)
+- [x] **1.1.8** Configurer Express (`src/app.js`) : helmet, cors, rate-limit, json parser, routes prefix `/api/v1`
+- [x] **1.1.9** Créer `server.js` (point d'entrée, connexion DB, écoute port)
+- [x] **1.1.10** Configurer les scripts npm : `dev`, `start`, `db:migrate`, `db:seed:all`, `db:migrate:undo`, `test`
+- [x] **1.1.11** Vérifier que `npm run dev` démarre sans erreur (serveur + connexion DB)
 
 ### 1.2 — Modèles & Migrations
 
-- [ ] **1.2.1** Modèle + Migration `Organization` (UUID PK, name, short_name, type ENUM, logo_path, contact_email, contact_phone, address, is_active, created_by FK, timestamps)
-- [ ] **1.2.2** Modèle + Migration `User` (UUID PK, email unique, password_hash, first/last_name, user_type ENUM, role ENUM, organization_id FK nullable, job_title, avatar_path, is_active, 2FA fields, last_login_at, created_by FK, timestamps + contraintes métier)
-- [ ] **1.2.3** Modèle + Migration `RefreshToken` (UUID PK, user_id FK, token_hash unique, expires_at, revoked, created_at)
-- [ ] **1.2.4** Modèle + Migration `Project` (UUID PK, organization_id FK, title, description, agency_direction, internal_manager_id FK, studio_manager_id FK, client_contact_id FK, priority ENUM, status ENUM, target_date, created_by FK, timestamps)
-- [ ] **1.2.5** Modèle + Migration `Brief` (UUID PK, project_id FK, organization_id FK, description, objective, target_audience, key_message, deadline, submitted_by FK, timestamps)
-- [ ] **1.2.6** Modèle + Migration `BriefAttachment` (UUID PK, brief_id FK, organization_id FK, file_name, file_path, file_size, mime_type, uploaded_by FK, created_at)
-- [ ] **1.2.7** Modèle + Migration `Task` (UUID PK, project_id FK, organization_id FK, title, description, assigned_to FK nullable, due_date, status ENUM, priority ENUM, visibility ENUM, created_by FK, timestamps)
-- [ ] **1.2.8** Modèle + Migration `TaskComment` (UUID PK, task_id FK, organization_id FK, user_id FK, content, is_internal, timestamps)
-- [ ] **1.2.9** Modèle + Migration `Proposal` (UUID PK, project_id FK, organization_id FK, version_number, title, description, file_path, author_id FK, validator_id FK nullable, status ENUM, submitted_at, timestamps)
-- [ ] **1.2.10** Modèle + Migration `ProposalComment` (UUID PK, proposal_id FK, organization_id FK, user_id FK, content, is_internal, created_at)
-- [ ] **1.2.11** Modèle + Migration `Validation` (UUID PK, proposal_id FK, organization_id FK, validator_id FK, status ENUM, comments, validated_at, created_at)
-- [ ] **1.2.12** Modèle + Migration `Publication` (UUID PK, project_id FK, organization_id FK, proposal_id FK nullable, publication_date, channel ENUM, link, archive_path, created_by FK, timestamps)
-- [ ] **1.2.13** Modèle + Migration `CalendarEvent` (UUID PK, organization_id FK, project_id FK nullable, title, type ENUM, start_date, end_date, status ENUM, description, visibility ENUM, created_by FK, timestamps)
-- [ ] **1.2.14** Modèle + Migration `Media` (UUID PK, organization_id FK nullable, name, type ENUM, tags JSONB, file_path, file_name, file_size, mime_type, is_global, uploaded_by FK, timestamps)
-- [ ] **1.2.15** Modèle + Migration `AuditLog` (UUID PK, user_id FK nullable, organization_id FK nullable, action, entity_type, entity_id, old_value JSONB, new_value JSONB, ip_address, user_agent, created_at — **no updated_at**)
-- [ ] **1.2.16** Fichier `src/models/index.js` : charger Sequelize, importer tous les modèles, définir toutes les associations (belongsTo, hasMany, etc.)
-- [ ] **1.2.17** Exécuter `db:migrate` et vérifier que toutes les tables sont créées avec les contraintes correctes
+- [x] **1.2.1** Modèle + Migration `Organization` (UUID PK, name, short_name, type ENUM, logo_path, contact_email, contact_phone, address, is_active, created_by FK, timestamps)
+- [x] **1.2.2** Modèle + Migration `User` (UUID PK, email unique, password_hash, first/last_name, user_type ENUM, role ENUM, organization_id FK nullable, job_title, avatar_path, is_active, 2FA fields, last_login_at, created_by FK, timestamps + contraintes métier)
+- [x] **1.2.3** Modèle + Migration `RefreshToken` (UUID PK, user_id FK, token_hash unique, expires_at, revoked, created_at)
+- [x] **1.2.4** Modèle + Migration `Project` (UUID PK, organization_id FK, title, description, agency_direction, internal_manager_id FK, studio_manager_id FK, client_contact_id FK, priority ENUM, status ENUM, target_date, created_by FK, timestamps)
+- [x] **1.2.5** Modèle + Migration `Brief` (UUID PK, project_id FK, organization_id FK, description, objective, target_audience, key_message, deadline, submitted_by FK, timestamps)
+- [x] **1.2.6** Modèle + Migration `BriefAttachment` (UUID PK, brief_id FK, organization_id FK, file_name, file_path, file_size, mime_type, uploaded_by FK, created_at)
+- [x] **1.2.7** Modèle + Migration `Task` (UUID PK, project_id FK, organization_id FK, title, description, assigned_to FK nullable, due_date, status ENUM, priority ENUM, visibility ENUM, created_by FK, timestamps)
+- [x] **1.2.8** Modèle + Migration `TaskComment` (UUID PK, task_id FK, organization_id FK, user_id FK, content, is_internal, timestamps)
+- [x] **1.2.9** Modèle + Migration `Proposal` (UUID PK, project_id FK, organization_id FK, version_number, title, description, file_path, author_id FK, validator_id FK nullable, status ENUM, submitted_at, timestamps)
+- [x] **1.2.10** Modèle + Migration `ProposalComment` (UUID PK, proposal_id FK, organization_id FK, user_id FK, content, is_internal, created_at)
+- [x] **1.2.11** Modèle + Migration `Validation` (UUID PK, proposal_id FK, organization_id FK, validator_id FK, status ENUM, comments, validated_at, created_at)
+- [x] **1.2.12** Modèle + Migration `Publication` (UUID PK, project_id FK, organization_id FK, proposal_id FK nullable, publication_date, channel ENUM, link, archive_path, created_by FK, timestamps)
+- [x] **1.2.13** Modèle + Migration `CalendarEvent` (UUID PK, organization_id FK, project_id FK nullable, title, type ENUM, start_date, end_date, status ENUM, description, visibility ENUM, created_by FK, timestamps)
+- [x] **1.2.14** Modèle + Migration `Media` (UUID PK, organization_id FK nullable, name, type ENUM, tags JSONB, file_path, file_name, file_size, mime_type, is_global, uploaded_by FK, timestamps)
+- [x] **1.2.15** Modèle + Migration `AuditLog` (UUID PK, user_id FK nullable, organization_id FK nullable, action, entity_type, entity_id, old_value JSONB, new_value JSONB, ip_address, user_agent, created_at — **no updated_at**)
+- [x] **1.2.16** Fichier `src/models/index.js` : charger Sequelize, importer tous les modèles, définir toutes les associations (belongsTo, hasMany, etc.)
+- [x] **1.2.17** Exécuter `db:migrate` et vérifier que toutes les tables sont créées avec les contraintes correctes
 
 ### 1.3 — Module Auth
 
