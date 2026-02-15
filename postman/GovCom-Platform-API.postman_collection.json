@@ -1,0 +1,1280 @@
+{
+  "info": {
+    "name": "GovCom Platform API",
+    "description": "Collection complète de l'API GovCom Platform — Golden Studio × Institutions\n\n**Base URL:** http://localhost:3000/api/v1\n\n**Comptes de test:**\n- super_admin: admin@goldenstudio.com / Admin@1234\n- admin: manager@goldenstudio.com / Manager@1234\n- validator: validator@goldenstudio.com / Validator@1234\n- contributor: creator@goldenstudio.com / Creator@1234\n- client_admin MIPISE: admin@mipise.gov.dz / Client@1234\n- client_validator MIPISE: validateur@mipise.gov.dz / Client@1234\n- client_reader MIPISE: lecteur@mipise.gov.dz / Client@1234\n- client_admin API-ZF: admin@api-zf.gov.dz / Client@1234\n- client_contributor API-ZF: contributeur@api-zf.gov.dz / Client@1234",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api/v1" },
+    { "key": "projectId_mipise_1", "value": "d1b2c3d4-0001-4000-8000-000000000001" },
+    { "key": "projectId_mipise_2", "value": "d1b2c3d4-0002-4000-8000-000000000002" },
+    { "key": "projectId_mipise_3", "value": "d1b2c3d4-0003-4000-8000-000000000003" },
+    { "key": "projectId_apizf_1", "value": "d1b2c3d4-0004-4000-8000-000000000004" },
+    { "key": "projectId_apizf_2", "value": "d1b2c3d4-0005-4000-8000-000000000005" },
+    { "key": "orgId_mipise", "value": "a1b2c3d4-0001-4000-8000-000000000001" },
+    { "key": "orgId_apizf", "value": "a1b2c3d4-0002-4000-8000-000000000002" }
+  ],
+  "item": [
+    {
+      "name": "00 — Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:3000/health", "host": ["http://localhost:3000"], "path": ["health"] },
+            "auth": { "type": "noauth" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 — Auth",
+      "description": "Authentification : login, refresh, logout, 2FA, change password, profil",
+      "item": [
+        {
+          "name": "Login — Super Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) {",
+                  "  pm.environment.set('access_token', res.data.access_token);",
+                  "  pm.environment.set('refresh_token', res.data.refresh_token);",
+                  "  pm.environment.set('current_user_id', res.data.user.id);",
+                  "  pm.test('Login successful', () => pm.expect(res.success).to.be.true);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@goldenstudio.com\",\n  \"password\": \"Admin@1234\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "auth": { "type": "noauth" }
+          }
+        },
+        {
+          "name": "Login — Admin (manager)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) {",
+                  "  pm.environment.set('access_token', res.data.access_token);",
+                  "  pm.environment.set('refresh_token', res.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"manager@goldenstudio.com\",\n  \"password\": \"Manager@1234\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "auth": { "type": "noauth" }
+          }
+        },
+        {
+          "name": "Login — Client Admin MIPISE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) {",
+                  "  pm.environment.set('access_token', res.data.access_token);",
+                  "  pm.environment.set('refresh_token', res.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@mipise.gov.dz\",\n  \"password\": \"Client@1234\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "auth": { "type": "noauth" }
+          }
+        },
+        {
+          "name": "Login — Client Admin API-ZF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) {",
+                  "  pm.environment.set('access_token', res.data.access_token);",
+                  "  pm.environment.set('refresh_token', res.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@api-zf.gov.dz\",\n  \"password\": \"Client@1234\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "auth": { "type": "noauth" }
+          }
+        },
+        {
+          "name": "Login — Client Validator MIPISE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) {",
+                  "  pm.environment.set('access_token', res.data.access_token);",
+                  "  pm.environment.set('refresh_token', res.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"validateur@mipise.gov.dz\",\n  \"password\": \"Client@1234\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "auth": { "type": "noauth" }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) {",
+                  "  pm.environment.set('access_token', res.data.access_token);",
+                  "  pm.environment.set('refresh_token', res.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] },
+            "auth": { "type": "noauth" }
+          }
+        },
+        {
+          "name": "Get Current User (/me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"Admin@1234\",\n  \"new_password\": \"Admin@5678\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/change-password", "host": ["{{baseUrl}}"], "path": ["auth", "change-password"] }
+          }
+        },
+        {
+          "name": "Enable 2FA",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/2fa/enable", "host": ["{{baseUrl}}"], "path": ["auth", "2fa", "enable"] }
+          }
+        },
+        {
+          "name": "Verify 2FA",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{current_user_id}}\",\n  \"code\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/2fa/verify", "host": ["{{baseUrl}}"], "path": ["auth", "2fa", "verify"] },
+            "auth": { "type": "noauth" }
+          }
+        },
+        {
+          "name": "Disable 2FA",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/2fa/disable", "host": ["{{baseUrl}}"], "path": ["auth", "2fa", "disable"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 — Organizations",
+      "description": "CRUD Organisations (internal only)",
+      "item": [
+        {
+          "name": "List Organizations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organizations?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "type", "value": "ministry", "disabled": true },
+                { "key": "is_active", "value": "true", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Organization",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Direction Générale des Douanes\",\n  \"short_name\": \"DGD\",\n  \"type\": \"direction\",\n  \"contact_email\": \"contact@dgd.gov.dz\",\n  \"contact_phone\": \"+213 21 00 00 03\",\n  \"address\": \"Constantine, Algérie\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/organizations", "host": ["{{baseUrl}}"], "path": ["organizations"] }
+          }
+        },
+        {
+          "name": "Get Organization by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/organizations/{{orgId_mipise}}", "host": ["{{baseUrl}}"], "path": ["organizations", "{{orgId_mipise}}"] }
+          }
+        },
+        {
+          "name": "Update Organization",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ministère de l'Industrie (MIPISE) — Mis à jour\",\n  \"contact_phone\": \"+213 21 00 00 99\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/organizations/{{orgId_mipise}}", "host": ["{{baseUrl}}"], "path": ["organizations", "{{orgId_mipise}}"] }
+          }
+        },
+        {
+          "name": "Patch Organization Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/organizations/{{orgId_mipise}}/status", "host": ["{{baseUrl}}"], "path": ["organizations", "{{orgId_mipise}}", "status"] }
+          }
+        },
+        {
+          "name": "Get Organization Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/organizations/{{orgId_mipise}}/users", "host": ["{{baseUrl}}"], "path": ["organizations", "{{orgId_mipise}}", "users"] }
+          }
+        },
+        {
+          "name": "Get Organization Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/organizations/{{orgId_mipise}}/projects", "host": ["{{baseUrl}}"], "path": ["organizations", "{{orgId_mipise}}", "projects"] }
+          }
+        },
+        {
+          "name": "Get Organization Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/organizations/{{orgId_mipise}}/stats", "host": ["{{baseUrl}}"], "path": ["organizations", "{{orgId_mipise}}", "stats"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 — Users",
+      "description": "Gestion utilisateurs internes et clients",
+      "item": [
+        {
+          "name": "Internal Users",
+          "item": [
+            {
+              "name": "List Internal Users",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/internal?page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "internal"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "role", "value": "admin", "disabled": true },
+                    { "key": "search", "value": "", "disabled": true }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Internal User",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"newuser@goldenstudio.com\",\n  \"password\": \"NewUser@1234\",\n  \"first_name\": \"Ahmed\",\n  \"last_name\": \"Nouveau\",\n  \"role\": \"contributor\",\n  \"job_title\": \"Designer Junior\"\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/users/internal", "host": ["{{baseUrl}}"], "path": ["users", "internal"] }
+              }
+            },
+            {
+              "name": "Change Internal User Role",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"role\": \"validator\"\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/users/internal/b1b2c3d4-0004-4000-8000-000000000004/role", "host": ["{{baseUrl}}"], "path": ["users", "internal", "b1b2c3d4-0004-4000-8000-000000000004", "role"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Client Users",
+          "item": [
+            {
+              "name": "List Client Users",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/clients?page=1&limit=20&organizationId={{orgId_mipise}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "clients"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "organizationId", "value": "{{orgId_mipise}}" },
+                    { "key": "search", "value": "", "disabled": true }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Client User",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"newclient@mipise.gov.dz\",\n  \"password\": \"Client@1234\",\n  \"first_name\": \"Mourad\",\n  \"last_name\": \"Client\",\n  \"role\": \"client_reader\",\n  \"organization_id\": \"{{orgId_mipise}}\",\n  \"job_title\": \"Agent de Liaison\"\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/users/clients?organizationId={{orgId_mipise}}", "host": ["{{baseUrl}}"], "path": ["users", "clients"], "query": [{ "key": "organizationId", "value": "{{orgId_mipise}}" }] }
+              }
+            },
+            {
+              "name": "Change Client User Role",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"role\": \"client_validator\"\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/users/clients/c1b2c3d4-0003-4000-8000-000000000003/role?organizationId={{orgId_mipise}}", "host": ["{{baseUrl}}"], "path": ["users", "clients", "c1b2c3d4-0003-4000-8000-000000000003", "role"], "query": [{ "key": "organizationId", "value": "{{orgId_mipise}}" }] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/users/b1b2c3d4-0001-4000-8000-000000000001", "host": ["{{baseUrl}}"], "path": ["users", "b1b2c3d4-0001-4000-8000-000000000001"] }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Super\",\n  \"last_name\": \"Administrateur\",\n  \"job_title\": \"Directeur Général\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users/b1b2c3d4-0001-4000-8000-000000000001", "host": ["{{baseUrl}}"], "path": ["users", "b1b2c3d4-0001-4000-8000-000000000001"] }
+          }
+        },
+        {
+          "name": "Patch User Status (deactivate)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users/c1b2c3d4-0003-4000-8000-000000000003/status", "host": ["{{baseUrl}}"], "path": ["users", "c1b2c3d4-0003-4000-8000-000000000003", "status"] }
+          }
+        },
+        {
+          "name": "Delete User (soft)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/users/c1b2c3d4-0003-4000-8000-000000000003", "host": ["{{baseUrl}}"], "path": ["users", "c1b2c3d4-0003-4000-8000-000000000003"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 — Projects",
+      "description": "Gestion des projets",
+      "item": [
+        {
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "in_production", "disabled": true },
+                { "key": "priority", "value": "high", "disabled": true },
+                { "key": "organizationId", "value": "{{orgId_mipise}}", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.id) {",
+                  "  pm.environment.set('new_project_id', res.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organization_id\": \"{{orgId_mipise}}\",\n  \"title\": \"Nouveau Projet Test\",\n  \"description\": \"Projet créé via Postman pour test\",\n  \"agency_direction\": \"Direction Test\",\n  \"priority\": \"normal\",\n  \"status\": \"brief_received\",\n  \"target_date\": \"2025-12-31\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects", "host": ["{{baseUrl}}"], "path": ["projects"] }
+          }
+        },
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/dashboard/stats", "host": ["{{baseUrl}}"], "path": ["projects", "dashboard", "stats"] }
+          }
+        },
+        {
+          "name": "Get Project by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}"] }
+          }
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Campagne Institutionnelle MIPISE 2025 — Mise à jour\",\n  \"priority\": \"urgent\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}"] }
+          }
+        },
+        {
+          "name": "Patch Project Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_validation\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/status", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "status"] }
+          }
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_3}}", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_3}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 — Briefs",
+      "description": "Gestion des briefs (nested sous /projects/:projectId)",
+      "item": [
+        {
+          "name": "List Briefs for Project",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/briefs", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "briefs"] }
+          }
+        },
+        {
+          "name": "Create Brief",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.id) {",
+                  "  pm.environment.set('new_brief_id', res.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Brief de test créé via Postman\",\n  \"objective\": \"Tester l'endpoint de création de brief\",\n  \"target_audience\": \"Équipe QA\",\n  \"key_message\": \"Message clé de test\",\n  \"deadline\": \"2025-06-01\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/briefs", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "briefs"] }
+          }
+        },
+        {
+          "name": "Update Brief",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Brief mis à jour via Postman\",\n  \"objective\": \"Objectif révisé\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/briefs/e1b2c3d4-0001-4000-8000-000000000001", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "briefs", "e1b2c3d4-0001-4000-8000-000000000001"] }
+          }
+        },
+        {
+          "name": "Upload Brief Attachment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/briefs/e1b2c3d4-0001-4000-8000-000000000001/attachments", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "briefs", "e1b2c3d4-0001-4000-8000-000000000001", "attachments"] }
+          }
+        },
+        {
+          "name": "Delete Brief Attachment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/briefs/e1b2c3d4-0001-4000-8000-000000000001/attachments/{{attachment_id}}", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "briefs", "e1b2c3d4-0001-4000-8000-000000000001", "attachments", "{{attachment_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 — Tasks",
+      "description": "Gestion des tâches avec commentaires",
+      "item": [
+        {
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "projectId", "value": "{{projectId_mipise_1}}", "disabled": true },
+                { "key": "status", "value": "in_progress", "disabled": true },
+                { "key": "priority", "value": "high", "disabled": true },
+                { "key": "visibility", "value": "client_visible", "disabled": true },
+                { "key": "organizationId", "value": "{{orgId_mipise}}", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.id) {",
+                  "  pm.environment.set('new_task_id', res.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"project_id\": \"{{projectId_mipise_1}}\",\n  \"title\": \"Tâche test Postman\",\n  \"description\": \"Tâche créée via Postman\",\n  \"priority\": \"normal\",\n  \"visibility\": \"client_visible\",\n  \"due_date\": \"2025-07-01\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"] }
+          }
+        },
+        {
+          "name": "Get Task by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/tasks/f1b2c3d4-0001-4000-8000-000000000001", "host": ["{{baseUrl}}"], "path": ["tasks", "f1b2c3d4-0001-4000-8000-000000000001"] }
+          }
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Tâche mise à jour\",\n  \"priority\": \"high\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tasks/f1b2c3d4-0001-4000-8000-000000000001", "host": ["{{baseUrl}}"], "path": ["tasks", "f1b2c3d4-0001-4000-8000-000000000001"] }
+          }
+        },
+        {
+          "name": "Patch Task Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"done\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tasks/f1b2c3d4-0001-4000-8000-000000000001/status", "host": ["{{baseUrl}}"], "path": ["tasks", "f1b2c3d4-0001-4000-8000-000000000001", "status"] }
+          }
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/tasks/f1b2c3d4-0003-4000-8000-000000000003", "host": ["{{baseUrl}}"], "path": ["tasks", "f1b2c3d4-0003-4000-8000-000000000003"] }
+          }
+        },
+        {
+          "name": "List Task Comments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/tasks/f1b2c3d4-0001-4000-8000-000000000001/comments", "host": ["{{baseUrl}}"], "path": ["tasks", "f1b2c3d4-0001-4000-8000-000000000001", "comments"] }
+          }
+        },
+        {
+          "name": "Add Task Comment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Commentaire de test depuis Postman\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tasks/f1b2c3d4-0001-4000-8000-000000000001/comments", "host": ["{{baseUrl}}"], "path": ["tasks", "f1b2c3d4-0001-4000-8000-000000000001", "comments"] }
+          }
+        },
+        {
+          "name": "Delete Task Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/tasks/f1b2c3d4-0001-4000-8000-000000000001/comments/{{comment_id}}", "host": ["{{baseUrl}}"], "path": ["tasks", "f1b2c3d4-0001-4000-8000-000000000001", "comments", "{{comment_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 — Proposals",
+      "description": "Gestion des propositions et validations (nested sous /projects/:projectId)",
+      "item": [
+        {
+          "name": "List Proposals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/proposals", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "proposals"] }
+          }
+        },
+        {
+          "name": "Create Proposal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.id) {",
+                  "  pm.environment.set('new_proposal_id', res.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Proposition test Postman\",\n  \"description\": \"Proposition créée via Postman pour tester le workflow\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/proposals", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "proposals"] }
+          }
+        },
+        {
+          "name": "Get Proposal by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/proposals/a7b2c3d4-0002-4000-8000-000000000002", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "proposals", "a7b2c3d4-0002-4000-8000-000000000002"] }
+          }
+        },
+        {
+          "name": "Update Proposal",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Proposition mise à jour\",\n  \"description\": \"Description modifiée\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/proposals/a7b2c3d4-0001-4000-8000-000000000001", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "proposals", "a7b2c3d4-0001-4000-8000-000000000001"] }
+          }
+        },
+        {
+          "name": "Submit Proposal to Client",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_3}}/proposals/a7b2c3d4-0004-4000-8000-000000000004/submit", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_3}}", "proposals", "a7b2c3d4-0004-4000-8000-000000000004", "submit"] }
+          }
+        },
+        {
+          "name": "List Proposal Comments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/proposals/a7b2c3d4-0002-4000-8000-000000000002/comments", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "proposals", "a7b2c3d4-0002-4000-8000-000000000002", "comments"] }
+          }
+        },
+        {
+          "name": "Add Proposal Comment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Commentaire sur la proposition depuis Postman\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/proposals/a7b2c3d4-0002-4000-8000-000000000002/comments", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "proposals", "a7b2c3d4-0002-4000-8000-000000000002", "comments"] }
+          }
+        },
+        {
+          "name": "Client Validate Proposal (approve)",
+          "description": "⚠️ Connectez-vous d'abord en tant que client_validator MIPISE (validateur@mipise.gov.dz)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"comments\": \"Proposition validée, merci pour le travail.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/proposals/a7b2c3d4-0002-4000-8000-000000000002/validate", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "proposals", "a7b2c3d4-0002-4000-8000-000000000002", "validate"] }
+          }
+        },
+        {
+          "name": "Client Validate Proposal (needs_revision)",
+          "description": "⚠️ Connectez-vous d'abord en tant que client_validator ou client_admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"needs_revision\",\n  \"comments\": \"Merci de revoir les couleurs de la page 3.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_2}}/proposals/a7b2c3d4-0003-4000-8000-000000000003/validate", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_2}}", "proposals", "a7b2c3d4-0003-4000-8000-000000000003", "validate"] }
+          }
+        },
+        {
+          "name": "List Validation History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_mipise_1}}/proposals/a7b2c3d4-0002-4000-8000-000000000002/validations", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_mipise_1}}", "proposals", "a7b2c3d4-0002-4000-8000-000000000002", "validations"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 — Publications",
+      "description": "Gestion des publications (nested sous /projects/:projectId)",
+      "item": [
+        {
+          "name": "List Publications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_apizf_2}}/publications", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_apizf_2}}", "publications"] }
+          }
+        },
+        {
+          "name": "Create Publication",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.id) {",
+                  "  pm.environment.set('new_publication_id', res.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"publication_date\": \"2025-04-01\",\n  \"channel\": \"web\",\n  \"link\": \"https://www.api-zf.gov.dz/video-promo-2025\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_apizf_2}}/publications", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_apizf_2}}", "publications"] }
+          }
+        },
+        {
+          "name": "Update Publication",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"channel\": \"social_media\",\n  \"link\": \"https://facebook.com/api-zf/video\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_apizf_2}}/publications/{{new_publication_id}}", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_apizf_2}}", "publications", "{{new_publication_id}}"] }
+          }
+        },
+        {
+          "name": "Delete Publication",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId_apizf_2}}/publications/{{new_publication_id}}", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId_apizf_2}}", "publications", "{{new_publication_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 — Calendar",
+      "description": "Gestion du calendrier éditorial",
+      "item": [
+        {
+          "name": "List Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/calendar?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["calendar"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "type", "value": "meeting", "disabled": true },
+                { "key": "status", "value": "planned", "disabled": true },
+                { "key": "start_date", "value": "2025-01-01", "disabled": true },
+                { "key": "end_date", "value": "2025-12-31", "disabled": true },
+                { "key": "organizationId", "value": "{{orgId_mipise}}", "disabled": true },
+                { "key": "projectId", "value": "{{projectId_mipise_1}}", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.id) {",
+                  "  pm.environment.set('new_event_id', res.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organization_id\": \"{{orgId_mipise}}\",\n  \"project_id\": \"{{projectId_mipise_1}}\",\n  \"title\": \"Réunion de validation maquettes\",\n  \"type\": \"meeting\",\n  \"start_date\": \"2025-04-10T09:00:00Z\",\n  \"end_date\": \"2025-04-10T11:00:00Z\",\n  \"description\": \"Réunion de présentation des maquettes au client MIPISE\",\n  \"visibility\": \"client_visible\",\n  \"status\": \"planned\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/calendar", "host": ["{{baseUrl}}"], "path": ["calendar"] }
+          }
+        },
+        {
+          "name": "Get Event by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/calendar/{{new_event_id}}", "host": ["{{baseUrl}}"], "path": ["calendar", "{{new_event_id}}"] }
+          }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Réunion de validation — Reportée\",\n  \"start_date\": \"2025-04-15T14:00:00Z\",\n  \"end_date\": \"2025-04-15T16:00:00Z\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/calendar/{{new_event_id}}", "host": ["{{baseUrl}}"], "path": ["calendar", "{{new_event_id}}"] }
+          }
+        },
+        {
+          "name": "Patch Event Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/calendar/{{new_event_id}}/status", "host": ["{{baseUrl}}"], "path": ["calendar", "{{new_event_id}}", "status"] }
+          }
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/calendar/{{new_event_id}}", "host": ["{{baseUrl}}"], "path": ["calendar", "{{new_event_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 — Media / Médiathèque",
+      "description": "Upload, consultation et téléchargement de médias",
+      "item": [
+        {
+          "name": "List Media",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/media?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["media"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "type", "value": "logo", "disabled": true },
+                { "key": "is_global", "value": "true", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "organizationId", "value": "{{orgId_mipise}}", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload Media",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.id) {",
+                  "  pm.environment.set('new_media_id', res.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" },
+                { "key": "name", "value": "Logo test upload", "type": "text" },
+                { "key": "type", "value": "logo", "type": "text" },
+                { "key": "is_global", "value": "true", "type": "text" },
+                { "key": "tags", "value": "[\"test\",\"logo\"]", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/media", "host": ["{{baseUrl}}"], "path": ["media"] }
+          }
+        },
+        {
+          "name": "Get Media by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/media/a8b2c3d4-0001-4000-8000-000000000001", "host": ["{{baseUrl}}"], "path": ["media", "a8b2c3d4-0001-4000-8000-000000000001"] }
+          }
+        },
+        {
+          "name": "Update Media Metadata",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Logo Golden Studio — Couleur (mis à jour)\",\n  \"tags\": [\"logo\", \"golden-studio\", \"officiel\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/media/a8b2c3d4-0001-4000-8000-000000000001", "host": ["{{baseUrl}}"], "path": ["media", "a8b2c3d4-0001-4000-8000-000000000001"] }
+          }
+        },
+        {
+          "name": "Download Media",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/media/a8b2c3d4-0001-4000-8000-000000000001/download", "host": ["{{baseUrl}}"], "path": ["media", "a8b2c3d4-0001-4000-8000-000000000001", "download"] }
+          }
+        },
+        {
+          "name": "Delete Media",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/media/{{new_media_id}}", "host": ["{{baseUrl}}"], "path": ["media", "{{new_media_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 — Reporting",
+      "description": "KPIs, statistiques et exports",
+      "item": [
+        {
+          "name": "Overview Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/reporting/overview", "host": ["{{baseUrl}}"], "path": ["reporting", "overview"] }
+          }
+        },
+        {
+          "name": "Projects Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/reporting/projects", "host": ["{{baseUrl}}"], "path": ["reporting", "projects"] }
+          }
+        },
+        {
+          "name": "Users Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/reporting/users", "host": ["{{baseUrl}}"], "path": ["reporting", "users"] }
+          }
+        },
+        {
+          "name": "Publications Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/reporting/publications", "host": ["{{baseUrl}}"], "path": ["reporting", "publications"] }
+          }
+        },
+        {
+          "name": "Validations Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/reporting/validations", "host": ["{{baseUrl}}"], "path": ["reporting", "validations"] }
+          }
+        },
+        {
+          "name": "Export PDF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/reporting/export/pdf", "host": ["{{baseUrl}}"], "path": ["reporting", "export", "pdf"] }
+          }
+        },
+        {
+          "name": "Export Excel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/reporting/export/excel", "host": ["{{baseUrl}}"], "path": ["reporting", "export", "excel"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 — Audit Logs",
+      "description": "Journal d'audit (lecture seule, admin+ uniquement)",
+      "item": [
+        {
+          "name": "List Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "action", "value": "login", "disabled": true },
+                { "key": "entity_type", "value": "User", "disabled": true },
+                { "key": "userId", "value": "", "disabled": true },
+                { "key": "organizationId", "value": "", "disabled": true },
+                { "key": "start_date", "value": "2025-01-01", "disabled": true },
+                { "key": "end_date", "value": "2025-12-31", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Audit Log Entry",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/audit/{{audit_log_id}}", "host": ["{{baseUrl}}"], "path": ["audit", "{{audit_log_id}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}
