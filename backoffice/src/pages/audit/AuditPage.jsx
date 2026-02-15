@@ -48,8 +48,9 @@ export default function AuditPage() {
       if (entity) params.entity_type = entity;
       if (search) params.search = search;
       const { data } = await auditAPI.list(params);
-      setLogs(data.data?.rows || data.data || []);
-      setTotal(data.data?.count || 0);
+      const result = data.data?.rows || (Array.isArray(data.data) ? data.data : []);
+      setLogs(result);
+      setTotal(data.data?.count || result.length || 0);
     } catch {
       toast.error('Erreur lors du chargement');
     } finally {

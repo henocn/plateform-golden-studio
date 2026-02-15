@@ -43,7 +43,7 @@ export default function CalendarPage() {
       const params = {};
       if (typeFilter) params.event_type = typeFilter;
       const { data } = await calendarAPI.list(params);
-      const raw = data.data?.rows || data.data || [];
+      const raw = data.data?.rows || (Array.isArray(data.data) ? data.data : []);
       setEvents(raw.map((e) => ({
         ...e,
         title: e.title,
@@ -60,8 +60,8 @@ export default function CalendarPage() {
 
   const loadProjects = async () => {
     try {
-      const { data } = await projectsAPI.list({ limit: 200 });
-      setProjects(data.data?.rows || data.data || []);
+      const { data } = await projectsAPI.list({ page: 1, limit: 100 });
+      setProjects(data.data?.rows || (Array.isArray(data.data) ? data.data : []));
     } catch {}
   };
 

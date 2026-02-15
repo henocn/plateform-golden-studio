@@ -34,8 +34,9 @@ export default function ProposalsPage() {
       if (statusFilter) params.status = statusFilter;
       if (projectId) params.project_id = projectId;
       const { data } = await proposalsAPI.list(params);
-      setProposals(data.data?.rows || data.data || []);
-      setTotal(data.data?.count || 0);
+      const result = data.data?.rows || (Array.isArray(data.data) ? data.data : []);
+      setProposals(result);
+      setTotal(data.data?.count || result.length || 0);
     } catch {
       toast.error('Erreur lors du chargement');
     } finally {
@@ -45,8 +46,8 @@ export default function ProposalsPage() {
 
   const loadProjects = async () => {
     try {
-      const { data } = await projectsAPI.list({ limit: 200 });
-      setProjects(data.data?.rows || data.data || []);
+      const { data } = await projectsAPI.list({ page: 1, limit: 100 });
+      setProjects(data.data?.rows || (Array.isArray(data.data) ? data.data : []));
     } catch {}
   };
 
@@ -158,7 +159,7 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh }) {
     (async () => {
       try {
         const { data } = await validationsAPI.getByProposal(p.id);
-        setValidations(data.data?.rows || data.data || []);
+        setValidations(data.data?.rows || (Array.isArray(data.data) ? data.data : []));
       } catch {} finally { setLoading(false); }
     })();
   }, [p.id]);

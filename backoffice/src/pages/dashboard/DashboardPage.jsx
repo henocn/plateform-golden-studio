@@ -45,7 +45,7 @@ export default function DashboardPage() {
 
       if (overviewRes.status === 'fulfilled') setOverview(overviewRes.value.data.data);
       if (projectsRes.status === 'fulfilled') setProjectStats(projectsRes.value.data.data);
-      if (auditRes.status === 'fulfilled') setRecentActivity(auditRes.value.data.data?.rows || auditRes.value.data.data || []);
+      if (auditRes.status === 'fulfilled') setRecentActivity(auditRes.value.data.data?.rows || (Array.isArray(auditRes.value.data.data) ? auditRes.value.data.data : []));
     } catch (err) {
       console.error('Dashboard load error:', err);
     } finally {

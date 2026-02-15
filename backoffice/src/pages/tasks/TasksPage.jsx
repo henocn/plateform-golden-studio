@@ -38,8 +38,9 @@ export default function TasksPage() {
       if (projectId) params.project_id = projectId;
       if (search) params.search = search;
       const { data } = await tasksAPI.list(params);
-      setTasks(data.data?.rows || data.data || []);
-      setTotal(data.data?.count || 0);
+      const result = data.data?.rows || (Array.isArray(data.data) ? data.data : []);
+      setTasks(result);
+      setTotal(data.data?.count || result.length || 0);
     } catch (err) {
       toast.error('Erreur lors du chargement des tâches');
     } finally {
@@ -49,8 +50,8 @@ export default function TasksPage() {
 
   const loadProjects = async () => {
     try {
-      const { data } = await projectsAPI.list({ limit: 200 });
-      setProjects(data.data?.rows || data.data || []);
+      const { data } = await projectsAPI.list({ page: 1, limit: 100 });
+      setProjects(data.data?.rows || (Array.isArray(data.data) ? data.data : []));
     } catch {}
   };
 
@@ -72,7 +73,7 @@ export default function TasksPage() {
   const grouped = useMemo(() => {
     const map = {};
     columns.forEach((c) => (map[c] = []));
-    tasks.forEach((t) => { if (map[t.status]) map[t.status].push(t); });
+    (Array.isArray(tasks) ? tasks : []).forEach((t) => { if (map[t.status]) map[t.status].push(t); });
     return map;
   }, [tasks]);
 

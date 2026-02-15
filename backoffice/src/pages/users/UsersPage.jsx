@@ -164,7 +164,7 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
   useEffect(() => {
     if (open && type === 'clients') {
       organizationsAPI.list({ limit: 100 }).then(({ data }) => {
-        setOrgs(data.data?.rows || data.data || []);
+        setOrgs(data.data?.rows || (Array.isArray(data.data) ? data.data : []));
       }).catch(() => {});
     }
   }, [open, type]);

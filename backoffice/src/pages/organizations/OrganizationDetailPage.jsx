@@ -30,8 +30,8 @@ export default function OrganizationDetailPage() {
         organizationsAPI.getStats(id),
       ]);
       if (orgRes.status === 'fulfilled') setOrg(orgRes.value.data.data);
-      if (usersRes.status === 'fulfilled') setUsers(usersRes.value.data.data?.rows || usersRes.value.data.data || []);
-      if (projectsRes.status === 'fulfilled') setProjects(projectsRes.value.data.data?.rows || projectsRes.value.data.data || []);
+      if (usersRes.status === 'fulfilled') setUsers(usersRes.value.data.data?.rows || (Array.isArray(usersRes.value.data.data) ? usersRes.value.data.data : []));
+      if (projectsRes.status === 'fulfilled') setProjects(projectsRes.value.data.data?.rows || (Array.isArray(projectsRes.value.data.data) ? projectsRes.value.data.data : []));
       if (statsRes.status === 'fulfilled') setStats(statsRes.value.data.data);
     } catch (err) {
       toast.error('Erreur lors du chargement');

@@ -127,3 +127,14 @@ export function downloadBlob(blob, filename) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Safely extract an array from API response data
+ * Handles { rows: [], count } or direct array or object fallback
+ */
+export function toArray(data) {
+  if (!data) return [];
+  if (data.rows && Array.isArray(data.rows)) return data.rows;
+  if (Array.isArray(data)) return data;
+  return [];
+}

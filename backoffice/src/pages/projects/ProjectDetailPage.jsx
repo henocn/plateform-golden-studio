@@ -33,10 +33,10 @@ export default function ProjectDetailPage() {
         publicationsAPI.list({ project_id: id }),
       ]);
       if (projRes.status === 'fulfilled') setProject(projRes.value.data.data);
-      if (briefRes.status === 'fulfilled') setBriefs(briefRes.value.data.data?.rows || briefRes.value.data.data || []);
-      if (taskRes.status === 'fulfilled') setTasks(taskRes.value.data.data?.rows || taskRes.value.data.data || []);
-      if (propRes.status === 'fulfilled') setProposals(propRes.value.data.data?.rows || propRes.value.data.data || []);
-      if (pubRes.status === 'fulfilled') setPublications(pubRes.value.data.data?.rows || pubRes.value.data.data || []);
+      if (briefRes.status === 'fulfilled') setBriefs(briefRes.value.data.data?.rows || (Array.isArray(briefRes.value.data.data) ? briefRes.value.data.data : []));
+      if (taskRes.status === 'fulfilled') setTasks(taskRes.value.data.data?.rows || (Array.isArray(taskRes.value.data.data) ? taskRes.value.data.data : []));
+      if (propRes.status === 'fulfilled') setProposals(propRes.value.data.data?.rows || (Array.isArray(propRes.value.data.data) ? propRes.value.data.data : []));
+      if (pubRes.status === 'fulfilled') setPublications(pubRes.value.data.data?.rows || (Array.isArray(pubRes.value.data.data) ? pubRes.value.data.data : []));
     } catch (err) {
       toast.error('Erreur lors du chargement du projet');
     } finally {
@@ -281,7 +281,7 @@ function ValidationsTab({ proposals }) {
         for (const p of proposals) {
           try {
             const { data } = await validationsAPI.getByProposal(p.id);
-            const vals = data.data?.rows || data.data || [];
+            const vals = data.data?.rows || (Array.isArray(data.data) ? data.data : []);
             allVals.push(...vals.map((v) => ({ ...v, proposalTitle: p.title, version: p.version_number })));
           } catch {}
         }

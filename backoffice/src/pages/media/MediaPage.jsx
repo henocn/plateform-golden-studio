@@ -49,8 +49,9 @@ export default function MediaPage() {
       if (search) params.search = search;
       if (tag) params.tag = tag;
       const { data } = await mediaAPI.list(params);
-      setFiles(data.data?.rows || data.data || []);
-      setTotal(data.data?.count || 0);
+      const result = data.data?.rows || (Array.isArray(data.data) ? data.data : []);
+      setFiles(result);
+      setTotal(data.data?.count || result.length || 0);
     } catch {
       toast.error('Erreur lors du chargement');
     } finally {
