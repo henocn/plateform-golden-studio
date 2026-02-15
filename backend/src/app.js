@@ -82,18 +82,21 @@ const userRoutes = require('./modules/users/user.routes');
 const projectRoutes = require('./modules/projects/project.routes');
 const briefRoutes = require('./modules/briefs/brief.routes');
 const taskRoutes = require('./modules/tasks/task.routes');
+const proposalRoutes = require('./modules/proposals/proposal.routes');
 require('./modules/auth/auth.swagger');
 require('./modules/organizations/organization.swagger');
 require('./modules/users/user.swagger');
 require('./modules/projects/project.swagger');
 require('./modules/briefs/brief.swagger');
 require('./modules/tasks/task.swagger');
+require('./modules/proposals/proposal.swagger');
 app.use(`${env.API_PREFIX}/auth`, authRoutes);
 app.use(`${env.API_PREFIX}/organizations`, orgRoutes);
 app.use(`${env.API_PREFIX}/users`, userRoutes);
 app.use(`${env.API_PREFIX}/projects`, projectRoutes);
 app.use(`${env.API_PREFIX}/projects/:projectId/briefs`, briefRoutes);
 app.use(`${env.API_PREFIX}/tasks`, taskRoutes);
+app.use(`${env.API_PREFIX}/projects/:projectId/proposals`, proposalRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────
 app.use((_req, res) => {

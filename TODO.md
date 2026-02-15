@@ -130,17 +130,17 @@
 
 ### 1.10 — Module Proposals + Validations
 
-- [ ] **1.10.1** `proposal.repository.js` — CRUD + filtrage statut (client ne voit pas les drafts)
-- [ ] **1.10.2** `proposal.service.js` — Workflow complet :
+- [x] **1.10.1** `proposal.repository.js` — CRUD + filtrage statut (client ne voit pas les drafts)
+- [x] **1.10.2** `proposal.service.js` — Workflow complet :
   - Création (internal contributor+), versioning auto
   - Soumission au client (status → pending_client_validation, internal validator+)
   - Commentaires (is_internal auto)
   - Client ne voit que pending_client_validation/approved/needs_revision/rejected
-- [ ] **1.10.3** `validation.repository.js` + `validation.service.js` — Logique de validation :
+- [x] **1.10.3** `validation.repository.js` + `validation.service.js` — Logique de validation :
   - Soumission décision (client_validator/client_admin) : approved/needs_revision/rejected
   - Vérification pas de double validation, proposal dans le bon état
   - Historique des validations
-- [ ] **1.10.4** Controllers, validations Joi, routes, swagger pour proposals + validations
+- [x] **1.10.4** Controllers, validations Joi, routes, swagger pour proposals + validations
 
 ### 1.11 — Module Publications
 
