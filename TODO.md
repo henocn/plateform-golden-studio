@@ -181,22 +181,22 @@
 
 ### 1.16 — Swagger Global
 
-- [ ] **1.16.1** `src/config/swagger.js` — Configuration globale : info, servers (localhost + prod), securitySchemes (Bearer JWT), tags
-- [ ] **1.16.2** Intégrer tous les fichiers `*.swagger.js` de chaque module
-- [ ] **1.16.3** Schémas réutilisables dans `components/schemas` (User, Organization, Project, Task, Brief, Proposal, etc.)
-- [ ] **1.16.4** Vérifier `/api-docs` accessible et fonctionnel, bouton "Authorize" opérationnel
+- [x] **1.16.1** `src/config/swagger.js` — Configuration globale : info, servers (localhost + prod), securitySchemes (Bearer JWT), tags
+- [x] **1.16.2** Intégrer tous les fichiers `*.swagger.js` de chaque module
+- [x] **1.16.3** Schémas réutilisables dans `components/schemas` (User, Organization, Project, Task, Brief, Proposal, etc.)
+- [x] **1.16.4** Vérifier `/api-docs` accessible et fonctionnel, bouton "Authorize" opérationnel
 
 ### 1.17 — Seeders
 
-- [ ] **1.17.1** Seeder `organizations` : MIPISE (ministry) + API-ZF (agency)
-- [ ] **1.17.2** Seeder `users` internes : super_admin, admin, validator, contributor (avec mots de passe hashés bcrypt)
-- [ ] **1.17.3** Seeder `users` clients : MIPISE (client_admin, client_validator, client_reader) + API-ZF (client_admin, client_contributor)
-- [ ] **1.17.4** Seeder `projects` : 3 projets MIPISE + 2 projets API-ZF (statuts variés)
-- [ ] **1.17.5** Seeder `briefs` : 1 brief par projet avec description complète
-- [ ] **1.17.6** Seeder `tasks` : 2-3 tâches par projet (mix visibility internal_only / client_visible)
-- [ ] **1.17.7** Seeder `proposals` : 1-2 propositions par projet (dont au moins une en pending_client_validation)
-- [ ] **1.17.8** Seeder `media` : 3 médias globaux (is_global=true)
-- [ ] **1.17.9** Exécuter `db:seed:all` et vérifier que les données sont cohérentes
+- [x] **1.17.1** Seeder `organizations` : MIPISE (ministry) + API-ZF (agency)
+- [x] **1.17.2** Seeder `users` internes : super_admin, admin, validator, contributor (avec mots de passe hashés bcrypt)
+- [x] **1.17.3** Seeder `users` clients : MIPISE (client_admin, client_validator, client_reader) + API-ZF (client_admin, client_contributor)
+- [x] **1.17.4** Seeder `projects` : 3 projets MIPISE + 2 projets API-ZF (statuts variés)
+- [x] **1.17.5** Seeder `briefs` : 1 brief par projet avec description complète
+- [x] **1.17.6** Seeder `tasks` : 2-3 tâches par projet (mix visibility internal_only / client_visible)
+- [x] **1.17.7** Seeder `proposals` : 1-2 propositions par projet (dont au moins une en pending_client_validation)
+- [x] **1.17.8** Seeder `media` : 3 médias globaux (is_global=true)
+- [x] **1.17.9** Exécuter `db:seed:all` et vérifier que les données sont cohérentes
 
 ### 1.18 — Tests & Validation Backend
 
