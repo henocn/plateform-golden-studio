@@ -200,13 +200,13 @@
 
 ### 1.18 — Tests & Validation Backend
 
-- [ ] **1.18.1** Tests unitaires : tenant.middleware, role.middleware, ApiError, pagination
-- [ ] **1.18.2** Tests d'intégration : auth (login, refresh, 2FA flow)
-- [ ] **1.18.3** Tests d'intégration : isolation multi-tenant (un client ne voit pas les données d'une autre org)
-- [ ] **1.18.4** Tests d'intégration : permissions (client_reader ne peut pas soumettre de validation)
-- [ ] **1.18.5** Tests d'intégration : workflow proposals (create draft → submit → client validate)
-- [ ] **1.18.6** Vérification finale : `npm run dev` ✅, `db:migrate` ✅, `db:seed:all` ✅, `/api-docs` ✅
-- [ ] **1.18.7** Créer `README.md` backend : instructions démarrage, architecture, users de test, endpoints principaux
+- [x] **1.18.1** Tests unitaires : tenant.middleware, role.middleware, ApiError, pagination
+- [x] **1.18.2** Tests d'intégration : auth (login, refresh, 2FA flow)
+- [x] **1.18.3** Tests d'intégration : isolation multi-tenant (un client ne voit pas les données d'une autre org)
+- [x] **1.18.4** Tests d'intégration : permissions (client_reader ne peut pas soumettre de validation)
+- [x] **1.18.5** Tests d'intégration : workflow proposals (create draft → submit → client validate)
+- [x] **1.18.6** Vérification finale : `npm run dev` ✅, `db:migrate` ✅, `db:seed:all` ✅, `/api-docs` ✅
+- [x] **1.18.7** Créer `README.md` backend : instructions démarrage, architecture, users de test, endpoints principaux
 
 ---
 
