@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base Layer ─────────────────────────────────────────── */
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply text-body-md text-ink-700;
+  }
+
+  h1 { @apply text-display-lg text-ink-900; }
+  h2 { @apply text-display-md text-ink-900; }
+  h3 { @apply text-display-sm text-ink-900; }
+
+  /* Scrollbar — minimal, elegant */
+  ::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-ink-300 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-ink-400;
+  }
+
+  /* Focus ring */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary-400 ring-offset-2 ring-offset-white;
+  }
+}
+
+/* ── Component Layer ────────────────────────────────────── */
+@layer components {
+  /* Page transition */
+  .page-enter {
+    @apply animate-fade-in;
+  }
+
+  /* Glass card effect */
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-sm border border-surface-300/50 rounded-xl shadow-card;
+  }
+
+  /* Sidebar active item */
+  .sidebar-item-active {
+    @apply bg-primary-50 text-primary-500 font-medium border-r-2 border-primary-500;
+  }
+
+  /* Status badge base */
+  .status-badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 text-body-sm font-medium rounded-full;
+  }
+
+  /* KPI card */
+  .kpi-card {
+    @apply bg-white rounded-xl border border-surface-300 p-5 shadow-card hover:shadow-card-hover transition-shadow duration-200;
+  }
+}
+
+/* ── Utility Layer ──────────────────────────────────────── */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .transition-default {
+    @apply transition-all duration-200 ease-out;
+  }
+}
+
+/* ── React Big Calendar Overrides ───────────────────────── */
+.calendar-wrapper .rbc-header {
+  @apply py-2 text-body-sm font-medium text-ink-500 border-surface-200;
+}
+.calendar-wrapper .rbc-month-view,
+.calendar-wrapper .rbc-time-view {
+  @apply border-surface-200 rounded-lg overflow-hidden;
+}
+.calendar-wrapper .rbc-today {
+  @apply bg-primary-50/40;
+}
+.calendar-wrapper .rbc-off-range-bg {
+  @apply bg-surface-50;
+}
+.calendar-wrapper .rbc-date-cell {
+  @apply text-body-sm text-ink-500 py-1 px-2;
+}
+.calendar-wrapper .rbc-day-bg + .rbc-day-bg,
+.calendar-wrapper .rbc-month-row + .rbc-month-row {
+  @apply border-surface-200;
+}
+.calendar-wrapper .rbc-event {
+  @apply bg-transparent border-none shadow-none p-0;
+}
+.calendar-wrapper .rbc-event:focus {
+  @apply outline-none;
+}
+.calendar-wrapper .rbc-show-more {
+  @apply text-body-sm text-primary-500 font-medium;
+}

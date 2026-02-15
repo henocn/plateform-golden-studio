@@ -1,16 +1,38 @@
 {
   "name": "govcom-backoffice",
-  "version": "1.0.0",
-  "description": "GovCom Platform — Backoffice Golden Studio (React + Vite + TailwindCSS)",
   "private": true,
+  "version": "1.0.0",
   "type": "module",
+  "description": "GovCom Platform — Backoffice Golden Studio (React + Vite + TailwindCSS)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint ."
   },
-  "keywords": ["govcom", "backoffice", "react", "vite"],
-  "author": "Golden Studio",
-  "license": "ISC"
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@tanstack/react-table": "^8.21.3",
+    "axios": "^1.13.5",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.564.0",
+    "react": "^18.3.1",
+    "react-big-calendar": "^1.19.4",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.71.1",
+    "react-hot-toast": "^2.6.0",
+    "react-router-dom": "^6.30.3",
+    "recharts": "^3.7.0",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@vitejs/plugin-react": "^5.1.4",
+    "autoprefixer": "^10.4.24",
+    "eslint": "^10.0.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "vite": "^5.4.21"
+  }
 }

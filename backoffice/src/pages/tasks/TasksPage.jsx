@@ -1,0 +1,272 @@
+import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import {
+  CheckSquare, Plus, Filter, Clock, AlertTriangle, List, LayoutGrid,
+} from 'lucide-react';
+import {
+  Card, Button, Badge, Modal, Input, Select, Textarea, SearchInput,
+  Pagination, EmptyState, Skeleton, Avatar,
+} from '../../components/ui';
+import { tasksAPI, projectsAPI, usersAPI } from '../../api/services';
+import { formatDate, TASK_STATUS, PRIORITY } from '../../utils/helpers';
+import toast from 'react-hot-toast';
+
+export default function TasksPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tasks, setTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('kanban'); // kanban | list
+  const [showCreate, setShowCreate] = useState(false);
+
+  const page = parseInt(searchParams.get('page') || '1');
+  const status = searchParams.get('status') || '';
+  const priority = searchParams.get('priority') || '';
+  const projectId = searchParams.get('project') || '';
+  const search = searchParams.get('q') || '';
+
+  useEffect(() => { loadTasks(); }, [page, status, priority, projectId, search]);
+  useEffect(() => { loadProjects(); }, []);
+
+  const loadTasks = async () => {
+    setLoading(true);
+    try {
+      const params = { page, limit: 100 };
+      if (status) params.status = status;
+      if (priority) params.priority = priority;
+      if (projectId) params.project_id = projectId;
+      if (search) params.search = search;
+      const { data } = await tasksAPI.list(params);
+      setTasks(data.data?.rows || data.data || []);
+      setTotal(data.data?.count || 0);
+    } catch (err) {
+      toast.error('Erreur lors du chargement des tâches');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadProjects = async () => {
+    try {
+      const { data } = await projectsAPI.list({ limit: 200 });
+      setProjects(data.data?.rows || data.data || []);
+    } catch {}
+  };
+
+  const updateParam = (key, value) => {
+    const p = new URLSearchParams(searchParams);
+    if (value) p.set(key, value); else p.delete(key);
+    if (key !== 'page') p.set('page', '1');
+    setSearchParams(p);
+  };
+
+  const columns = ['todo', 'in_progress', 'done', 'blocked'];
+  const columnConfig = {
+    todo:        { label: 'À faire',   accent: 'bg-surface-400' },
+    in_progress: { label: 'En cours',  accent: 'bg-info-500' },
+    done:        { label: 'Terminé',   accent: 'bg-success-500' },
+    blocked:     { label: 'Bloqué',    accent: 'bg-danger-500' },
+  };
+
+  const grouped = useMemo(() => {
+    const map = {};
+    columns.forEach((c) => (map[c] = []));
+    tasks.forEach((t) => { if (map[t.status]) map[t.status].push(t); });
+    return map;
+  }, [tasks]);
+
+  const isOverdue = (t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done';
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-display-lg">Tâches</h1>
+          <p className="text-body-md text-ink-400 mt-1">{total} tâche{total !== 1 ? 's' : ''}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex items-center bg-surface-100 rounded-lg p-0.5">
+            <button
+              onClick={() => setView('kanban')}
+              className={`p-1.5 rounded-md ${view === 'kanban' ? 'bg-white shadow-sm text-ink-700' : 'text-ink-400'}`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setView('list')}
+              className={`p-1.5 rounded-md ${view === 'list' ? 'bg-white shadow-sm text-ink-700' : 'text-ink-400'}`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+          <Button onClick={() => setShowCreate(true)} icon={Plus}>Nouvelle tâche</Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <SearchInput value={search} onChange={(v) => updateParam('q', v)} placeholder="Rechercher une tâche…" className="w-64" />
+        <Select value={projectId} onChange={(e) => updateParam('project', e.target.value)} className="w-48">
+          <option value="">Tous les projets</option>
+          {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+        </Select>
+        <Select value={priority} onChange={(e) => updateParam('priority', e.target.value)} className="w-36">
+          <option value="">Priorité</option>
+          {Object.entries(PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+        </Select>
+        {view === 'list' && (
+          <Select value={status} onChange={(e) => updateParam('status', e.target.value)} className="w-36">
+            <option value="">Statut</option>
+            {Object.entries(TASK_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          </Select>
+        )}
+      </div>
+
+      {/* Content */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {[1,2,3,4].map((i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
+        </div>
+      ) : view === 'kanban' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+          {columns.map((col) => {
+            const cfg = columnConfig[col];
+            const items = grouped[col] || [];
+            return (
+              <div key={col} className="flex flex-col min-h-[280px]">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className={`w-2.5 h-2.5 rounded-full ${cfg.accent}`} />
+                  <h3 className="text-label font-semibold text-ink-700">{cfg.label}</h3>
+                  <span className="ml-auto text-body-sm text-ink-400 bg-surface-100 px-2 py-0.5 rounded-full">{items.length}</span>
+                </div>
+                <div className="space-y-2.5 flex-1">
+                  {items.map((t) => (
+                    <TaskCard key={t.id} task={t} isOverdue={isOverdue(t)} />
+                  ))}
+                  {items.length === 0 && (
+                    <div className="border-2 border-dashed border-surface-300 rounded-xl flex items-center justify-center h-24 text-body-sm text-ink-400">Aucune tâche</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <Card padding={false}>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-surface-200">
+                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Titre</th>
+                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Projet</th>
+                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Statut</th>
+                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Priorité</th>
+                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Assigné</th>
+                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Échéance</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-surface-200">
+              {tasks.length === 0 ? (
+                <tr><td colSpan={6} className="px-5 py-12 text-center text-body-sm text-ink-400">Aucune tâche trouvée</td></tr>
+              ) : tasks.map((t) => {
+                const s = TASK_STATUS[t.status] || { label: t.status, color: 'neutral' };
+                const p = PRIORITY[t.priority] || { label: t.priority, color: 'neutral' };
+                const over = isOverdue(t);
+                return (
+                  <tr key={t.id} className="hover:bg-surface-50 transition-default">
+                    <td className="px-5 py-3 text-body-sm font-medium text-ink-900">{t.title}</td>
+                    <td className="px-5 py-3 text-body-sm text-ink-500">{t.Project?.title || '—'}</td>
+                    <td className="px-5 py-3"><Badge color={s.color} dot size="sm">{s.label}</Badge></td>
+                    <td className="px-5 py-3"><Badge color={p.color} size="sm">{p.label}</Badge></td>
+                    <td className="px-5 py-3 text-body-sm text-ink-500">{t.Assignee ? `${t.Assignee.first_name} ${t.Assignee.last_name}` : '—'}</td>
+                    <td className={`px-5 py-3 text-body-sm ${over ? 'text-danger-600 font-medium' : 'text-ink-500'}`}>
+                      {t.due_date ? formatDate(t.due_date) : '—'}
+                      {over && <AlertTriangle className="inline w-3.5 h-3.5 ml-1 -mt-0.5" />}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </Card>
+      )}
+
+      {showCreate && <CreateTaskModal projects={projects} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); loadTasks(); }} />}
+    </div>
+  );
+}
+
+function TaskCard({ task: t, isOverdue }) {
+  return (
+    <div className={`bg-white rounded-xl border p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${isOverdue ? 'border-danger-300 bg-danger-50/30' : 'border-surface-300'}`}>
+      <p className="text-body-md font-medium text-ink-900 mb-1">{t.title}</p>
+      {t.description && <p className="text-body-sm text-ink-400 line-clamp-2 mb-2.5">{t.description}</p>}
+      <div className="flex items-center justify-between">
+        <Badge color={PRIORITY[t.priority]?.color || 'neutral'} size="xs">{PRIORITY[t.priority]?.label || t.priority}</Badge>
+        <div className="flex items-center gap-2 text-body-sm text-ink-400">
+          {t.due_date && (
+            <span className={`flex items-center gap-1 ${isOverdue ? 'text-danger-600 font-medium' : ''}`}>
+              <Clock className="w-3.5 h-3.5" />
+              {formatDate(t.due_date)}
+            </span>
+          )}
+        </div>
+      </div>
+      {t.Assignee && (
+        <div className="flex items-center gap-2 mt-2.5 pt-2 border-t border-surface-200">
+          <Avatar name={`${t.Assignee.first_name} ${t.Assignee.last_name}`} size="xs" />
+          <span className="text-body-sm text-ink-500">{t.Assignee.first_name} {t.Assignee.last_name}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CreateTaskModal({ projects, onClose, onCreated }) {
+  const [form, setForm] = useState({ title: '', description: '', project_id: '', priority: 'medium', due_date: '', assigned_to: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.title || !form.project_id) return toast.error('Titre et projet requis');
+    setSubmitting(true);
+    try {
+      const payload = { ...form };
+      if (!payload.assigned_to) delete payload.assigned_to;
+      if (!payload.due_date) delete payload.due_date;
+      await tasksAPI.create(payload);
+      toast.success('Tâche créée');
+      onCreated();
+    } catch (err) {
+      toast.error(err.response?.data?.error?.message || 'Erreur');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal open onClose={onClose} title="Nouvelle tâche" size="lg">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input label="Titre *" value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="Titre de la tâche" />
+        <Textarea label="Description" value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} />
+        <div className="grid grid-cols-2 gap-4">
+          <Select label="Projet *" value={form.project_id} onChange={(e) => set('project_id', e.target.value)}>
+            <option value="">Sélectionner</option>
+            {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+          </Select>
+          <Select label="Priorité" value={form.priority} onChange={(e) => set('priority', e.target.value)}>
+            {Object.entries(PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          </Select>
+        </div>
+        <Input label="Date d'échéance" type="date" value={form.due_date} onChange={(e) => set('due_date', e.target.value)} />
+        <div className="flex justify-end gap-3 pt-2">
+          <Button variant="secondary" onClick={onClose}>Annuler</Button>
+          <Button type="submit" loading={submitting}>Créer la tâche</Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}

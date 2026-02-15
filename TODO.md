@@ -217,8 +217,8 @@
 
 ### 2.1 — Setup & Infrastructure Backoffice
 
-- [ ] **2.1.1** Initialiser projet React avec Vite (`npm create vite@latest backoffice -- --template react`)
-- [ ] **2.1.2** Installer dépendances :
+- [x] **2.1.1** Initialiser projet React avec Vite (`npm create vite@latest backoffice -- --template react`)
+- [x] **2.1.2** Installer dépendances :
   - TailwindCSS + PostCSS + Autoprefixer
   - React Router v6
   - Axios (instance configurée avec interceptors)
@@ -230,14 +230,14 @@
   - recharts (graphiques reporting)
   - @tanstack/react-table (tableaux)
   - react-big-calendar (calendrier)
-- [ ] **2.1.3** Configurer TailwindCSS avec palette institutionnelle :
+- [x] **2.1.3** Configurer TailwindCSS avec palette institutionnelle :
   - Primary : bleu institutionnel (`#1E3A5F` ou similaire)
   - Background : blanc `#FFFFFF` / gris très clair `#F8F9FA`
   - Texte titres : noir profond `#1A1A1A`
   - Texte secondaire : `#6B7280`
   - Accents : success green, warning amber, danger red
-- [ ] **2.1.4** Configurer Axios : instance avec `baseURL`, interceptors pour JWT auto-refresh, gestion erreurs globale
-- [ ] **2.1.5** Créer structure de dossiers :
+- [x] **2.1.4** Configurer Axios : instance avec `baseURL`, interceptors pour JWT auto-refresh, gestion erreurs globale
+- [x] **2.1.5** Créer structure de dossiers :
   ```
   src/
   ├── api/           (services API par module)
@@ -255,119 +255,119 @@
 
 ### 2.2 — Auth & Layout Backoffice
 
-- [ ] **2.2.1** Page Login (`/login`) : formulaire email/password, gestion erreurs, redirection post-login
-- [ ] **2.2.2** Étape 2FA : si 2fa_enabled → écran saisie code TOTP après login
-- [ ] **2.2.3** `AuthContext` : stocker user + tokens, auto-refresh, logout global
-- [ ] **2.2.4** Route Guard : `ProtectedRoute` component (vérifie auth + rôle), redirection si non autorisé
-- [ ] **2.2.5** Layout principal :
+- [x] **2.2.1** Page Login (`/login`) : formulaire email/password, gestion erreurs, redirection post-login
+- [x] **2.2.2** Étape 2FA : si 2fa_enabled → écran saisie code TOTP après login
+- [x] **2.2.3** `AuthContext` : stocker user + tokens, auto-refresh, logout global
+- [x] **2.2.4** Route Guard : `ProtectedRoute` component (vérifie auth + rôle), redirection si non autorisé
+- [x] **2.2.5** Layout principal :
   - **Sidebar fixe gauche** (menu latéral CDC §IV) : Dashboard, Projets, Tâches, Calendrier, Médiathèque, Reporting, Utilisateurs, Paramètres — icônes minimalistes + labels
   - **Header top** : nom utilisateur, avatar, rôle, bouton logout, notifications
   - **Zone contenu principale** : breadcrumb + contenu de page
-- [ ] **2.2.6** Responsive : sidebar collapsible sur écrans moyens, priorité desktop (CDC §V)
+- [x] **2.2.6** Responsive : sidebar collapsible sur écrans moyens, priorité desktop (CDC §V)
 
 ### 2.3 — Module Dashboard Backoffice (MODULE 1 CDC)
 
-- [ ] **2.3.1** Vue synthétique temps réel :
+- [x] **2.3.1** Vue synthétique temps réel :
   - Cards KPI : projets en cours, en attente validation, urgents, publications programmées, projets terminés
   - Graphiques (recharts) : projets par statut, publications par canal, tendance mensuelle
-- [ ] **2.3.2** Filtres dynamiques (CDC) : par agence/org, par direction, par statut, par priorité, par période
-- [ ] **2.3.3** Liste des dernières activités / audit récent
-- [ ] **2.3.4** Accès rapide aux projets urgents et en attente de validation
+- [x] **2.3.2** Filtres dynamiques (CDC) : par agence/org, par direction, par statut, par priorité, par période
+- [x] **2.3.3** Liste des dernières activités / audit récent
+- [x] **2.3.4** Accès rapide aux projets urgents et en attente de validation
 
 ### 2.4 — Module Projets Backoffice (MODULE 2 CDC)
 
-- [ ] **2.4.1** Liste des projets : tableau paginé avec filtres (statut, priorité, organisation, période, recherche)
-- [ ] **2.4.2** Création de projet : formulaire complet (titre, org, direction, managers, contact client, priorité, date cible)
-- [ ] **2.4.3** Fiche projet détaillée avec sous-sections (onglets ou navigation interne) :
+- [x] **2.4.1** Liste des projets : tableau paginé avec filtres (statut, priorité, organisation, période, recherche)
+- [x] **2.4.2** Création de projet : formulaire complet (titre, org, direction, managers, contact client, priorité, date cible)
+- [x] **2.4.3** Fiche projet détaillée avec sous-sections (onglets ou navigation interne) :
   - **Brief initial** : description, objectif, cible, message clé, deadline, documents joints
   - **Tâches** : liste / vue Kanban / vue chronologique (3 vues - CDC §MODULE 2)
   - **Propositions déposées** : versions horodatées, commentaires, auteur, validateur
   - **Historique validation** : tableau date, validateur, commentaires, statut (Validé/À modifier/Refusé)
   - **Statut publication** : date, canal, lien, archive
-- [ ] **2.4.4** Changement de statut projet (workflow : brief_received → in_production → in_validation → published → archived)
-- [ ] **2.4.5** Archivage / suppression (soft delete)
+- [x] **2.4.4** Changement de statut projet (workflow : brief_received → in_production → in_validation → published → archived)
+- [x] **2.4.5** Archivage / suppression (soft delete)
 
 ### 2.5 — Module Tâches Backoffice (MODULE 3 CDC)
 
-- [ ] **2.5.1** Vue transversale toutes tâches tous projets (CDC §MODULE 3 — pilotage opérationnel)
-- [ ] **2.5.2** Filtres : par collaborateur, par statut, par projet, overdue, urgent
-- [ ] **2.5.3** Vue Kanban (colonnes : todo, in_progress, done, blocked)
-- [ ] **2.5.4** Création / édition tâche : titre, description, assignation, date limite, priorité, visibility (internal_only / client_visible)
-- [ ] **2.5.5** Commentaires sur tâche (is_internal affiché différemment, badge "interne")
-- [ ] **2.5.6** Indicateurs visuels : retards en rouge, urgences avec badge
+- [x] **2.5.1** Vue transversale toutes tâches tous projets (CDC §MODULE 3 — pilotage opérationnel)
+- [x] **2.5.2** Filtres : par collaborateur, par statut, par projet, overdue, urgent
+- [x] **2.5.3** Vue Kanban (colonnes : todo, in_progress, done, blocked)
+- [x] **2.5.4** Création / édition tâche : titre, description, assignation, date limite, priorité, visibility (internal_only / client_visible)
+- [x] **2.5.5** Commentaires sur tâche (is_internal affiché différemment, badge "interne")
+- [x] **2.5.6** Indicateurs visuels : retards en rouge, urgences avec badge
 
 ### 2.6 — Module Propositions & Validations Backoffice
 
-- [ ] **2.6.1** Liste propositions par projet : toutes versions, statut, auteur
-- [ ] **2.6.2** Création proposition : upload fichier, titre, description, version auto-incrémentée
-- [ ] **2.6.3** Workflow visuel : draft → submitted → pending_client_validation → approved/needs_revision/rejected
-- [ ] **2.6.4** Soumission au client : bouton "Soumettre pour validation" (change status)
-- [ ] **2.6.5** Commentaires : distinction visuelle commentaires internes vs visibles par client
-- [ ] **2.6.6** Historique validations : timeline avec décisions, commentaires, dates
+- [x] **2.6.1** Liste propositions par projet : toutes versions, statut, auteur
+- [x] **2.6.2** Création proposition : upload fichier, titre, description, version auto-incrémentée
+- [x] **2.6.3** Workflow visuel : draft → submitted → pending_client_validation → approved/needs_revision/rejected
+- [x] **2.6.4** Soumission au client : bouton "Soumettre pour validation" (change status)
+- [x] **2.6.5** Commentaires : distinction visuelle commentaires internes vs visibles par client
+- [x] **2.6.6** Historique validations : timeline avec décisions, commentaires, dates
 
 ### 2.7 — Module Calendrier Backoffice (MODULE 4 CDC)
 
-- [ ] **2.7.1** Vue calendrier mensuelle + hebdomadaire (react-big-calendar)
-- [ ] **2.7.2** Types d'événements (CDC) : publications prévues, événements à couvrir, tournages, dépôts livrables, réunions
-- [ ] **2.7.3** Code couleur selon statut (CDC) : en attente, validé, programmé, publié
-- [ ] **2.7.4** Création / édition événement : titre, type, dates, projet associé, org, visibility, statut
-- [ ] **2.7.5** Filtres : par org, par type, par projet
+- [x] **2.7.1** Vue calendrier mensuelle + hebdomadaire (react-big-calendar)
+- [x] **2.7.2** Types d'événements (CDC) : publications prévues, événements à couvrir, tournages, dépôts livrables, réunions
+- [x] **2.7.3** Code couleur selon statut (CDC) : en attente, validé, programmé, publié
+- [x] **2.7.4** Création / édition événement : titre, type, dates, projet associé, org, visibility, statut
+- [x] **2.7.5** Filtres : par org, par type, par projet
 
 ### 2.8 — Module Médiathèque Backoffice (MODULE 5 CDC)
 
-- [ ] **2.8.1** Grille de médias avec vignettes / vue liste
-- [ ] **2.8.2** Upload de fichiers : drag & drop, barre de progression
-- [ ] **2.8.3** Système de tags (CDC) : ajout/suppression de tags sur chaque média
-- [ ] **2.8.4** Moteur de recherche (CDC) : recherche par nom, tags, type
-- [ ] **2.8.5** Classement par agence/org (CDC)
-- [ ] **2.8.6** Types de médias : logos, chartes graphiques, vidéos, photos, templates, documents
-- [ ] **2.8.7** Téléchargement de fichiers, prévisualisation images/PDF
+- [x] **2.8.1** Grille de médias avec vignettes / vue liste
+- [x] **2.8.2** Upload de fichiers : drag & drop, barre de progression
+- [x] **2.8.3** Système de tags (CDC) : ajout/suppression de tags sur chaque média
+- [x] **2.8.4** Moteur de recherche (CDC) : recherche par nom, tags, type
+- [x] **2.8.5** Classement par agence/org (CDC)
+- [x] **2.8.6** Types de médias : logos, chartes graphiques, vidéos, photos, templates, documents
+- [x] **2.8.7** Téléchargement de fichiers, prévisualisation images/PDF
 
 ### 2.9 — Module Reporting Backoffice (MODULE 6 CDC)
 
-- [ ] **2.9.1** Tableau de bord KPIs :
+- [x] **2.9.1** Tableau de bord KPIs :
   - Nombre de publications, couverture événementielle
   - Temps moyen de validation
   - Taux d'approbation
   - Projets par statut, par org
-- [ ] **2.9.2** Graphiques interactifs (recharts) : évolution temporelle, répartition par canal
-- [ ] **2.9.3** Filtres : par org, par période, par type
-- [ ] **2.9.4** Export PDF + Export Excel (téléchargement depuis l'API)
+- [x] **2.9.2** Graphiques interactifs (recharts) : évolution temporelle, répartition par canal
+- [x] **2.9.3** Filtres : par org, par période, par type
+- [x] **2.9.4** Export PDF + Export Excel (téléchargement depuis l'API)
 
 ### 2.10 — Module Utilisateurs Backoffice (MODULE 7 CDC)
 
-- [ ] **2.10.1** Liste utilisateurs internes : tableau avec statut, rôle, actions
-- [ ] **2.10.2** Liste utilisateurs clients : filtrables par org, rôle
-- [ ] **2.10.3** Création utilisateur internal (super_admin) / client (admin+)
-- [ ] **2.10.4** Modification profil, changement rôle, activation/désactivation
-- [ ] **2.10.5** Badge rôle coloré (CDC §MODULE 7 — 🔵🟢🟡🟠⚪)
+- [x] **2.10.1** Liste utilisateurs internes : tableau avec statut, rôle, actions
+- [x] **2.10.2** Liste utilisateurs clients : filtrables par org, rôle
+- [x] **2.10.3** Création utilisateur internal (super_admin) / client (admin+)
+- [x] **2.10.4** Modification profil, changement rôle, activation/désactivation
+- [x] **2.10.5** Badge rôle coloré (CDC §MODULE 7 — 🔵🟢🟡🟠⚪)
 
 ### 2.11 — Module Organisations Backoffice
 
-- [ ] **2.11.1** Liste organisations : tableau avec type, statut actif, nombre projets/users
-- [ ] **2.11.2** Création / édition organisation : formulaire complet
-- [ ] **2.11.3** Fiche organisation : détail, stats, liste users, liste projets
-- [ ] **2.11.4** Activation / désactivation organisation
+- [x] **2.11.1** Liste organisations : tableau avec type, statut actif, nombre projets/users
+- [x] **2.11.2** Création / édition organisation : formulaire complet
+- [x] **2.11.3** Fiche organisation : détail, stats, liste users, liste projets
+- [x] **2.11.4** Activation / désactivation organisation
 
 ### 2.12 — Module Audit / Traçabilité Backoffice (MODULE 8 CDC)
 
-- [ ] **2.12.1** Journal d'activité : tableau paginé avec filtres (utilisateur, org, action, type, période)
-- [ ] **2.12.2** Détail d'une entrée d'audit : avant/après (old_value / new_value)
-- [ ] **2.12.3** Aucun bouton supprimer/modifier (CDC : historique non supprimable)
+- [x] **2.12.1** Journal d'activité : tableau paginé avec filtres (utilisateur, org, action, type, période)
+- [x] **2.12.2** Détail d'une entrée d'audit : avant/après (old_value / new_value)
+- [x] **2.12.3** Aucun bouton supprimer/modifier (CDC : historique non supprimable)
 
 ### 2.13 — Paramètres Backoffice
 
-- [ ] **2.13.1** Page profil utilisateur connecté : modification infos, changement mot de passe
-- [ ] **2.13.2** Gestion 2FA : activation/désactivation, QR code display
-- [ ] **2.13.3** Paramètres plateforme (super_admin) : configuration globale si nécessaire
+- [x] **2.13.1** Page profil utilisateur connecté : modification infos, changement mot de passe
+- [x] **2.13.2** Gestion 2FA : activation/désactivation, QR code display
+- [x] **2.13.3** Paramètres plateforme (super_admin) : configuration globale si nécessaire
 
 ### 2.14 — Finitions Backoffice
 
-- [ ] **2.14.1** Gestion états vides (empty states) : illustrations + messages quand pas de données
-- [ ] **2.14.2** Loading states : skeletons / spinners cohérents
-- [ ] **2.14.3** Gestion erreurs globale : toast notifications, page 404, page 403
-- [ ] **2.14.4** Responsive final : vérifier toutes les pages desktop + tablette
-- [ ] **2.14.5** Performance : lazy loading des pages (React.lazy + Suspense), optimisation bundle
+- [x] **2.14.1** Gestion états vides (empty states) : illustrations + messages quand pas de données
+- [x] **2.14.2** Loading states : skeletons / spinners cohérents
+- [x] **2.14.3** Gestion erreurs globale : toast notifications, page 404, page 403
+- [x] **2.14.4** Responsive final : vérifier toutes les pages desktop + tablette
+- [x] **2.14.5** Performance : lazy loading des pages (React.lazy + Suspense), optimisation bundle
 
 ---
 
