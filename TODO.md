@@ -114,11 +114,11 @@
 
 ### 1.8 — Module Briefs
 
-- [ ] **1.8.1** `brief.repository.js` — CRUD + gestion attachments
-- [ ] **1.8.2** `brief.service.js` — Création par internal OU client_contributor, gestion pièces jointes (Multer)
-- [ ] **1.8.3** `brief.validation.js` — Schémas Joi
-- [ ] **1.8.4** `brief.controller.js` — GET /, POST /, PUT /:id, POST /:id/attachments, DELETE /:id/attachments/:attachId
-- [ ] **1.8.5** `brief.routes.js` + `brief.swagger.js`
+- [x] **1.8.1** `brief.repository.js` — CRUD + gestion attachments
+- [x] **1.8.2** `brief.service.js` — Création par internal OU client_contributor, gestion pièces jointes (Multer)
+- [x] **1.8.3** `brief.validation.js` — Schémas Joi
+- [x] **1.8.4** `brief.controller.js` — GET /, POST /, PUT /:id, POST /:id/attachments, DELETE /:id/attachments/:attachId
+- [x] **1.8.5** `brief.routes.js` + `brief.swagger.js`
 
 ### 1.9 — Module Tasks
 

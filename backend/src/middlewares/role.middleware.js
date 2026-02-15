@@ -25,6 +25,8 @@ const PERMISSIONS = {
   'tasks.delete':               ['super_admin', 'admin'],
   'publications.manage':        ['super_admin', 'admin', 'contributor'],
   'calendar.manage':            ['super_admin', 'admin', 'contributor'],
+  'briefs.create':              ['super_admin', 'admin', 'contributor'],
+  'briefs.edit':                ['super_admin', 'admin', 'contributor'],
 
   // ─── Portail client (always scoped to their organization_id) ─
   'projects.view_own':          ['client_admin', 'client_validator', 'client_contributor', 'client_reader'],
