@@ -93,16 +93,16 @@
 
 ### 1.6 — Module Users
 
-- [ ] **1.6.1** `user.repository.js` — CRUD avec tenant filtering, séparation internal/client queries
-- [ ] **1.6.2** `user.service.js` — Logique métier :
+- [x] **1.6.1** `user.repository.js` — CRUD avec tenant filtering, séparation internal/client queries
+- [x] **1.6.2** `user.service.js` — Logique métier :
   - Créer user internal (super_admin only) / user client (admin+ ou client_admin pour sa propre org)
   - Modifier profil, changer rôle, activer/désactiver
   - Hash password à la création, ne jamais retourner password_hash
   - Contraintes : client → organization_id obligatoire, rôles client_* ↔ user_type client
-- [ ] **1.6.3** `user.validation.js` — Schémas Joi (create internal, create client, update, change role)
-- [ ] **1.6.4** `user.controller.js` — GET /internal, POST /internal, PATCH /internal/:id/role, GET /clients, POST /clients, PATCH /clients/:id/role, GET /:id, PUT /:id, PATCH /:id/status, DELETE /:id
-- [ ] **1.6.5** `user.routes.js` — Câblage avec auth + role + tenant middlewares
-- [ ] **1.6.6** `user.swagger.js` — Documentation Swagger complète
+- [x] **1.6.3** `user.validation.js` — Schémas Joi (create internal, create client, update, change role)
+- [x] **1.6.4** `user.controller.js` — GET /internal, POST /internal, PATCH /internal/:id/role, GET /clients, POST /clients, PATCH /clients/:id/role, GET /:id, PUT /:id, PATCH /:id/status, DELETE /:id
+- [x] **1.6.5** `user.routes.js` — Câblage avec auth + role + tenant middlewares
+- [x] **1.6.6** `user.swagger.js` — Documentation Swagger complète
 
 ### 1.7 — Module Projects
 

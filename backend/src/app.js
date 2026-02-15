@@ -78,10 +78,13 @@ app.get('/health', (_req, res) => {
 // ─── API Routes ──────────────────────────────────────────────
 const authRoutes = require('./modules/auth/auth.routes');
 const orgRoutes = require('./modules/organizations/organization.routes');
+const userRoutes = require('./modules/users/user.routes');
 require('./modules/auth/auth.swagger');
 require('./modules/organizations/organization.swagger');
+require('./modules/users/user.swagger');
 app.use(`${env.API_PREFIX}/auth`, authRoutes);
 app.use(`${env.API_PREFIX}/organizations`, orgRoutes);
+app.use(`${env.API_PREFIX}/users`, userRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────
 app.use((_req, res) => {
