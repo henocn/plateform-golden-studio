@@ -77,8 +77,11 @@ app.get('/health', (_req, res) => {
 
 // ─── API Routes ──────────────────────────────────────────────
 const authRoutes = require('./modules/auth/auth.routes');
-require('./modules/auth/auth.swagger'); // Load swagger JSDoc comments
+const orgRoutes = require('./modules/organizations/organization.routes');
+require('./modules/auth/auth.swagger');
+require('./modules/organizations/organization.swagger');
 app.use(`${env.API_PREFIX}/auth`, authRoutes);
+app.use(`${env.API_PREFIX}/organizations`, orgRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────
 app.use((_req, res) => {

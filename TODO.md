@@ -84,12 +84,12 @@
 
 ### 1.5 — Module Organizations
 
-- [ ] **1.5.1** `organization.repository.js` — CRUD Sequelize avec support tenant filtering
-- [ ] **1.5.2** `organization.service.js` — Logique métier : création, modification, activation/désactivation, stats par org
-- [ ] **1.5.3** `organization.validation.js` — Schémas Joi (create, update, patch status, query filters)
-- [ ] **1.5.4** `organization.controller.js` — GET /, POST /, GET /:id, PUT /:id, PATCH /:id/status, GET /:id/users, GET /:id/projects, GET /:id/stats
-- [ ] **1.5.5** `organization.routes.js` — Câblage avec auth + role middleware (accès internal seulement)
-- [ ] **1.5.6** `organization.swagger.js` — Documentation Swagger complète
+- [x] **1.5.1** `organization.repository.js` — CRUD Sequelize avec support tenant filtering
+- [x] **1.5.2** `organization.service.js` — Logique métier : création, modification, activation/désactivation, stats par org
+- [x] **1.5.3** `organization.validation.js` — Schémas Joi (create, update, patch status, query filters)
+- [x] **1.5.4** `organization.controller.js` — GET /, POST /, GET /:id, PUT /:id, PATCH /:id/status, GET /:id/users, GET /:id/projects, GET /:id/stats
+- [x] **1.5.5** `organization.routes.js` — Câblage avec auth + role middleware (accès internal seulement)
+- [x] **1.5.6** `organization.swagger.js` — Documentation Swagger complète
 
 ### 1.6 — Module Users
 
