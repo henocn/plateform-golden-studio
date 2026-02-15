@@ -1,0 +1,18 @@
+{
+  "name": "govcom-backend",
+  "version": "1.0.0",
+  "description": "GovCom Platform — Backend API (Node.js + Express + PostgreSQL)",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "db:migrate": "npx sequelize-cli db:migrate",
+    "db:migrate:undo": "npx sequelize-cli db:migrate:undo:all",
+    "db:seed:all": "npx sequelize-cli db:seed:all",
+    "test": "jest --detectOpenHandles --forceExit"
+  },
+  "keywords": ["govcom", "api", "backend", "multi-tenant"],
+  "author": "Golden Studio",
+  "license": "ISC",
+  "type": "commonjs"
+}

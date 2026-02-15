@@ -1,0 +1,16 @@
+{
+  "name": "govcom-backoffice",
+  "version": "1.0.0",
+  "description": "GovCom Platform — Backoffice Golden Studio (React + Vite + TailwindCSS)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint ."
+  },
+  "keywords": ["govcom", "backoffice", "react", "vite"],
+  "author": "Golden Studio",
+  "license": "ISC"
+}
