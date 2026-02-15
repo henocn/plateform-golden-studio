@@ -70,17 +70,17 @@
 
 ### 1.4 — Middlewares Tenant & Role
 
-- [ ] **1.4.1** `tenant.middleware.js` :
+- [x] **1.4.1** `tenant.middleware.js` :
   - Si `user_type === 'client'` → `req.tenantId = req.user.organization_id` (forcé, non modifiable)
   - Si `user_type === 'internal'` → `req.tenantId = req.query.organizationId || null`
   - Validation que l'organizationId passé existe si fourni
-- [ ] **1.4.2** `role.middleware.js` :
+- [x] **1.4.2** `role.middleware.js` :
   - Matrice de permissions complète (toutes les permissions listées dans proposition.md §6)
   - Middleware factory `authorize(...permissions)` vérifiant `req.user.role`
-- [ ] **1.4.3** `validate.middleware.js` — Wrapper générique pour validation Joi (body, query, params)
-- [ ] **1.4.4** `audit.middleware.js` — Logger automatique des mutations (POST/PUT/PATCH/DELETE), fire-and-forget async
-- [ ] **1.4.5** `upload.middleware.js` — Configuration Multer (destination, limites taille, filtres MIME)
-- [ ] **1.4.6** `errorHandler.middleware.js` — Gestion centralisée des erreurs, format ApiError standardisé
+- [x] **1.4.3** `validate.middleware.js` — Wrapper générique pour validation Joi (body, query, params)
+- [x] **1.4.4** `audit.middleware.js` — Logger automatique des mutations (POST/PUT/PATCH/DELETE), fire-and-forget async
+- [x] **1.4.5** `upload.middleware.js` — Configuration Multer (destination, limites taille, filtres MIME)
+- [x] **1.4.6** `errorHandler.middleware.js` — Gestion centralisée des erreurs, format ApiError standardisé
 
 ### 1.5 — Module Organizations
 

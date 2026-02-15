@@ -9,6 +9,7 @@ const swaggerUi = require('swagger-ui-express');
 const env = require('./config/env');
 const swaggerSpec = require('./config/swagger');
 const logger = require('./utils/logger');
+const errorHandler = require('./middlewares/errorHandler.middleware');
 
 const app = express();
 
@@ -92,60 +93,6 @@ app.use((_req, res) => {
 });
 
 // ─── Global Error Handler ────────────────────────────────────
-// eslint-disable-next-line no-unused-vars
-app.use((err, _req, res, _next) => {
-  logger.error(err.message, { stack: err.stack });
-
-  // ApiError (erreur métier)
-  if (err.isOperational) {
-    return res.status(err.statusCode).json(err.toJSON());
-  }
-
-  // Erreur Sequelize validation
-  if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeUniqueConstraintError') {
-    const details = err.errors ? err.errors.map((e) => ({ field: e.path, message: e.message })) : [];
-    return res.status(422).json({
-      success: false,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Database validation error',
-        details,
-      },
-    });
-  }
-
-  // Erreur JWT
-  if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      success: false,
-      error: {
-        code: 'INVALID_TOKEN',
-        message: 'Invalid authentication token',
-        details: [],
-      },
-    });
-  }
-
-  if (err.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      success: false,
-      error: {
-        code: 'TOKEN_EXPIRED',
-        message: 'Authentication token has expired',
-        details: [],
-      },
-    });
-  }
-
-  // Erreur inattendue (500)
-  return res.status(500).json({
-    success: false,
-    error: {
-      code: 'INTERNAL_ERROR',
-      message: env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
-      details: [],
-    },
-  });
-});
+app.use(errorHandler);
 
 module.exports = app;
