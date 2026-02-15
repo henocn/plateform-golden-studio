@@ -106,11 +106,11 @@
 
 ### 1.7 — Module Projects
 
-- [ ] **1.7.1** `project.repository.js` — CRUD avec tenant filtering, includes (organization, managers, contact)
-- [ ] **1.7.2** `project.service.js` — Logique métier : création (internal only), modification, changement statut, archivage, stats dashboard
-- [ ] **1.7.3** `project.validation.js` — Schémas Joi
-- [ ] **1.7.4** `project.controller.js` — GET / (adapté user_type), POST /, GET /dashboard/stats, GET /:id, PUT /:id, PATCH /:id/status, DELETE /:id
-- [ ] **1.7.5** `project.routes.js` + `project.swagger.js`
+- [x] **1.7.1** `project.repository.js` — CRUD avec tenant filtering, includes (organization, managers, contact)
+- [x] **1.7.2** `project.service.js` — Logique métier : création (internal only), modification, changement statut, archivage, stats dashboard
+- [x] **1.7.3** `project.validation.js` — Schémas Joi
+- [x] **1.7.4** `project.controller.js` — GET / (adapté user_type), POST /, GET /dashboard/stats, GET /:id, PUT /:id, PATCH /:id/status, DELETE /:id
+- [x] **1.7.5** `project.routes.js` + `project.swagger.js`
 
 ### 1.8 — Module Briefs
 
