@@ -55,18 +55,18 @@
 
 ### 1.3 — Module Auth
 
-- [ ] **1.3.1** `auth.middleware.js` — Vérifier JWT, décoder payload, attacher `req.user` (id, email, user_type, role, organization_id), gérer token expiré/invalide
-- [ ] **1.3.2** `auth.validation.js` — Schémas Joi pour login, refresh, change-password, enable 2FA, verify 2FA
-- [ ] **1.3.3** `auth.service.js` — Logique métier :
+- [x] **1.3.1** `auth.middleware.js` — Vérifier JWT, décoder payload, attacher `req.user` (id, email, user_type, role, organization_id), gérer token expiré/invalide
+- [x] **1.3.2** `auth.validation.js` — Schémas Joi pour login, refresh, change-password, enable 2FA, verify 2FA
+- [x] **1.3.3** `auth.service.js` — Logique métier :
   - Login universel (internal + client), vérifier is_active, bcrypt compare, générer access+refresh tokens
   - Gestion refresh token (hash en DB, rotation, révocation)
   - Change password (vérif ancien mot de passe, hash nouveau)
   - 2FA : générer secret TOTP (speakeasy), vérifier code, activer/désactiver
   - Mise à jour last_login_at
-- [ ] **1.3.4** `auth.controller.js` — Routes : POST login, POST logout, POST refresh, POST change-password, POST 2fa/enable, POST 2fa/verify, POST 2fa/disable, GET /me
-- [ ] **1.3.5** `auth.routes.js` — Câblage routes + middlewares (rate-limit auth = 5 req/15min)
-- [ ] **1.3.6** `auth.swagger.js` — Documentation Swagger complète de toutes les routes auth
-- [ ] **1.3.7** Tester manuellement : login super_admin, obtenir token, refresh, /me
+- [x] **1.3.4** `auth.controller.js` — Routes : POST login, POST logout, POST refresh, POST change-password, POST 2fa/enable, POST 2fa/verify, POST 2fa/disable, GET /me
+- [x] **1.3.5** `auth.routes.js` — Câblage routes + middlewares (rate-limit auth = 5 req/15min)
+- [x] **1.3.6** `auth.swagger.js` — Documentation Swagger complète de toutes les routes auth
+- [x] **1.3.7** Tester manuellement : login super_admin, obtenir token, refresh, /me
 
 ### 1.4 — Middlewares Tenant & Role
 

@@ -13,8 +13,25 @@
 class ApiResponse {
   /**
    * Réponse succès simple
+   * Supports: success(res, data, message, statusCode) OR success(res, { data, message, statusCode, meta })
    */
-  static success(res, { data = null, message = 'Success', statusCode = 200, meta = null } = {}) {
+  static success(res, dataOrOptions = null, message = 'Success', statusCode = 200) {
+    let data = null;
+    let meta = null;
+
+    // Detect if called with options object pattern: success(res, { data, message, ... })
+    if (
+      dataOrOptions !== null
+      && typeof dataOrOptions === 'object'
+      && !Array.isArray(dataOrOptions)
+      && ('data' in dataOrOptions || 'message' in dataOrOptions || 'statusCode' in dataOrOptions || 'meta' in dataOrOptions)
+      && arguments.length === 2
+    ) {
+      ({ data = null, message = 'Success', statusCode = 200, meta = null } = dataOrOptions);
+    } else {
+      data = dataOrOptions;
+    }
+
     const response = {
       success: true,
       data,
@@ -31,8 +48,8 @@ class ApiResponse {
   /**
    * Réponse succès avec création (201)
    */
-  static created(res, { data = null, message = 'Resource created successfully' } = {}) {
-    return ApiResponse.success(res, { data, message, statusCode: 201 });
+  static created(res, data = null, message = 'Resource created successfully') {
+    return ApiResponse.success(res, data, message, 201);
   }
 
   /**

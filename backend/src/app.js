@@ -75,8 +75,9 @@ app.get('/health', (_req, res) => {
 });
 
 // ─── API Routes ──────────────────────────────────────────────
-// Routes will be mounted here as modules are implemented
-// Example: app.use(`${env.API_PREFIX}/auth`, authRoutes);
+const authRoutes = require('./modules/auth/auth.routes');
+require('./modules/auth/auth.swagger'); // Load swagger JSDoc comments
+app.use(`${env.API_PREFIX}/auth`, authRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────
 app.use((_req, res) => {
