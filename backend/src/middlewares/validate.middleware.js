@@ -31,7 +31,14 @@ const validate = (schema, source = 'body') => (req, _res, next) => {
   }
 
   // Replace source with sanitized/validated values
-  req[source] = value;
+  // Node.js 24+ defines req.query as a read-only getter on IncomingMessage,
+  // so direct assignment (req.query = value) throws. Use defineProperty to shadow it.
+  Object.defineProperty(req, source, {
+    value,
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
   return next();
 };
 
