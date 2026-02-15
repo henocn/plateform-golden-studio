@@ -9,7 +9,7 @@ import {
   Pagination, EmptyState, Skeleton, ConfirmDialog,
 } from '../../components/ui';
 import { mediaAPI } from '../../api/services';
-import { formatDate, formatFileSize } from '../../utils/helpers';
+import { formatDate, formatFileSize, extractList } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
 const typeIcons = {
@@ -49,9 +49,9 @@ export default function MediaPage() {
       if (search) params.search = search;
       if (tag) params.tag = tag;
       const { data } = await mediaAPI.list(params);
-      const result = data.data?.rows || (Array.isArray(data.data) ? data.data : []);
-      setFiles(result);
-      setTotal(data.data?.count || result.length || 0);
+      const { items, total: t } = extractList(data.data);
+      setFiles(items);
+      setTotal(t);
     } catch {
       toast.error('Erreur lors du chargement');
     } finally {
@@ -227,7 +227,7 @@ export default function MediaPage() {
         </Card>
       )}
 
-      <Pagination currentPage={page} totalItems={total} pageSize={24} onPageChange={(p) => updateParam('page', String(p))} />
+      <Pagination page={page} totalPages={Math.ceil(total / 24) || 1} total={total} limit={24} onPageChange={(p) => updateParam('page', String(p))} />
 
       {/* Upload Modal */}
       {showUpload && <UploadModal onClose={() => setShowUpload(false)} onUploaded={() => { setShowUpload(false); loadMedia(); }} />}

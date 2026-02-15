@@ -5,8 +5,8 @@ import {
   Calendar, MessageSquare, Paperclip, Clock, User,
 } from 'lucide-react';
 import { Card, Button, Badge, Tabs, Skeleton, Avatar, EmptyState, Textarea } from '../../components/ui';
-import { projectsAPI, briefsAPI, tasksAPI, proposalsAPI, validationsAPI, publicationsAPI } from '../../api/services';
-import { formatDate, formatRelative, PROJECT_STATUS, TASK_STATUS, PROPOSAL_STATUS, PRIORITY } from '../../utils/helpers';
+import { projectsAPI, briefsAPI, tasksAPI, proposalsAPI, publicationsAPI } from '../../api/services';
+import { formatDate, formatRelative, PROJECT_STATUS, TASK_STATUS, PROPOSAL_STATUS, PRIORITY, extractList } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
 export default function ProjectDetailPage() {
@@ -27,16 +27,19 @@ export default function ProjectDetailPage() {
     try {
       const [projRes, briefRes, taskRes, propRes, pubRes] = await Promise.allSettled([
         projectsAPI.getById(id),
-        briefsAPI.list({ project_id: id }),
+        briefsAPI.list(id),
         tasksAPI.list({ project_id: id, limit: 50 }),
-        proposalsAPI.list({ project_id: id }),
-        publicationsAPI.list({ project_id: id }),
+        proposalsAPI.list(id),
+        publicationsAPI.list(id),
       ]);
       if (projRes.status === 'fulfilled') setProject(projRes.value.data.data);
-      if (briefRes.status === 'fulfilled') setBriefs(briefRes.value.data.data?.rows || (Array.isArray(briefRes.value.data.data) ? briefRes.value.data.data : []));
-      if (taskRes.status === 'fulfilled') setTasks(taskRes.value.data.data?.rows || (Array.isArray(taskRes.value.data.data) ? taskRes.value.data.data : []));
-      if (propRes.status === 'fulfilled') setProposals(propRes.value.data.data?.rows || (Array.isArray(propRes.value.data.data) ? propRes.value.data.data : []));
-      if (pubRes.status === 'fulfilled') setPublications(pubRes.value.data.data?.rows || (Array.isArray(pubRes.value.data.data) ? pubRes.value.data.data : []));
+      if (briefRes.status === 'fulfilled') setBriefs(extractList(briefRes.value.data.data).items);
+      if (taskRes.status === 'fulfilled') setTasks(extractList(taskRes.value.data.data).items);
+      if (propRes.status === 'fulfilled') {
+        const propData = propRes.value.data.data;
+        setProposals(Array.isArray(propData) ? propData : extractList(propData).items);
+      }
+      if (pubRes.status === 'fulfilled') setPublications(extractList(pubRes.value.data.data).items);
     } catch (err) {
       toast.error('Erreur lors du chargement du projet');
     } finally {
@@ -280,8 +283,10 @@ function ValidationsTab({ proposals }) {
         const allVals = [];
         for (const p of proposals) {
           try {
-            const { data } = await validationsAPI.getByProposal(p.id);
-            const vals = data.data?.rows || (Array.isArray(data.data) ? data.data : []);
+            const projectId = p.project_id || p.Project?.id;
+            if (!projectId) continue;
+            const { data } = await proposalsAPI.getValidations(projectId, p.id);
+            const vals = Array.isArray(data.data) ? data.data : extractList(data.data).items;
             allVals.push(...vals.map((v) => ({ ...v, proposalTitle: p.title, version: p.version_number })));
           } catch {}
         }

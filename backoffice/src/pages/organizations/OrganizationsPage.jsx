@@ -4,7 +4,7 @@ import { Plus, Building2, Users, FolderKanban, MoreVertical } from 'lucide-react
 import { Card, Button, Badge, SearchInput, Pagination, EmptyState, Skeleton, Modal, Input, Select } from '../../components/ui';
 import { organizationsAPI } from '../../api/services';
 import { usePagination, useDebounce } from '../../hooks';
-import { formatDate } from '../../utils/helpers';
+import { formatDate, extractList } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
 export default function OrganizationsPage() {
@@ -24,9 +24,9 @@ export default function OrganizationsPage() {
         limit: pagination.limit,
         search: debouncedSearch || undefined,
       });
-      const result = data.data;
-      setOrgs(result.rows || result);
-      pagination.setTotal(result.count || result.length || 0);
+      const { items, total } = extractList(data.data);
+      setOrgs(items);
+      pagination.setTotal(total);
     } catch (err) {
       toast.error('Erreur lors du chargement des organisations');
     } finally {

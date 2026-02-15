@@ -38,9 +38,9 @@ export default function TasksPage() {
       if (projectId) params.project_id = projectId;
       if (search) params.search = search;
       const { data } = await tasksAPI.list(params);
-      const result = data.data?.rows || (Array.isArray(data.data) ? data.data : []);
-      setTasks(result);
-      setTotal(data.data?.count || result.length || 0);
+      const { items, total } = extractList(data.data);
+      setTasks(items);
+      setTotal(total);
     } catch (err) {
       toast.error('Erreur lors du chargement des tâches');
     } finally {
@@ -51,7 +51,7 @@ export default function TasksPage() {
   const loadProjects = async () => {
     try {
       const { data } = await projectsAPI.list({ page: 1, limit: 100 });
-      setProjects(data.data?.rows || (Array.isArray(data.data) ? data.data : []));
+      setProjects(extractList(data.data).items);
     } catch {}
   };
 

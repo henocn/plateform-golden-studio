@@ -7,8 +7,8 @@ import {
   Card, Button, Badge, Modal, Input, Select, Textarea, SearchInput,
   Pagination, EmptyState, Skeleton, Avatar,
 } from '../../components/ui';
-import { proposalsAPI, projectsAPI, validationsAPI } from '../../api/services';
-import { formatDate, formatRelative, PROPOSAL_STATUS } from '../../utils/helpers';
+import { proposalsAPI, projectsAPI } from '../../api/services';
+import { formatDate, formatRelative, PROPOSAL_STATUS, extractList } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
 export default function ProposalsPage() {
@@ -24,19 +24,39 @@ export default function ProposalsPage() {
   const statusFilter = searchParams.get('status') || '';
   const projectId = searchParams.get('project') || '';
 
-  useEffect(() => { loadProposals(); }, [page, statusFilter, projectId]);
   useEffect(() => { loadProjects(); }, []);
+  useEffect(() => { if (projects.length > 0) loadProposals(); }, [page, statusFilter, projectId, projects]);
 
   const loadProposals = async () => {
     setLoading(true);
     try {
-      const params = { page, limit: 20 };
-      if (statusFilter) params.status = statusFilter;
-      if (projectId) params.project_id = projectId;
-      const { data } = await proposalsAPI.list(params);
-      const result = data.data?.rows || (Array.isArray(data.data) ? data.data : []);
-      setProposals(result);
-      setTotal(data.data?.count || result.length || 0);
+      let allProposals = [];
+      if (projectId) {
+        // Single project selected
+        const { data } = await proposalsAPI.list(projectId);
+        allProposals = Array.isArray(data.data) ? data.data : extractList(data.data).items;
+      } else {
+        // All projects — fetch proposals for each
+        const results = await Promise.allSettled(
+          projects.map((p) => proposalsAPI.list(p.id))
+        );
+        for (const r of results) {
+          if (r.status === 'fulfilled') {
+            const items = Array.isArray(r.value.data.data) ? r.value.data.data : extractList(r.value.data.data).items;
+            allProposals.push(...items);
+          }
+        }
+      }
+      // Client-side status filter
+      if (statusFilter) {
+        allProposals = allProposals.filter((p) => p.status === statusFilter);
+      }
+      // Client-side sort by date desc
+      allProposals.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      // Client-side pagination
+      const start = (page - 1) * 20;
+      setTotal(allProposals.length);
+      setProposals(allProposals.slice(start, start + 20));
     } catch {
       toast.error('Erreur lors du chargement');
     } finally {
@@ -47,7 +67,7 @@ export default function ProposalsPage() {
   const loadProjects = async () => {
     try {
       const { data } = await projectsAPI.list({ page: 1, limit: 100 });
-      setProjects(data.data?.rows || (Array.isArray(data.data) ? data.data : []));
+      setProjects(extractList(data.data).items);
     } catch {}
   };
 
@@ -139,9 +159,10 @@ export default function ProposalsPage() {
       )}
 
       <Pagination
-        currentPage={page}
-        totalItems={total}
-        pageSize={20}
+        page={page}
+        totalPages={Math.ceil(total / 20) || 1}
+        total={total}
+        limit={20}
         onPageChange={(p) => updateParam('page', String(p))}
       />
 
@@ -158,8 +179,10 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh }) {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await validationsAPI.getByProposal(p.id);
-        setValidations(data.data?.rows || (Array.isArray(data.data) ? data.data : []));
+        const projectId = p.project_id || p.Project?.id;
+        if (!projectId) { setLoading(false); return; }
+        const { data } = await proposalsAPI.getValidations(projectId, p.id);
+        setValidations(Array.isArray(data.data) ? data.data : extractList(data.data).items);
       } catch {} finally { setLoading(false); }
     })();
   }, [p.id]);
@@ -229,7 +252,7 @@ function CreateProposalModal({ projects, onClose, onCreated }) {
       fd.append('description', form.description);
       fd.append('project_id', form.project_id);
       if (form.file) fd.append('file', form.file);
-      await proposalsAPI.create(fd);
+      await proposalsAPI.create(form.project_id, fd);
       toast.success('Proposition créée');
       onCreated();
     } catch (err) {

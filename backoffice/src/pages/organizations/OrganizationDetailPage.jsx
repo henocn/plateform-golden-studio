@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Building2, Users, FolderKanban, Mail, Phone, MapPin } from 'lucide-react';
 import { Card, Button, Badge, Tabs, Skeleton, Avatar } from '../../components/ui';
 import { organizationsAPI } from '../../api/services';
-import { formatDate, ROLE_LABELS } from '../../utils/helpers';
+import { formatDate, ROLE_LABELS, extractList } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
 export default function OrganizationDetailPage() {
@@ -30,8 +30,8 @@ export default function OrganizationDetailPage() {
         organizationsAPI.getStats(id),
       ]);
       if (orgRes.status === 'fulfilled') setOrg(orgRes.value.data.data);
-      if (usersRes.status === 'fulfilled') setUsers(usersRes.value.data.data?.rows || (Array.isArray(usersRes.value.data.data) ? usersRes.value.data.data : []));
-      if (projectsRes.status === 'fulfilled') setProjects(projectsRes.value.data.data?.rows || (Array.isArray(projectsRes.value.data.data) ? projectsRes.value.data.data : []));
+      if (usersRes.status === 'fulfilled') setUsers(extractList(usersRes.value.data.data).items);
+      if (projectsRes.status === 'fulfilled') setProjects(extractList(projectsRes.value.data.data).items);
       if (statsRes.status === 'fulfilled') setStats(statsRes.value.data.data);
     } catch (err) {
       toast.error('Erreur lors du chargement');

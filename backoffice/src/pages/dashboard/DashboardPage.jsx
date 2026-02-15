@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Badge, Avatar, Skeleton } from '../../components/ui';
 import { useAuthStore } from '../../store/authStore';
 import { reportingAPI, projectsAPI, auditAPI } from '../../api/services';
-import { formatRelative, PROJECT_STATUS } from '../../utils/helpers';
+import { formatRelative, PROJECT_STATUS, extractList } from '../../utils/helpers';
 
 const CHART_COLORS = ['#1E3A5F', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
@@ -45,7 +45,7 @@ export default function DashboardPage() {
 
       if (overviewRes.status === 'fulfilled') setOverview(overviewRes.value.data.data);
       if (projectsRes.status === 'fulfilled') setProjectStats(projectsRes.value.data.data);
-      if (auditRes.status === 'fulfilled') setRecentActivity(auditRes.value.data.data?.rows || (Array.isArray(auditRes.value.data.data) ? auditRes.value.data.data : []));
+      if (auditRes.status === 'fulfilled') setRecentActivity(extractList(auditRes.value.data.data).items);
     } catch (err) {
       console.error('Dashboard load error:', err);
     } finally {

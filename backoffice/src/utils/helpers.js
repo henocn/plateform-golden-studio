@@ -129,12 +129,23 @@ export function downloadBlob(blob, filename) {
 }
 
 /**
- * Safely extract an array from API response data
- * Handles { rows: [], count } or direct array or object fallback
+ * Safely extract list items + total from API response data.
+ * Backend format: { data: [...], meta: { total, page, limit, totalPages } }
+ * Fallback: { rows: [], count } or direct array.
+ * Usage: const { items, total } = extractList(data.data);
  */
-export function toArray(data) {
-  if (!data) return [];
-  if (data.rows && Array.isArray(data.rows)) return data.rows;
-  if (Array.isArray(data)) return data;
-  return [];
+export function extractList(apiData) {
+  if (!apiData) return { items: [], total: 0 };
+  // Standard backend format: { data: [...], meta: { total } }
+  if (apiData.meta !== undefined || apiData.data !== undefined) {
+    const items = Array.isArray(apiData.data) ? apiData.data : [];
+    return { items, total: apiData.meta?.total ?? items.length };
+  }
+  // Sequelize format: { rows: [...], count }
+  if (Array.isArray(apiData.rows)) {
+    return { items: apiData.rows, total: apiData.count ?? apiData.rows.length };
+  }
+  // Direct array
+  if (Array.isArray(apiData)) return { items: apiData, total: apiData.length };
+  return { items: [], total: 0 };
 }

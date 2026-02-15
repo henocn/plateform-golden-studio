@@ -45,15 +45,15 @@ export const projectsAPI = {
 };
 
 export const briefsAPI = {
-  list: (params) => api.get('/briefs', { params }),
-  getById: (id) => api.get(`/briefs/${id}`),
-  create: (data) => api.post('/briefs', data),
-  update: (id, data) => api.put(`/briefs/${id}`, data),
-  addAttachment: (id, formData) =>
-    api.post(`/briefs/${id}/attachments`, formData, {
+  list: (projectId, params) => api.get(`/projects/${projectId}/briefs`, { params }),
+  getById: (projectId, id) => api.get(`/projects/${projectId}/briefs/${id}`),
+  create: (projectId, data) => api.post(`/projects/${projectId}/briefs`, data),
+  update: (projectId, id, data) => api.put(`/projects/${projectId}/briefs/${id}`, data),
+  addAttachment: (projectId, id, formData) =>
+    api.post(`/projects/${projectId}/briefs/${id}/attachments`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
-  removeAttachment: (id, attachId) => api.delete(`/briefs/${id}/attachments/${attachId}`),
+  removeAttachment: (projectId, id, attachId) => api.delete(`/projects/${projectId}/briefs/${id}/attachments/${attachId}`),
 };
 
 export const tasksAPI = {
@@ -69,30 +69,26 @@ export const tasksAPI = {
 };
 
 export const proposalsAPI = {
-  list: (params) => api.get('/proposals', { params }),
-  getById: (id) => api.get(`/proposals/${id}`),
-  create: (data) =>
-    api.post('/proposals', data, {
+  list: (projectId, params) => api.get(`/projects/${projectId}/proposals`, { params }),
+  getById: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}`),
+  create: (projectId, data) =>
+    api.post(`/projects/${projectId}/proposals`, data, {
       headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
     }),
-  update: (id, data) => api.put(`/proposals/${id}`, data),
-  submit: (id) => api.patch(`/proposals/${id}/submit`),
-  getComments: (id) => api.get(`/proposals/${id}/comments`),
-  addComment: (id, data) => api.post(`/proposals/${id}/comments`, data),
-};
-
-export const validationsAPI = {
-  list: (params) => api.get('/validations', { params }),
-  getByProposal: (proposalId) => api.get(`/validations/proposal/${proposalId}`),
-  create: (data) => api.post('/validations', data),
+  update: (projectId, id, data) => api.put(`/projects/${projectId}/proposals/${id}`, data),
+  submit: (projectId, id) => api.patch(`/projects/${projectId}/proposals/${id}/submit`),
+  getComments: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}/comments`),
+  addComment: (projectId, id, data) => api.post(`/projects/${projectId}/proposals/${id}/comments`, data),
+  validate: (projectId, id, data) => api.post(`/projects/${projectId}/proposals/${id}/validate`, data),
+  getValidations: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}/validations`),
 };
 
 export const publicationsAPI = {
-  list: (params) => api.get('/publications', { params }),
-  getById: (id) => api.get(`/publications/${id}`),
-  create: (data) => api.post('/publications', data),
-  update: (id, data) => api.put(`/publications/${id}`, data),
-  remove: (id) => api.delete(`/publications/${id}`),
+  list: (projectId, params) => api.get(`/projects/${projectId}/publications`, { params }),
+  getById: (projectId, id) => api.get(`/projects/${projectId}/publications/${id}`),
+  create: (projectId, data) => api.post(`/projects/${projectId}/publications`, data),
+  update: (projectId, id, data) => api.put(`/projects/${projectId}/publications/${id}`, data),
+  remove: (projectId, id) => api.delete(`/projects/${projectId}/publications/${id}`),
 };
 
 export const calendarAPI = {

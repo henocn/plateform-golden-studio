@@ -7,7 +7,7 @@ import {
   Card, Badge, Select, SearchInput, Pagination, EmptyState, Skeleton,
 } from '../../components/ui';
 import { auditAPI } from '../../api/services';
-import { formatDate, formatRelative } from '../../utils/helpers';
+import { formatDate, formatRelative, extractList } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
 const actionColors = {
@@ -48,9 +48,9 @@ export default function AuditPage() {
       if (entity) params.entity_type = entity;
       if (search) params.search = search;
       const { data } = await auditAPI.list(params);
-      const result = data.data?.rows || (Array.isArray(data.data) ? data.data : []);
-      setLogs(result);
-      setTotal(data.data?.count || result.length || 0);
+      const { items, total: t } = extractList(data.data);
+      setLogs(items);
+      setTotal(t);
     } catch {
       toast.error('Erreur lors du chargement');
     } finally {
@@ -189,7 +189,7 @@ export default function AuditPage() {
         </Card>
       )}
 
-      <Pagination currentPage={page} totalItems={total} pageSize={30} onPageChange={(p) => updateParam('page', String(p))} />
+      <Pagination page={page} totalPages={Math.ceil(total / 30) || 1} total={total} limit={30} onPageChange={(p) => updateParam('page', String(p))} />
     </div>
   );
 }

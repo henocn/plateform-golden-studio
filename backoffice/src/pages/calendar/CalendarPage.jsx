@@ -9,7 +9,7 @@ import {
   Card, Button, Badge, Modal, Input, Select, Textarea, EmptyState, Skeleton,
 } from '../../components/ui';
 import { calendarAPI, projectsAPI } from '../../api/services';
-import { formatDate, CALENDAR_EVENT_TYPES } from '../../utils/helpers';
+import { formatDate, CALENDAR_EVENT_TYPES, extractList } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
@@ -43,7 +43,7 @@ export default function CalendarPage() {
       const params = {};
       if (typeFilter) params.event_type = typeFilter;
       const { data } = await calendarAPI.list(params);
-      const raw = data.data?.rows || (Array.isArray(data.data) ? data.data : []);
+      const raw = extractList(data.data).items;
       setEvents(raw.map((e) => ({
         ...e,
         title: e.title,
@@ -61,7 +61,7 @@ export default function CalendarPage() {
   const loadProjects = async () => {
     try {
       const { data } = await projectsAPI.list({ page: 1, limit: 100 });
-      setProjects(data.data?.rows || (Array.isArray(data.data) ? data.data : []));
+      setProjects(extractList(data.data).items);
     } catch {}
   };
 
@@ -129,7 +129,7 @@ export default function CalendarPage() {
         <div className="flex items-center gap-3">
           <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="w-40">
             <option value="">Tous les types</option>
-            {Object.entries(CALENDAR_EVENT_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            {Object.entries(CALENDAR_EVENT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </Select>
           <div className="flex items-center bg-surface-100 rounded-lg p-0.5">
             {['month', 'week', 'day'].map((v) => (
@@ -150,7 +150,7 @@ export default function CalendarPage() {
         {Object.entries(eventTypeColors).map(([type, colors]) => (
           <div key={type} className="flex items-center gap-1.5 text-body-sm text-ink-500">
             <div className={`w-3 h-3 rounded-sm ${colors.bg} border-l-2 ${colors.border}`} />
-            <span className="capitalize">{CALENDAR_EVENT_TYPES[type] || type}</span>
+            <span className="capitalize">{CALENDAR_EVENT_TYPES[type]?.label || type}</span>
           </div>
         ))}
       </div>
@@ -200,7 +200,7 @@ function EventDetailModal({ event: ev, onClose }) {
         </div>
         {ev.description && <p className="text-body-md text-ink-500">{ev.description}</p>}
         <div className="grid grid-cols-2 gap-3 text-body-sm">
-          <div><span className="text-ink-400">Type:</span> <span className="text-ink-700 ml-1 capitalize">{CALENDAR_EVENT_TYPES[ev.event_type] || ev.event_type}</span></div>
+          <div><span className="text-ink-400">Type:</span> <span className="text-ink-700 ml-1 capitalize">{CALENDAR_EVENT_TYPES[ev.event_type]?.label || ev.event_type}</span></div>
           <div><span className="text-ink-400">Date:</span> <span className="text-ink-700 ml-1">{formatDate(ev.start)}</span></div>
           {ev.Project && <div><span className="text-ink-400">Projet:</span> <span className="text-ink-700 ml-1">{ev.Project.title}</span></div>}
         </div>
@@ -238,7 +238,7 @@ function CreateEventModal({ projects, onClose, onCreated }) {
         <Textarea label="Description" value={form.description} onChange={(e) => set('description', e.target.value)} rows={2} />
         <div className="grid grid-cols-2 gap-4">
           <Select label="Type" value={form.event_type} onChange={(e) => set('event_type', e.target.value)}>
-            {Object.entries(CALENDAR_EVENT_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            {Object.entries(CALENDAR_EVENT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </Select>
           <Input label="Date *" type="date" value={form.event_date} onChange={(e) => set('event_date', e.target.value)} />
         </div>
