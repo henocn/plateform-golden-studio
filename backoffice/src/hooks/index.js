@@ -8,7 +8,7 @@ const PERMISSIONS = {
   admin:       ['projects.*', 'tasks.*', 'proposals.*', 'calendar.*', 'media.*', 'users.manage', 'organizations.*', 'reporting.*', 'audit.*'],
   validator:   ['projects.view', 'tasks.view', 'tasks.create', 'proposals.*', 'calendar.*', 'media.*', 'reporting.view'],
   contributor: ['projects.view', 'tasks.view', 'tasks.create', 'proposals.create', 'proposals.view', 'calendar.view', 'media.*'],
-  viewer:      ['projects.view', 'tasks.view', 'proposals.view', 'calendar.view', 'media.view'],
+  reader:      ['projects.view', 'tasks.view', 'proposals.view', 'calendar.view', 'media.view'],
   // Client roles
   client_admin:       ['projects.view', 'tasks.view', 'proposals.view', 'proposals.validate', 'calendar.view', 'media.view', 'media.upload', 'users.manage_org', 'reporting.view_org'],
   client_validator:   ['projects.view', 'tasks.view', 'proposals.view', 'proposals.validate', 'calendar.view', 'media.view'],

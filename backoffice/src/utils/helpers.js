@@ -66,7 +66,7 @@ export const ROLE_LABELS = {
   admin:              { label: 'Admin',          color: '#059669' },
   validator:          { label: 'Validateur',     color: '#D97706' },
   contributor:        { label: 'Contributeur',   color: '#F59E0B' },
-  viewer:             { label: 'Lecteur',        color: '#9CA3AF' },
+  reader:             { label: 'Lecteur',        color: '#9CA3AF' },
   client_admin:       { label: 'Client Admin',   color: '#1E3A5F' },
   client_validator:   { label: 'Client Valid.',   color: '#059669' },
   client_contributor: { label: 'Client Contrib.', color: '#D97706' },

@@ -27,7 +27,7 @@ const validate = (schema, source = 'body') => (req, _res, next) => {
       field: d.path.join('.'),
       message: d.message,
     }));
-    return next(ApiError.validationError(details));
+    return next(ApiError.validationError('Validation error', details));
   }
 
   // Replace source with sanitized/validated values

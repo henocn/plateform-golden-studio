@@ -201,7 +201,7 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
     { value: 'admin', label: 'Admin' },
     { value: 'validator', label: 'Validateur' },
     { value: 'contributor', label: 'Contributeur' },
-    { value: 'viewer', label: 'Lecteur' },
+    { value: 'reader', label: 'Lecteur' },
   ];
 
   const clientRoles = isClientAdmin
@@ -229,7 +229,11 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
       toast.success('Utilisateur créé avec succès');
       onCreated();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur lors de la création');
+      const errData = err.response?.data?.error;
+      const msg = errData?.details?.length
+        ? errData.details.map((d) => d.message).join('\n')
+        : errData?.message || 'Erreur lors de la création';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
