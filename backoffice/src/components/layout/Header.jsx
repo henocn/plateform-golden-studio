@@ -92,6 +92,9 @@ export default function Header({ sidebarCollapsed, onMenuClick }) {
                 <p className="text-[0.625rem] truncate" style={{ color: roleInfo.color }}>
                   {roleInfo.label}
                 </p>
+                {user?.user_type === 'client' && user?.organization_name && (
+                  <p className="text-[0.6rem] text-ink-400 truncate">{user.organization_name}</p>
+                )}
               </div>
               <ChevronDown className={`w-4 h-4 text-ink-400 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
             </button>

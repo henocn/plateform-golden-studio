@@ -9,7 +9,9 @@ import toast from 'react-hot-toast';
 
 export default function UsersPage() {
   const { user: currentUser } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('internal');
+  const isInternal = currentUser?.user_type === 'internal';
+  const isClientAdmin = currentUser?.role === 'client_admin';
+  const [activeTab, setActiveTab] = useState(isInternal ? 'internal' : 'clients');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -20,7 +22,13 @@ export default function UsersPage() {
   const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const apiFn = activeTab === 'internal' ? usersAPI.listInternal : usersAPI.listClients;
+      let apiFn;
+      if (isInternal) {
+        apiFn = activeTab === 'internal' ? usersAPI.listInternal : usersAPI.listClients;
+      } else {
+        // Client admin: always list clients of their own org
+        apiFn = usersAPI.listClients;
+      }
       const { data } = await apiFn({
         page: pagination.page,
         limit: pagination.limit,
@@ -62,14 +70,18 @@ export default function UsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-display-lg">Utilisateurs</h1>
-          <p className="text-body-md text-ink-500 mt-1">Gestion des comptes internes et clients</p>
+          <p className="text-body-md text-ink-500 mt-1">
+            {isInternal ? 'Gestion des comptes internes et clients' : 'Utilisateurs de mon organisation'}
+          </p>
         </div>
-        <Button icon={UserPlus} onClick={() => setShowCreate(true)}>
-          Nouvel utilisateur
-        </Button>
+        {(isInternal || isClientAdmin) && (
+          <Button icon={UserPlus} onClick={() => setShowCreate(true)}>
+            Nouvel utilisateur
+          </Button>
+        )}
       </div>
 
-      <Tabs tabs={tabs} activeTab={activeTab} onChange={(t) => { setActiveTab(t); pagination.setPage(1); }} />
+      {isInternal && <Tabs tabs={tabs} activeTab={activeTab} onChange={(t) => { setActiveTab(t); pagination.setPage(1); }} />}
 
       <div className="flex items-center gap-3">
         <SearchInput value={search} onChange={setSearch} placeholder="Rechercher par nom, email…" className="w-72" />

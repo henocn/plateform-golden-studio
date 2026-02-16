@@ -9,9 +9,12 @@ import {
 } from '../../components/ui';
 import { tasksAPI, projectsAPI, usersAPI } from '../../api/services';
 import { formatDate, TASK_STATUS, PRIORITY } from '../../utils/helpers';
+import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
 export default function TasksPage() {
+  const { user: currentUser } = useAuthStore();
+  const isInternal = currentUser?.user_type === 'internal';
   const [searchParams, setSearchParams] = useSearchParams();
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -103,7 +106,7 @@ export default function TasksPage() {
               <List className="w-4 h-4" />
             </button>
           </div>
-          <Button onClick={() => setShowCreate(true)} icon={Plus}>Nouvelle tâche</Button>
+          {isInternal && <Button onClick={() => setShowCreate(true)} icon={Plus}>Nouvelle tâche</Button>}
         </div>
       </div>
 

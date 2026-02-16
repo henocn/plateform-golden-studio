@@ -10,6 +10,7 @@ import {
 } from '../../components/ui';
 import { mediaAPI } from '../../api/services';
 import { formatDate, formatFileSize, extractList } from '../../utils/helpers';
+import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
 const typeIcons = {
@@ -25,6 +26,8 @@ const typeColors = {
 };
 
 export default function MediaPage() {
+  const { user: currentUser } = useAuthStore();
+  const canUpload = currentUser?.user_type === 'internal' || ['client_admin', 'client_contributor'].includes(currentUser?.role);
   const [searchParams, setSearchParams] = useSearchParams();
   const [files, setFiles] = useState([]);
   const [total, setTotal] = useState(0);
@@ -102,7 +105,7 @@ export default function MediaPage() {
               <List className="w-4 h-4" />
             </button>
           </div>
-          <Button onClick={() => setShowUpload(true)} icon={Upload}>Uploader</Button>
+          {canUpload && <Button onClick={() => setShowUpload(true)} icon={Upload}>Uploader</Button>}
         </div>
       </div>
 
@@ -133,7 +136,7 @@ export default function MediaPage() {
           <div className="space-y-2">{[1,2,3,4].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}</div>
         )
       ) : files.length === 0 ? (
-        <EmptyState icon={Image} title="Médiathèque vide" description="Aucun fichier uploadé pour le moment" action={<Button onClick={() => setShowUpload(true)} icon={Upload}>Uploader un fichier</Button>} />
+        <EmptyState icon={Image} title="Médiathèque vide" description="Aucun fichier uploadé pour le moment" action={canUpload ? <Button onClick={() => setShowUpload(true)} icon={Upload}>Uploader un fichier</Button> : null} />
       ) : view === 'grid' ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-4">
           {files.map((f) => {

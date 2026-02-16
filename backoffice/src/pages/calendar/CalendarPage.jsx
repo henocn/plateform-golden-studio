@@ -10,6 +10,7 @@ import {
 } from '../../components/ui';
 import { calendarAPI, projectsAPI } from '../../api/services';
 import { formatDate, CALENDAR_EVENT_TYPES, extractList } from '../../utils/helpers';
+import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
@@ -25,6 +26,7 @@ const eventTypeColors = {
 };
 
 export default function CalendarPage() {
+  const { user: currentUser } = useAuthStore();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState(new Date());
@@ -108,7 +110,7 @@ export default function CalendarPage() {
           <h1 className="text-display-lg">Calendrier</h1>
           <p className="text-body-md text-ink-400 mt-1">{events.length} événement{events.length !== 1 ? 's' : ''}</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} icon={Plus}>Nouvel événement</Button>
+        {currentUser?.user_type === 'internal' && <Button onClick={() => setShowCreate(true)} icon={Plus}>Nouvel événement</Button>}
       </div>
 
       {/* Filters + Navigation */}

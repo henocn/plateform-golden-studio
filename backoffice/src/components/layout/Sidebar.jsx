@@ -17,15 +17,15 @@ import { useAuthStore } from '../../store/authStore';
 
 const navItems = [
   { label: 'Dashboard',      to: '/dashboard',      icon: LayoutDashboard },
-  { label: 'Organisations',  to: '/organizations',  icon: Building2, roles: ['super_admin', 'admin'] },
+  { label: 'Organisations',  to: '/organizations',  icon: Building2, roles: ['super_admin', 'admin'], internal: true },
   { label: 'Projets',        to: '/projects',       icon: FolderKanban },
   { label: 'Tâches',         to: '/tasks',          icon: CheckSquare },
   { label: 'Propositions',   to: '/proposals',      icon: FolderKanban },
   { label: 'Calendrier',     to: '/calendar',       icon: Calendar },
   { label: 'Médiathèque',    to: '/media',          icon: Image },
-  { label: 'Reporting',      to: '/reporting',       icon: BarChart3, roles: ['super_admin', 'admin', 'validator'] },
-  { label: 'Utilisateurs',   to: '/users',          icon: Users, roles: ['super_admin', 'admin'] },
-  { label: 'Audit',          to: '/audit',          icon: Shield, roles: ['super_admin', 'admin'] },
+  { label: 'Reporting',      to: '/reporting',       icon: BarChart3, roles: ['super_admin', 'admin', 'validator'], internal: true },
+  { label: 'Utilisateurs',   to: '/users',          icon: Users, roles: ['super_admin', 'admin', 'client_admin'] },
+  { label: 'Audit',          to: '/audit',          icon: Shield, roles: ['super_admin', 'admin'], internal: true },
 ];
 
 const bottomItems = [
@@ -36,9 +36,15 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const { user } = useAuthStore();
   const location = useLocation();
 
-  const filteredNav = navItems.filter(
-    (item) => !item.roles || item.roles.includes(user?.role)
-  );
+  const isClient = user?.user_type === 'client';
+
+  const filteredNav = navItems.filter((item) => {
+    // Hide internal-only items from client users
+    if (item.internal && isClient) return false;
+    // Check role restriction
+    if (item.roles && !item.roles.includes(user?.role)) return false;
+    return true;
+  });
 
   const isActive = (to) => location.pathname.startsWith(to);
 

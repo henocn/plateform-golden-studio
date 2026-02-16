@@ -105,6 +105,14 @@ const login = async ({ email, password, totp_code }) => {
   // Update last_login_at
   await user.update({ last_login_at: new Date() }, { hooks: false });
 
+  // Fetch organization name if applicable
+  let organizationName = null;
+  if (user.organization_id) {
+    const { Organization } = require('../../models');
+    const org = await Organization.findByPk(user.organization_id, { attributes: ['name'] });
+    organizationName = org?.name || null;
+  }
+
   logger.info(`User logged in: ${user.email} (${user.user_type}/${user.role})`);
 
   return {
@@ -119,6 +127,7 @@ const login = async ({ email, password, totp_code }) => {
       user_type: user.user_type,
       role: user.role,
       organization_id: user.organization_id,
+      organization_name: organizationName,
       avatar_path: user.avatar_path,
       two_factor_enabled: user.two_factor_enabled,
     },
@@ -159,6 +168,14 @@ const verify2FALogin = async (tempToken, totpCode) => {
   const refreshToken = await generateRefreshToken(user.id);
   await user.update({ last_login_at: new Date() }, { hooks: false });
 
+  // Fetch organization name if applicable
+  let organizationName = null;
+  if (user.organization_id) {
+    const { Organization } = require('../../models');
+    const org = await Organization.findByPk(user.organization_id, { attributes: ['name'] });
+    organizationName = org?.name || null;
+  }
+
   logger.info(`User completed 2FA login: ${user.email}`);
 
   return {
@@ -172,6 +189,7 @@ const verify2FALogin = async (tempToken, totpCode) => {
       user_type: user.user_type,
       role: user.role,
       organization_id: user.organization_id,
+      organization_name: organizationName,
       avatar_path: user.avatar_path,
       two_factor_enabled: user.two_factor_enabled,
     },

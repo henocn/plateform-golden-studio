@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
-import { useAuthStore } from './store/authStore';
 import MainLayout from './components/layout/MainLayout';
 import ProtectedRoute from './routes/ProtectedRoute';
+import AdminRoute from './routes/AdminRoute';
 import LoadingScreen from './components/ui/LoadingScreen';
 
 // Lazy-loaded pages
@@ -33,34 +33,32 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/2fa" element={<TwoFactorPage />} />
 
-        {/* ── Protected ───────────────── */}
+        {/* ── Protected (internal + client) ── */}
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
 
-            <Route path="organizations" element={<OrganizationsPage />} />
-            <Route path="organizations/:id" element={<OrganizationDetailPage />} />
-
-            <Route path="users" element={<UsersPage />} />
-
+            {/* Shared pages — both internal & client */}
             <Route path="projects" element={<ProjectsPage />} />
             <Route path="projects/:id" element={<ProjectDetailPage />} />
-
             <Route path="tasks" element={<TasksPage />} />
-
             <Route path="proposals" element={<ProposalsPage />} />
-
             <Route path="calendar" element={<CalendarPage />} />
-
             <Route path="media" element={<MediaPage />} />
-
-            <Route path="reporting" element={<ReportingPage />} />
-
-            <Route path="audit" element={<AuditPage />} />
-
             <Route path="profile" element={<ProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
+
+            {/* Users — internal admins + client_admin (page adapts) */}
+            <Route path="users" element={<UsersPage />} />
+
+            {/* Admin-only pages — internal users only */}
+            <Route element={<AdminRoute />}>
+              <Route path="organizations" element={<OrganizationsPage />} />
+              <Route path="organizations/:id" element={<OrganizationDetailPage />} />
+              <Route path="reporting" element={<ReportingPage />} />
+              <Route path="audit" element={<AuditPage />} />
+            </Route>
           </Route>
         </Route>
 

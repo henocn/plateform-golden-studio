@@ -9,9 +9,12 @@ import {
 } from '../../components/ui';
 import { proposalsAPI, projectsAPI } from '../../api/services';
 import { formatDate, formatRelative, PROPOSAL_STATUS, extractList } from '../../utils/helpers';
+import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
 export default function ProposalsPage() {
+  const { user: currentUser } = useAuthStore();
+  const isInternal = currentUser?.user_type === 'internal';
   const [searchParams, setSearchParams] = useSearchParams();
   const [proposals, setProposals] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -91,7 +94,7 @@ export default function ProposalsPage() {
           <h1 className="text-display-lg">Propositions</h1>
           <p className="text-body-md text-ink-400 mt-1">{total} proposition{total !== 1 ? 's' : ''}</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} icon={Plus}>Nouvelle proposition</Button>
+        {isInternal && <Button onClick={() => setShowCreate(true)} icon={Plus}>Nouvelle proposition</Button>}
       </div>
 
       {/* Filters */}

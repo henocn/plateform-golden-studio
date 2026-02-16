@@ -5,10 +5,13 @@ import { Card, Button, Badge, SearchInput, Select, Pagination, EmptyState, Skele
 import { projectsAPI, organizationsAPI, usersAPI } from '../../api/services';
 import { usePagination, useDebounce } from '../../hooks';
 import { formatDate, PROJECT_STATUS, PRIORITY, extractList } from '../../utils/helpers';
+import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuthStore();
+  const isInternal = currentUser?.user_type === 'internal';
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -50,7 +53,7 @@ export default function ProjectsPage() {
           <h1 className="text-display-lg">Projets</h1>
           <p className="text-body-md text-ink-500 mt-1">Gestion des projets de communication</p>
         </div>
-        <Button icon={Plus} onClick={() => setShowCreate(true)}>Nouveau projet</Button>
+        {isInternal && <Button icon={Plus} onClick={() => setShowCreate(true)}>Nouveau projet</Button>}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -75,7 +78,7 @@ export default function ProjectsPage() {
           </div>
         ) : projects.length === 0 ? (
           <EmptyState icon={FolderKanban} title="Aucun projet" description="Créez votre premier projet de communication"
-            action={<Button icon={Plus} onClick={() => setShowCreate(true)}>Créer un projet</Button>} />
+            action={isInternal ? <Button icon={Plus} onClick={() => setShowCreate(true)}>Créer un projet</Button> : null} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">

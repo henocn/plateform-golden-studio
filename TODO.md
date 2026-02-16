@@ -371,91 +371,59 @@
 
 ---
 
-## PHASE 3 — CLIENT PORTAL (`/client`) — Frontend Institutions
+## PHASE 3 — INTÉGRATION CLIENT (Frontend Unifié)
 
-> **Stack** : React 18 + Vite + React Router v6 + Axios + TailwindCSS (même stack que backoffice)
-> **Principes** : Le client ne voit QUE ses propres données (isolation par organization_id). Pas de drafts de propositions, pas de tâches internal_only, pas de commentaires internes.
+> **Approche** : Un seul frontend (`/backoffice`) avec accès différencié par rôle (`user_type: internal | client`).
+> Le backend isole déjà les données par `organization_id`. Le frontend adapte l'affichage :
+> Sidebar limitée, boutons d'action masqués, pages admin protégées par `AdminRoute`.
+> **Avantages** : 0 duplication de code, 1 seul build, composants UI partagés, maintenance simplifiée.
 
-### 3.1 — Setup & Infrastructure Client Portal
+### 3.1 — Architecture & Guards
 
-- [ ] **3.1.1** Initialiser projet React avec Vite (même template que backoffice)
-- [ ] **3.1.2** Installer mêmes dépendances que backoffice
-- [ ] **3.1.3** Configurer TailwindCSS avec même palette institutionnelle
-- [ ] **3.1.4** Configurer Axios (même base URL, JWT interceptors)
-- [ ] **3.1.5** Structure de dossiers identique au backoffice
-- [ ] **3.1.6** Bibliothèque de composants UI partagée ou dupliquée (Button, Input, Modal, Table, Badge, Card...)
+- [ ] **3.1.1** `AdminRoute.jsx` — Guard bloquant l'accès aux pages internes (redirect `/403`)
+- [ ] **3.1.2** Modifier `ProtectedRoute.jsx` — Autoriser les `user_type === 'client'` (retirer le blocage actuel)
+- [ ] **3.1.3** Modifier `App.jsx` — Wrapper les routes admin-only (Organisations, Users, Audit, Reporting) avec `AdminRoute`
+- [ ] **3.1.4** Routes partagées : Dashboard, Projets, Tâches, Propositions, Calendrier, Média, Profil, Settings
 
-### 3.2 — Auth & Layout Client Portal
+### 3.2 — Sidebar & Header Adaptatifs
 
-- [ ] **3.2.1** Page Login client (`/login`) : même formulaire, le backend différencie via user_type
-- [ ] **3.2.2** Étape 2FA (si activé)
-- [ ] **3.2.3** `AuthContext` client : stocker user + tokens, auto-refresh
-- [ ] **3.2.4** Route Guard : `ProtectedRoute` vérifiant que user_type === 'client'
-- [ ] **3.2.5** Layout client :
-  - **Sidebar fixe** (adapté au client) : Dashboard, Mes Projets, Calendrier, Médiathèque, Mon Organisation (si client_admin)
-  - **Header** : nom organisation, nom utilisateur, rôle, logout
-  - **Zone contenu** avec breadcrumb
-- [ ] **3.2.6** Responsive desktop prioritaire
+- [ ] **3.2.1** `Sidebar.jsx` — Filtrer les `navItems` par `user_type` en plus de `roles` :
+  - Client voit : Dashboard, Projets, Tâches (client_visible), Propositions, Calendrier, Médiathèque
+  - Client_admin voit en plus : Utilisateurs (de son org)
+  - Internal voit tout (comme actuellement)
+- [ ] **3.2.2** `Header.jsx` — Afficher le nom de l'organisation pour les clients
+- [ ] **3.2.3** Logo / branding conditionnel (optionnel)
 
-### 3.3 — Dashboard Client
+### 3.3 — Dashboard Client (conditionnel dans DashboardPage)
 
-- [ ] **3.3.1** KPIs de l'organisation : projets en cours, en attente de ma validation, publications récentes
+- [ ] **3.3.1** KPIs adaptés au client : projets de mon org, en attente de ma validation, publications récentes
 - [ ] **3.3.2** Notifications : propositions soumises en attente de validation
-- [ ] **3.3.3** Dernières activités sur les projets de l'org
+- [ ] **3.3.3** Dernières activités sur les projets de l'org (backend filtre déjà par `organization_id`)
 
-### 3.4 — Module Projets Client
+### 3.4 — Pages Partagées — Restrictions Client
 
-- [ ] **3.4.1** Liste des projets de mon organisation : tableau filtrables (statut, priorité, période)
-- [ ] **3.4.2** Fiche projet (lecture + actions limitées) :
-  - **Brief** : visualisation + possibilité de soumettre un brief (client_contributor+)
-  - **Tâches visibles** (`client_visible` uniquement) : visualisation + commentaires
-  - **Propositions** : uniquement celles en `pending_client_validation`, `approved`, `needs_revision`, `rejected` (PAS les drafts)
-  - **Historique validations** : lecture
-  - **Publications** : lecture
+- [ ] **3.4.1** `ProjectsPage` — Masquer bouton "Nouveau projet" pour les clients (création = internal only)
+- [ ] **3.4.2** `ProjectDetailPage` — Client : pas d'onglet tâches internes, pas de propositions draft, pas de changement statut
+- [ ] **3.4.3** `TasksPage` — Backend filtre `internal_only` automatiquement. Masquer bouton "Nouvelle tâche" pour clients.
+- [ ] **3.4.4** `ProposalsPage` — Client voit `pending_client_validation`, `approved`, `needs_revision`, `rejected` (PAS drafts). Client_validator peut valider.
+- [ ] **3.4.5** `CalendarPage` — Lecture seule pour client (pas de création d'événement). Backend filtre `client_visible`.
+- [ ] **3.4.6** `MediaPage` — Client voit médias de son org + globaux. Upload seulement pour `client_contributor+`.
 
-### 3.5 — Validation des Propositions Client
+### 3.5 — Validation des Propositions (Client)
 
-- [ ] **3.5.1** Liste des propositions en attente de ma validation (vue dédiée ou badge notification)
-- [ ] **3.5.2** Détail proposition : visualisation fichier, commentaires (hors internes)
-- [ ] **3.5.3** Action de validation : approuver / demander révision / rejeter + commentaire obligatoire
-- [ ] **3.5.4** Historique de mes décisions de validation
+- [ ] **3.5.1** Bouton "Valider / Réviser / Rejeter" visible pour `client_validator` et `client_admin`
+- [ ] **3.5.2** Commentaires : masquer `is_internal` automatiquement côté backend
+- [ ] **3.5.3** Historique validations accessible en lecture
 
-### 3.6 — Soumission de Briefs Client
+### 3.6 — Gestion Utilisateurs Client (client_admin)
 
-- [ ] **3.6.1** Formulaire de soumission de brief (client_contributor+) : description, objectif, cible, message clé, deadline
-- [ ] **3.6.2** Upload pièces jointes (documents, images)
-- [ ] **3.6.3** Visualisation de ses briefs soumis
+- [ ] **3.6.1** `UsersPage` conditionnel — client_admin voit uniquement les users de son org
+- [ ] **3.6.2** Création d'utilisateur client dans son org
+- [ ] **3.6.3** Modification rôle, activation/désactivation (limité aux rôles client_*)
 
-### 3.7 — Calendrier Client
+### 3.7 — Suppression dossier `/client`
 
-- [ ] **3.7.1** Vue calendrier mensuelle/hebdomadaire (événements `client_visible` de mon org uniquement)
-- [ ] **3.7.2** Code couleur selon statut
-- [ ] **3.7.3** Lecture seule (le client ne crée pas d'événements)
-
-### 3.8 — Médiathèque Client
-
-- [ ] **3.8.1** Médias de mon organisation + médias globaux (is_global=true)
-- [ ] **3.8.2** Recherche, filtres par type/tags
-- [ ] **3.8.3** Téléchargement de fichiers
-- [ ] **3.8.4** Lecture seule (pas d'upload pour les clients sauf si client_contributor)
-
-### 3.9 — Gestion Utilisateurs Client (client_admin uniquement)
-
-- [ ] **3.9.1** Liste des utilisateurs de mon organisation
-- [ ] **3.9.2** Création d'un utilisateur client dans mon org (client_admin)
-- [ ] **3.9.3** Modification rôle, activation/désactivation
-
-### 3.10 — Profil & Paramètres Client
-
-- [ ] **3.10.1** Page profil : modification infos personnelles, changement mot de passe
-- [ ] **3.10.2** Gestion 2FA : activation/désactivation
-
-### 3.11 — Finitions Client Portal
-
-- [ ] **3.11.1** Empty states et loading states
-- [ ] **3.11.2** Gestion erreurs : toast, 404, 403 (tentative accès autre org → page "Accès refusé")
-- [ ] **3.11.3** Responsive desktop + tablette
-- [ ] **3.11.4** Performance : lazy loading, optimisation bundle
+- [ ] **3.7.1** Supprimer le dossier `client/` (vide, inutile avec le frontend unifié)
 
 ---
 
@@ -463,17 +431,16 @@
 
 ### 4.1 — Tests End-to-End
 
-- [ ] **4.1.1** Scénario complet backoffice : login admin → créer org → créer user client → créer projet → brief → tâches → proposition → soumettre au client
+- [ ] **4.1.1** Scénario complet admin : login admin → créer org → créer user client → créer projet → brief → tâches → proposition → soumettre au client
 - [ ] **4.1.2** Scénario complet client : login client_validator → voir projets → voir proposition → valider → vérifier historique
 - [ ] **4.1.3** Test isolation : login 2 clients différents, vérifier qu'ils ne voient pas les données de l'autre
-- [ ] **4.1.4** Test permissions : tenter actions interdites et vérifier les rejets
+- [ ] **4.1.4** Test permissions : tenter actions interdites et vérifier les rejets (client ne crée pas de projet, client_reader ne valide pas)
 
 ### 4.2 — Documentation
 
-- [ ] **4.2.1** `README.md` racine : vue d'ensemble, architecture 3 parties, instructions démarrage global
+- [ ] **4.2.1** `README.md` racine : vue d'ensemble, architecture 2 parties (backend + frontend unifié), instructions démarrage
 - [ ] **4.2.2** `backend/README.md` : setup DB, migrations, seeders, endpoints, users test
-- [ ] **4.2.3** `backoffice/README.md` : démarrage dev, structure pages, variables env
-- [ ] **4.2.4** `client/README.md` : démarrage dev, structure pages, variables env
+- [ ] **4.2.3** `backoffice/README.md` : démarrage dev, structure pages, rôles & accès, variables env
 
 ### 4.3 — Préparation Production
 
