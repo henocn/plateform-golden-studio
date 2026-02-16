@@ -12,18 +12,35 @@ class ReportingService {
     const isClient = user.user_type === 'client';
     const orgWhere = isClient ? { organization_id: user.organization_id } : {};
 
-    const [totalProjects, totalTasks, totalProposals, totalPublications] = await Promise.all([
-      Project.count({ where: { ...orgWhere, status: { [Op.ne]: 'archived' } } }),
+    const [
+      totalProjects,
+      activeProjects,
+      pendingValidation,
+      completedProjects,
+      totalTasks,
+      totalProposals,
+      totalPublications,
+      scheduledPublications,
+    ] = await Promise.all([
+      Project.count({ where: { ...orgWhere } }),
+      Project.count({ where: { ...orgWhere, status: { [Op.in]: ['brief_received', 'in_production'] } } }),
+      Project.count({ where: { ...orgWhere, status: 'in_validation' } }),
+      Project.count({ where: { ...orgWhere, status: 'published' } }),
       Task.count({ where: orgWhere }),
       Proposal.count({ where: orgWhere }),
       Publication.count({ where: orgWhere }),
+      Publication.count({ where: { ...orgWhere, status: 'scheduled' } }),
     ]);
 
     return {
       total_projects: totalProjects,
+      active_projects: activeProjects,
+      pending_validation: pendingValidation,
+      completed_projects: completedProjects,
       total_tasks: totalTasks,
       total_proposals: totalProposals,
       total_publications: totalPublications,
+      scheduled_publications: scheduledPublications,
     };
   }
 

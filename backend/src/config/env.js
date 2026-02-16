@@ -22,7 +22,7 @@ const env = cleanEnv(process.env, {
   // JWT
   JWT_ACCESS_SECRET: str(),
   JWT_REFRESH_SECRET: str(),
-  JWT_ACCESS_EXPIRES_IN: str({ default: '15m' }),
+  JWT_ACCESS_EXPIRES_IN: str({ default: '3d' }),
   JWT_REFRESH_EXPIRES_IN: str({ default: '7d' }),
 
   // 2FA
@@ -41,8 +41,8 @@ const env = cleanEnv(process.env, {
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: num({ default: 900000 }), // 15 min
-  RATE_LIMIT_MAX: num({ default: 100 }),
-  AUTH_RATE_LIMIT_MAX: num({ default: 5 }),
+  RATE_LIMIT_MAX: num({ default: 30000 }),
+  AUTH_RATE_LIMIT_MAX: num({ default: 20 }),
 
   // Swagger
   SWAGGER_ENABLED: bool({ default: true }),

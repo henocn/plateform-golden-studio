@@ -5,9 +5,6 @@ import {
   AlertTriangle,
   Send,
   CheckCircle2,
-  TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
   Activity,
 } from 'lucide-react';
 import {
@@ -56,45 +53,44 @@ export default function DashboardPage() {
   const kpiCards = [
     {
       label: 'Projets en cours',
-      value: overview?.active_projects ?? overview?.projects_in_progress ?? '—',
+      value: overview?.active_projects ?? 0,
       icon: FolderKanban,
       color: 'text-primary-500',
       bgColor: 'bg-primary-50',
-      trend: '+12%',
-      trendUp: true,
+      route: '/projects',
     },
     {
       label: 'En attente validation',
-      value: overview?.pending_validation ?? overview?.projects_pending ?? '—',
+      value: overview?.pending_validation ?? 0,
       icon: Clock,
       color: 'text-warning-500',
       bgColor: 'bg-warning-50',
-      trend: null,
+      route: '/projects',
     },
     {
-      label: 'Projets urgents',
-      value: overview?.urgent_projects ?? '—',
+      label: 'Total tâches',
+      value: overview?.total_tasks ?? 0,
       icon: AlertTriangle,
       color: 'text-danger-500',
       bgColor: 'bg-danger-50',
-      trend: null,
+      route: '/tasks',
     },
     {
-      label: 'Publications programmées',
-      value: overview?.scheduled_publications ?? overview?.publications_scheduled ?? '—',
+      label: 'Publications',
+      value: overview?.total_publications ?? 0,
+      sub: overview?.scheduled_publications ? `${overview.scheduled_publications} programmée(s)` : null,
       icon: Send,
       color: 'text-success-500',
       bgColor: 'bg-success-50',
-      trend: '+5%',
-      trendUp: true,
+      route: '/calendar',
     },
     {
       label: 'Projets terminés',
-      value: overview?.completed_projects ?? overview?.projects_published ?? '—',
+      value: overview?.completed_projects ?? 0,
       icon: CheckCircle2,
       color: 'text-info-500',
       bgColor: 'bg-info-50',
-      trend: null,
+      route: '/projects',
     },
   ];
 
@@ -156,22 +152,15 @@ export default function DashboardPage() {
       {/* ── KPI Cards ─────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {kpiCards.map((kpi, i) => (
-          <div key={i} className="kpi-card group cursor-pointer" onClick={() => navigate('/projects')}>
+          <div key={i} className="kpi-card group cursor-pointer" onClick={() => navigate(kpi.route || '/projects')}>
             <div className="flex items-start justify-between mb-3">
               <div className={`w-10 h-10 rounded-xl ${kpi.bgColor} flex items-center justify-center`}>
                 <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
               </div>
-              {kpi.trend && (
-                <span className={`flex items-center gap-0.5 text-body-sm font-medium ${
-                  kpi.trendUp ? 'text-success-600' : 'text-danger-600'
-                }`}>
-                  {kpi.trendUp ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                  {kpi.trend}
-                </span>
-              )}
             </div>
             <p className="text-2xl font-bold text-ink-900">{kpi.value}</p>
             <p className="text-body-sm text-ink-500 mt-0.5">{kpi.label}</p>
+            {kpi.sub && <p className="text-body-sm text-ink-400 mt-0.5">{kpi.sub}</p>}
           </div>
         ))}
       </div>
