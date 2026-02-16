@@ -23,6 +23,7 @@ export const organizationsAPI = {
 };
 
 export const usersAPI = {
+  listMembers: (params) => api.get('/users/members', { params }),
   listInternal: (params) => api.get('/users/internal', { params }),
   listClients: (params) => api.get('/users/clients', { params }),
   getById: (id) => api.get(`/users/${id}`),

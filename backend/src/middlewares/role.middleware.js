@@ -3,41 +3,10 @@
 const ApiError = require('../utils/ApiError');
 
 /**
- * Complete permissions matrix — from proposition.md §6
+ * Permissions matrix — loaded from config/permissions.js
+ * Pour modifier les accès, éditez UNIQUEMENT le fichier config/permissions.js
  */
-const PERMISSIONS = {
-  // ─── Backoffice interne Golden Studio ──────────────────────
-  'projects.create':            ['super_admin', 'admin', 'contributor'],
-  'projects.edit':              ['super_admin', 'admin', 'contributor'],
-  'projects.delete':            ['super_admin', 'admin'],
-  'projects.view_all_orgs':     ['super_admin', 'admin', 'validator', 'contributor', 'reader'],
-  'proposals.create':           ['super_admin', 'admin', 'contributor'],
-  'proposals.submit_to_client': ['super_admin', 'admin', 'validator'],
-  'validations.internal':       ['super_admin', 'admin', 'validator'],
-  'users.manage_internal':      ['super_admin'],
-  'users.manage_clients':       ['super_admin', 'admin'],
-  'organizations.manage':       ['super_admin'],
-  'reporting.global':           ['super_admin', 'admin'],
-  'audit.view':                 ['super_admin', 'admin'],
-  'mediatheque.upload':         ['super_admin', 'admin', 'contributor'],
-  'tasks.create':               ['super_admin', 'admin', 'contributor'],
-  'tasks.edit':                 ['super_admin', 'admin', 'contributor'],
-  'tasks.delete':               ['super_admin', 'admin'],
-  'publications.manage':        ['super_admin', 'admin', 'contributor'],
-  'calendar.manage':            ['super_admin', 'admin', 'contributor'],
-  'briefs.create':              ['super_admin', 'admin', 'contributor'],
-  'briefs.edit':                ['super_admin', 'admin', 'contributor'],
-
-  // ─── Portail client (always scoped to their organization_id) ─
-  'projects.view_own':          ['client_admin', 'client_validator', 'client_contributor', 'client_reader'],
-  'briefs.submit':              ['client_admin', 'client_contributor'],
-  'proposals.validate_client':  ['client_admin', 'client_validator'],
-  'tasks.comment':              ['client_admin', 'client_validator', 'client_contributor'],
-  'calendar.view':              ['client_admin', 'client_validator', 'client_contributor', 'client_reader'],
-  'mediatheque.view':           ['client_admin', 'client_validator', 'client_contributor', 'client_reader'],
-  'users.manage_own_org':       ['client_admin'],
-  'reporting.own_org':          ['client_admin'],
-};
+const PERMISSIONS = require('../config/permissions');
 
 /**
  * Middleware factory — authorize(...permissions)

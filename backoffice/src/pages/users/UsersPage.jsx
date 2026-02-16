@@ -230,9 +230,12 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
       onCreated();
     } catch (err) {
       const errData = err.response?.data?.error;
-      const msg = errData?.details?.length
-        ? errData.details.map((d) => d.message).join('\n')
-        : errData?.message || 'Erreur lors de la création';
+      let msg = 'Erreur lors de la création';
+      if (errData?.details?.length) {
+        msg = errData.details.map((d) => typeof d === 'string' ? d : d.message || JSON.stringify(d)).join(' | ');
+      } else if (typeof errData?.message === 'string') {
+        msg = errData.message;
+      }
       toast.error(msg);
     } finally {
       setLoading(false);

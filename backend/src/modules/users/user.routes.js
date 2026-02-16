@@ -20,6 +20,11 @@ const router = Router();
 // All user routes require authentication
 router.use(authenticate);
 
+// ─── Members (lightweight for dropdowns / assignment) ────────
+router.get('/members',
+  authorize('users.list_members', 'users.manage_internal', 'users.manage_clients'),
+  userController.listMembers);
+
 // ─── Internal Users (backoffice only) ────────────────────────
 router.get('/internal',
   authorize('users.manage_internal'),

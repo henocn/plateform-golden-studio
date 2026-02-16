@@ -228,9 +228,21 @@ function TaskCard({ task: t, isOverdue }) {
 }
 
 function CreateTaskModal({ projects, onClose, onCreated }) {
-  const [form, setForm] = useState({ title: '', description: '', project_id: '', priority: 'medium', due_date: '', assigned_to: '' });
+  const [form, setForm] = useState({ title: '', description: '', project_id: '', priority: 'normal', due_date: '', assigned_to: '', visibility: 'client_visible' });
   const [submitting, setSubmitting] = useState(false);
+  const [users, setUsers] = useState([]);
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const { data } = await usersAPI.listMembers();
+        const all = extractList(data.data).items;
+        setUsers(all.map((u) => ({ ...u, _type: u.user_type })));
+      } catch {}
+    };
+    loadUsers();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -253,18 +265,41 @@ function CreateTaskModal({ projects, onClose, onCreated }) {
   return (
     <Modal open onClose={onClose} title="Nouvelle tâche" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input label="Titre *" value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="Titre de la tâche" />
+        <Input label="Nom *" value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="Titre de la tâche" />
         <Textarea label="Description" value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} />
         <div className="grid grid-cols-2 gap-4">
           <Select label="Projet *" value={form.project_id} onChange={(e) => set('project_id', e.target.value)}>
-            <option value="">Sélectionner</option>
+            <option value="">Sélectionner un projet</option>
             {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
           </Select>
+          <Select label="Assignation" value={form.assigned_to} onChange={(e) => set('assigned_to', e.target.value)}>
+            <option value="">Non assigné</option>
+            {users.filter((u) => u._type === 'internal').length > 0 && (
+              <optgroup label="Internes">
+                {users.filter((u) => u._type === 'internal').map((u) => (
+                  <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
+                ))}
+              </optgroup>
+            )}
+            {users.filter((u) => u._type === 'client').length > 0 && (
+              <optgroup label="Clients">
+                {users.filter((u) => u._type === 'client').map((u) => (
+                  <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
+                ))}
+              </optgroup>
+            )}
+          </Select>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
           <Select label="Priorité" value={form.priority} onChange={(e) => set('priority', e.target.value)}>
             {Object.entries(PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </Select>
+          <Input label="Date limite" type="date" value={form.due_date} onChange={(e) => set('due_date', e.target.value)} />
+          <Select label="Visibilité" value={form.visibility} onChange={(e) => set('visibility', e.target.value)}>
+            <option value="client_visible">Visible client</option>
+            <option value="internal_only">Interne uniquement</option>
+          </Select>
         </div>
-        <Input label="Date d'échéance" type="date" value={form.due_date} onChange={(e) => set('due_date', e.target.value)} />
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" onClick={onClose}>Annuler</Button>
           <Button type="submit" loading={submitting}>Créer la tâche</Button>

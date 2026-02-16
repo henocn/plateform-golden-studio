@@ -1,24 +1,10 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useAuthStore } from '../store/authStore';
-
-// ── Permission matrix (mirrors backend role.middleware.js) ──
-const PERMISSIONS = {
-  // Internal roles
-  super_admin: ['*'],
-  admin:       ['projects.*', 'tasks.*', 'proposals.*', 'calendar.*', 'media.*', 'users.manage', 'organizations.*', 'reporting.*', 'audit.*'],
-  validator:   ['projects.view', 'tasks.view', 'tasks.create', 'proposals.*', 'calendar.*', 'media.*', 'reporting.view'],
-  contributor: ['projects.view', 'tasks.view', 'tasks.create', 'proposals.create', 'proposals.view', 'calendar.view', 'media.*'],
-  reader:      ['projects.view', 'tasks.view', 'proposals.view', 'calendar.view', 'media.view'],
-  // Client roles
-  client_admin:       ['projects.view', 'tasks.view', 'proposals.view', 'proposals.validate', 'calendar.view', 'media.view', 'media.upload', 'users.manage_org', 'reporting.view_org'],
-  client_validator:   ['projects.view', 'tasks.view', 'proposals.view', 'proposals.validate', 'calendar.view', 'media.view'],
-  client_contributor: ['projects.view', 'tasks.view', 'tasks.comment', 'proposals.view', 'calendar.view', 'media.view', 'media.upload'],
-  client_reader:      ['projects.view', 'tasks.view', 'proposals.view', 'calendar.view', 'media.view'],
-};
+import PERMISSIONS_MAP from '../config/permissions';
 
 /**
  * Role & permission helper hook.
- * Returns booleans and a `can()` function for granular permission checks.
+ * Permissions are loaded from config/permissions.js — éditez ce fichier pour modifier les accès.
  */
 export function usePermissions() {
   const { user } = useAuthStore();
@@ -28,16 +14,14 @@ export function usePermissions() {
     const userType = user?.user_type || '';
     const isInternal = userType === 'internal';
     const isClient = userType === 'client';
-    const perms = PERMISSIONS[role] || [];
     const isSuperAdmin = role === 'super_admin';
 
+    /** Check if the current user's role has the given permission */
     const can = (permission) => {
       if (isSuperAdmin) return true;
-      if (perms.includes('*')) return true;
-      if (perms.includes(permission)) return true;
-      // Wildcard match: 'projects.*' covers 'projects.create'
-      const [domain] = permission.split('.');
-      return perms.includes(`${domain}.*`);
+      const allowedRoles = PERMISSIONS_MAP[permission];
+      if (!allowedRoles) return false;
+      return allowedRoles.includes(role);
     };
 
     return {
@@ -55,12 +39,12 @@ export function usePermissions() {
       canCreateProject: can('projects.create') && isInternal,
       canCreateTask: can('tasks.create') && isInternal,
       canCreateProposal: can('proposals.create') && isInternal,
-      canValidateProposal: can('proposals.validate'),
-      canCreateEvent: can('calendar.create') && isInternal,
-      canUploadMedia: can('media.upload'),
-      canManageUsers: can('users.manage') || can('users.manage_org'),
-      canViewAudit: can('audit.*') || can('audit.view'),
-      canViewReporting: can('reporting.*') || can('reporting.view') || can('reporting.view_org'),
+      canValidateProposal: can('proposals.validate_client'),
+      canCreateEvent: can('calendar.manage') && isInternal,
+      canUploadMedia: can('mediatheque.upload') || can('mediatheque.upload_client'),
+      canManageUsers: can('users.manage_internal') || can('users.manage_clients') || can('users.manage_own_org'),
+      canViewAudit: can('audit.view'),
+      canViewReporting: can('reporting.global') || can('reporting.own_org'),
     };
   }, [user]);
 }

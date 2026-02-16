@@ -10,8 +10,8 @@ const createProjectSchema = Joi.object({
   internal_manager_id: Joi.string().uuid().optional().allow(null),
   studio_manager_id: Joi.string().uuid().optional().allow(null),
   client_contact_id: Joi.string().uuid().optional().allow(null),
-  priority: Joi.string().valid('low', 'medium', 'high', 'urgent').default('medium'),
-  status: Joi.string().valid('draft', 'in_progress', 'pending_validation', 'completed', 'archived').default('draft'),
+  priority: Joi.string().valid('low', 'normal', 'high', 'urgent').default('normal'),
+  status: Joi.string().valid('brief_received', 'in_production', 'in_validation', 'published', 'archived').default('brief_received'),
   target_date: Joi.date().iso().optional().allow(null),
 });
 
@@ -22,19 +22,19 @@ const updateProjectSchema = Joi.object({
   internal_manager_id: Joi.string().uuid().optional().allow(null),
   studio_manager_id: Joi.string().uuid().optional().allow(null),
   client_contact_id: Joi.string().uuid().optional().allow(null),
-  priority: Joi.string().valid('low', 'medium', 'high', 'urgent').optional(),
+  priority: Joi.string().valid('low', 'normal', 'high', 'urgent').optional(),
   target_date: Joi.date().iso().optional().allow(null),
 }).min(1);
 
 const patchStatusSchema = Joi.object({
   status: Joi.string()
-    .valid('draft', 'in_progress', 'pending_validation', 'completed', 'archived')
+    .valid('brief_received', 'in_production', 'in_validation', 'published', 'archived')
     .required(),
 });
 
 const listProjectQuery = Joi.object({
-  status: Joi.string().valid('draft', 'in_progress', 'pending_validation', 'completed', 'archived').optional(),
-  priority: Joi.string().valid('low', 'medium', 'high', 'urgent').optional(),
+  status: Joi.string().valid('brief_received', 'in_production', 'in_validation', 'published', 'archived').optional(),
+  priority: Joi.string().valid('low', 'normal', 'high', 'urgent').optional(),
   organizationId: Joi.string().uuid().optional(),
   search: Joi.string().max(255).optional(),
   page: Joi.number().integer().min(1).default(1),

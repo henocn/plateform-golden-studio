@@ -56,7 +56,7 @@ export const PROPOSAL_STATUS = {
 
 export const PRIORITY = {
   low:      { label: 'Basse',     color: 'neutral' },
-  medium:   { label: 'Moyenne',   color: 'info' },
+  normal:   { label: 'Normale',   color: 'info' },
   high:     { label: 'Haute',     color: 'warning' },
   urgent:   { label: 'Urgente',   color: 'danger' },
 };

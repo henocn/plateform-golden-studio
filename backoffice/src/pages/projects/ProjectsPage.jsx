@@ -194,14 +194,19 @@ function ProjectActions({ project, onRefresh, canDelete }) {
 function CreateProjectModal({ open, onClose, onCreated }) {
   const [loading, setLoading] = useState(false);
   const [orgs, setOrgs] = useState([]);
+  const [internalUsers, setInternalUsers] = useState([]);
   const [form, setForm] = useState({
-    title: '', description: '', organization_id: '', agency_direction: '', priority: 'medium', target_date: '',
+    title: '', description: '', organization_id: '', agency_direction: '',
+    priority: 'normal', target_date: '', internal_manager_id: '', studio_manager_id: '',
   });
 
   useEffect(() => {
     if (open) {
       organizationsAPI.list({ limit: 100 }).then(({ data }) => {
         setOrgs(extractList(data.data).items);
+      }).catch(() => {});
+      usersAPI.listMembers({ type: 'internal' }).then(({ data }) => {
+        setInternalUsers(extractList(data.data).items);
       }).catch(() => {});
     }
   }, [open]);
@@ -210,7 +215,10 @@ function CreateProjectModal({ open, onClose, onCreated }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await projectsAPI.create(form);
+      const payload = { ...form };
+      if (!payload.internal_manager_id) delete payload.internal_manager_id;
+      if (!payload.studio_manager_id) delete payload.studio_manager_id;
+      await projectsAPI.create(payload);
       toast.success('Projet créé avec succès');
       onCreated();
     } catch (err) {
@@ -230,6 +238,26 @@ function CreateProjectModal({ open, onClose, onCreated }) {
           <Select label="Organisation" required value={form.organization_id} onChange={(e) => setForm({ ...form, organization_id: e.target.value })}
             options={orgs.map((o) => ({ value: o.id, label: o.name }))} />
           <Input label="Direction / Agence" value={form.agency_direction} onChange={(e) => setForm({ ...form, agency_direction: e.target.value })} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Responsable interne"
+              value={form.internal_manager_id}
+              onChange={e => setForm({ ...form, internal_manager_id: e.target.value })}
+              options={[
+                { value: '', label: 'Sélectionner' },
+                ...internalUsers.map(u => ({ value: u.id, label: `${u.first_name} ${u.last_name}` }))
+              ]}
+            />
+            <Select
+              label="Responsable studio"
+              value={form.studio_manager_id}
+              onChange={e => setForm({ ...form, studio_manager_id: e.target.value })}
+              options={[
+                { value: '', label: 'Sélectionner' },
+                ...internalUsers.map(u => ({ value: u.id, label: `${u.first_name} ${u.last_name}` }))
+              ]}
+            />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Select label="Priorité" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}

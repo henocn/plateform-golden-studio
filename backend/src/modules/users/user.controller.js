@@ -1,8 +1,32 @@
 'use strict';
 
 const userService = require('./user.service');
+const { User } = require('../../models');
 const ApiResponse = require('../../utils/ApiResponse');
 const { parsePagination, buildPaginationMeta } = require('../../utils/pagination');
+
+/**
+ * GET /api/v1/users/members
+ * Lightweight endpoint returning id + name + role for assignment dropdowns.
+ * Available to any internal user.
+ */
+const listMembers = async (req, res, next) => {
+  try {
+    const type = req.query.type; // 'internal' | 'client' | undefined (all)
+    const where = { is_active: true };
+    if (type === 'internal') where.user_type = 'internal';
+    else if (type === 'client') where.user_type = 'client';
+
+    const users = await User.findAll({
+      where,
+      attributes: ['id', 'first_name', 'last_name', 'role', 'user_type'],
+      order: [['first_name', 'ASC'], ['last_name', 'ASC']],
+    });
+    return ApiResponse.success(res, { data: users, meta: { total: users.length } }, 'Members retrieved');
+  } catch (error) {
+    return next(error);
+  }
+};
 
 /**
  * GET /api/v1/users/internal
@@ -141,6 +165,7 @@ const deleteUser = async (req, res, next) => {
 };
 
 module.exports = {
+  listMembers,
   listInternal,
   createInternal,
   changeInternalRole,
