@@ -162,21 +162,40 @@ export default function UsersPage() {
 }
 
 function CreateUserModal({ open, onClose, onCreated, type }) {
+  const { isInternal, isClientAdmin, user } = usePermissions();
   const [loading, setLoading] = useState(false);
   const [orgs, setOrgs] = useState([]);
+
+  // For client_admin: always create client users with their own org
+  const effectiveType = isClientAdmin ? 'clients' : type;
+
   const [form, setForm] = useState({
     email: '', password: '', first_name: '', last_name: '',
-    role: type === 'internal' ? 'contributor' : 'client_reader',
-    organization_id: '', job_title: '',
+    role: effectiveType === 'internal' ? 'contributor' : 'client_reader',
+    organization_id: isClientAdmin ? (user?.organization_id || '') : '',
+    job_title: '',
   });
 
   useEffect(() => {
-    if (open && type === 'clients') {
+    // Only internal admins need to fetch organizations list
+    if (open && effectiveType === 'clients' && isInternal) {
       organizationsAPI.list({ limit: 100 }).then(({ data }) => {
         setOrgs(extractList(data.data).items);
       }).catch(() => {});
     }
-  }, [open, type]);
+  }, [open, effectiveType, isInternal]);
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (open) {
+      setForm({
+        email: '', password: '', first_name: '', last_name: '',
+        role: effectiveType === 'internal' ? 'contributor' : 'client_reader',
+        organization_id: isClientAdmin ? (user?.organization_id || '') : '',
+        job_title: '',
+      });
+    }
+  }, [open, effectiveType, isClientAdmin]);
 
   const internalRoles = [
     { value: 'admin', label: 'Admin' },
@@ -185,18 +204,24 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
     { value: 'viewer', label: 'Lecteur' },
   ];
 
-  const clientRoles = [
-    { value: 'client_admin', label: 'Client Admin' },
-    { value: 'client_validator', label: 'Client Validateur' },
-    { value: 'client_contributor', label: 'Client Contributeur' },
-    { value: 'client_reader', label: 'Client Lecteur' },
-  ];
+  const clientRoles = isClientAdmin
+    ? [
+        { value: 'client_validator', label: 'Client Validateur' },
+        { value: 'client_contributor', label: 'Client Contributeur' },
+        { value: 'client_reader', label: 'Client Lecteur' },
+      ]
+    : [
+        { value: 'client_admin', label: 'Client Admin' },
+        { value: 'client_validator', label: 'Client Validateur' },
+        { value: 'client_contributor', label: 'Client Contributeur' },
+        { value: 'client_reader', label: 'Client Lecteur' },
+      ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (type === 'internal') {
+      if (effectiveType === 'internal') {
         await usersAPI.createInternal(form);
       } else {
         await usersAPI.createClient(form);
@@ -211,7 +236,7 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={`Nouvel utilisateur ${type === 'internal' ? 'interne' : 'client'}`} size="md"
+    <Modal open={open} onClose={onClose} title={`Nouvel utilisateur ${effectiveType === 'internal' ? 'interne' : 'client'}`} size="md"
       footer={<><Button variant="ghost" onClick={onClose}>Annuler</Button><Button loading={loading} onClick={handleSubmit}>Créer</Button></>}
     >
       <form className="space-y-4">
@@ -221,11 +246,14 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
         </div>
         <Input label="Email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <Input label="Mot de passe" type="password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} hint="Min. 8 caractères" />
-        <Select label="Rôle" required value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} options={type === 'internal' ? internalRoles : clientRoles} />
-        {type === 'clients' && (
+        <Select label="Rôle" required value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} options={effectiveType === 'internal' ? internalRoles : clientRoles} />
+        {effectiveType === 'clients' && isInternal && (
           <Select label="Organisation" required value={form.organization_id} onChange={(e) => setForm({ ...form, organization_id: e.target.value })}
             options={orgs.map((o) => ({ value: o.id, label: o.name }))}
           />
+        )}
+        {effectiveType === 'clients' && isClientAdmin && (
+          <Input label="Organisation" value={user?.organization_name || 'Mon organisation'} disabled />
         )}
         <Input label="Poste" value={form.job_title} onChange={(e) => setForm({ ...form, job_title: e.target.value })} />
       </form>
