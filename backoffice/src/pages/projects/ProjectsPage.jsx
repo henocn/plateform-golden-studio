@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FolderKanban, Filter, MoreVertical } from 'lucide-react';
+import { Plus, FolderKanban, Filter, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Card, Button, Badge, SearchInput, Select, Pagination, EmptyState, Skeleton, Modal, Input, Textarea } from '../../components/ui';
 import { projectsAPI, organizationsAPI, usersAPI } from '../../api/services';
-import { usePagination, useDebounce } from '../../hooks';
+import { usePagination, useDebounce, usePermissions } from '../../hooks';
 import { formatDate, PROJECT_STATUS, PRIORITY, extractList } from '../../utils/helpers';
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
-  const { user: currentUser } = useAuthStore();
-  const isInternal = currentUser?.user_type === 'internal';
+  const { canCreateProject, can, isInternal } = usePermissions();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -53,7 +52,7 @@ export default function ProjectsPage() {
           <h1 className="text-display-lg">Projets</h1>
           <p className="text-body-md text-ink-500 mt-1">Gestion des projets de communication</p>
         </div>
-        {isInternal && <Button icon={Plus} onClick={() => setShowCreate(true)}>Nouveau projet</Button>}
+        {canCreateProject && <Button icon={Plus} onClick={() => setShowCreate(true)}>Nouveau projet</Button>}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -78,7 +77,7 @@ export default function ProjectsPage() {
           </div>
         ) : projects.length === 0 ? (
           <EmptyState icon={FolderKanban} title="Aucun projet" description="Créez votre premier projet de communication"
-            action={isInternal ? <Button icon={Plus} onClick={() => setShowCreate(true)}>Créer un projet</Button> : null} />
+            action={canCreateProject ? <Button icon={Plus} onClick={() => setShowCreate(true)}>Créer un projet</Button> : null} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -121,9 +120,9 @@ export default function ProjectsPage() {
                       </td>
                       <td className="px-5 py-3 text-body-sm text-ink-400">{formatDate(p.target_date)}</td>
                       <td className="px-5 py-3">
-                        <button className="p-1 rounded-lg text-ink-400 hover:bg-surface-200" onClick={(e) => e.stopPropagation()}>
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
+                        {can('projects.update') && (
+                          <ProjectActions project={p} onRefresh={loadProjects} canDelete={can('projects.delete')} />
+                        )}
                       </td>
                     </tr>
                   );
@@ -140,6 +139,54 @@ export default function ProjectsPage() {
       </Card>
 
       <CreateProjectModal open={showCreate} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); loadProjects(); }} />
+    </div>
+  );
+}
+
+function ProjectActions({ project, onRefresh, canDelete }) {
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleDelete = async () => {
+    if (!confirm('Supprimer ce projet ? Cette action est irréversible.')) return;
+    try {
+      await projectsAPI.delete(project.id);
+      toast.success('Projet supprimé');
+      onRefresh();
+    } catch (err) {
+      toast.error(err.response?.data?.error?.message || 'Erreur lors de la suppression');
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        className="p-1 rounded-lg text-ink-400 hover:bg-surface-200"
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+      >
+        <MoreVertical className="w-4 h-4" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-8 z-20 bg-white rounded-xl shadow-dropdown border border-surface-200 py-1 w-44 animate-fade-in">
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}`); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-body-sm text-ink-700 hover:bg-surface-100 transition-default"
+            >
+              <Edit className="w-4 h-4" /> Modifier
+            </button>
+            {canDelete && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-body-sm text-danger-600 hover:bg-danger-50 transition-default"
+              >
+                <Trash2 className="w-4 h-4" /> Supprimer
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

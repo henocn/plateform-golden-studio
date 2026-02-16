@@ -2,15 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Users as UsersIcon, UserPlus, MoreVertical } from 'lucide-react';
 import { Card, Button, Badge, SearchInput, Pagination, EmptyState, Skeleton, Modal, Input, Select, Tabs, Avatar } from '../../components/ui';
 import { usersAPI, organizationsAPI } from '../../api/services';
-import { usePagination, useDebounce } from '../../hooks';
+import { usePagination, useDebounce, usePermissions } from '../../hooks';
 import { formatDate, ROLE_LABELS, extractList } from '../../utils/helpers';
-import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
 export default function UsersPage() {
-  const { user: currentUser } = useAuthStore();
-  const isInternal = currentUser?.user_type === 'internal';
-  const isClientAdmin = currentUser?.role === 'client_admin';
+  const { isInternal, isClientAdmin, canManageUsers } = usePermissions();
   const [activeTab, setActiveTab] = useState(isInternal ? 'internal' : 'clients');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +71,7 @@ export default function UsersPage() {
             {isInternal ? 'Gestion des comptes internes et clients' : 'Utilisateurs de mon organisation'}
           </p>
         </div>
-        {(isInternal || isClientAdmin) && (
+        {canManageUsers && (
           <Button icon={UserPlus} onClick={() => setShowCreate(true)}>
             Nouvel utilisateur
           </Button>

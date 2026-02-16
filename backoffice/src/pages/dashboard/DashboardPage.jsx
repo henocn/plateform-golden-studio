@@ -14,6 +14,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { Card, Badge, Avatar, Skeleton } from '../../components/ui';
 import { useAuthStore } from '../../store/authStore';
+import { usePermissions } from '../../hooks';
 import { reportingAPI, projectsAPI, auditAPI } from '../../api/services';
 import { formatRelative, PROJECT_STATUS, extractList } from '../../utils/helpers';
 
@@ -21,6 +22,7 @@ const CHART_COLORS = ['#1E3A5F', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
+  const { isInternal, isClient, canViewAudit, canViewReporting } = usePermissions();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState(null);
@@ -34,15 +36,22 @@ export default function DashboardPage() {
   const loadDashboard = async () => {
     setLoading(true);
     try {
-      const [overviewRes, projectsRes, auditRes] = await Promise.allSettled([
+      const promises = [
         reportingAPI.overview(),
-        reportingAPI.projects(),
-        auditAPI.list({ limit: 8, sort: 'created_at', order: 'DESC' }),
-      ]);
+      ];
+      // Only internal admins/validators get project stats & audit
+      if (canViewReporting) promises.push(reportingAPI.projects());
+      if (canViewAudit) promises.push(auditAPI.list({ limit: 8, sort: 'created_at', order: 'DESC' }));
 
-      if (overviewRes.status === 'fulfilled') setOverview(overviewRes.value.data.data);
-      if (projectsRes.status === 'fulfilled') setProjectStats(projectsRes.value.data.data);
-      if (auditRes.status === 'fulfilled') setRecentActivity(extractList(auditRes.value.data.data).items);
+      const results = await Promise.allSettled(promises);
+
+      if (results[0]?.status === 'fulfilled') setOverview(results[0].value.data.data);
+      if (canViewReporting && results[1]?.status === 'fulfilled') setProjectStats(results[1].value.data.data);
+
+      const auditIdx = canViewReporting ? 2 : 1;
+      if (canViewAudit && results[auditIdx]?.status === 'fulfilled') {
+        setRecentActivity(extractList(results[auditIdx].value.data.data).items);
+      }
     } catch (err) {
       console.error('Dashboard load error:', err);
     } finally {
@@ -52,7 +61,7 @@ export default function DashboardPage() {
 
   const kpiCards = [
     {
-      label: 'Projets en cours',
+      label: isClient ? 'Mes projets en cours' : 'Projets en cours',
       value: overview?.active_projects ?? 0,
       icon: FolderKanban,
       color: 'text-primary-500',
@@ -65,16 +74,17 @@ export default function DashboardPage() {
       icon: Clock,
       color: 'text-warning-500',
       bgColor: 'bg-warning-50',
-      route: '/projects',
+      route: '/proposals',
     },
-    {
+    // Internal only: total tasks overview
+    ...(isInternal ? [{
       label: 'Total tâches',
       value: overview?.total_tasks ?? 0,
       icon: AlertTriangle,
       color: 'text-danger-500',
       bgColor: 'bg-danger-50',
       route: '/tasks',
-    },
+    }] : []),
     {
       label: 'Publications',
       value: overview?.total_publications ?? 0,
@@ -125,7 +135,7 @@ export default function DashboardPage() {
           <Skeleton className="h-4 w-72" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {Array.from({ length: 5 }).map((_, i) => (
+          {Array.from({ length: kpiCards.length }).map((_, i) => (
             <Skeleton key={i} className="h-28 rounded-xl" />
           ))}
         </div>
@@ -150,7 +160,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── KPI Cards ─────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${Math.min(kpiCards.length, 3)} xl:grid-cols-${Math.min(kpiCards.length, 5)} gap-4`}>
         {kpiCards.map((kpi, i) => (
           <div key={i} className="kpi-card group cursor-pointer" onClick={() => navigate(kpi.route || '/projects')}>
             <div className="flex items-start justify-between mb-3">
@@ -165,7 +175,8 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* ── Charts Row ────────────────── */}
+      {/* ── Charts Row (internal / client_admin only) ── */}
+      {canViewReporting && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Area Chart: Monthly Trend */}
         <Card title="Tendance mensuelle" subtitle="Projets & publications" className="lg:col-span-2">
@@ -237,8 +248,10 @@ export default function DashboardPage() {
           </div>
         </Card>
       </div>
+      )}
 
-      {/* ── Recent Activity ───────────── */}
+      {/* ── Recent Activity (internal admins only) ── */}
+      {canViewAudit && (
       <Card
         title="Activité récente"
         subtitle="Dernières actions sur la plateforme"
@@ -277,6 +290,7 @@ export default function DashboardPage() {
           </p>
         )}
       </Card>
+      )}
     </div>
   );
 }

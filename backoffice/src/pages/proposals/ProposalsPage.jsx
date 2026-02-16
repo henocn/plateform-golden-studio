@@ -9,12 +9,11 @@ import {
 } from '../../components/ui';
 import { proposalsAPI, projectsAPI } from '../../api/services';
 import { formatDate, formatRelative, PROPOSAL_STATUS, extractList } from '../../utils/helpers';
-import { useAuthStore } from '../../store/authStore';
+import { usePermissions } from '../../hooks';
 import toast from 'react-hot-toast';
 
 export default function ProposalsPage() {
-  const { user: currentUser } = useAuthStore();
-  const isInternal = currentUser?.user_type === 'internal';
+  const { isInternal, isClient, canCreateProposal, canValidateProposal } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const [proposals, setProposals] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -49,6 +48,10 @@ export default function ProposalsPage() {
             allProposals.push(...items);
           }
         }
+      }
+      // Clients should not see draft proposals
+      if (isClient) {
+        allProposals = allProposals.filter((p) => p.status !== 'draft');
       }
       // Client-side status filter
       if (statusFilter) {
@@ -94,7 +97,7 @@ export default function ProposalsPage() {
           <h1 className="text-display-lg">Propositions</h1>
           <p className="text-body-md text-ink-400 mt-1">{total} proposition{total !== 1 ? 's' : ''}</p>
         </div>
-        {isInternal && <Button onClick={() => setShowCreate(true)} icon={Plus}>Nouvelle proposition</Button>}
+        {canCreateProposal && <Button onClick={() => setShowCreate(true)} icon={Plus}>Nouvelle proposition</Button>}
       </div>
 
       {/* Filters */}
@@ -169,15 +172,35 @@ export default function ProposalsPage() {
         onPageChange={(p) => updateParam('page', String(p))}
       />
 
-      {detail && <ProposalDetailModal proposal={detail} onClose={() => setDetail(null)} onRefresh={loadProposals} />}
+      {detail && <ProposalDetailModal proposal={detail} onClose={() => setDetail(null)} onRefresh={loadProposals} canValidate={canValidateProposal} />}
       {showCreate && <CreateProposalModal projects={projects} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); loadProposals(); }} />}
     </div>
   );
 }
 
-function ProposalDetailModal({ proposal: p, onClose, onRefresh }) {
+function ProposalDetailModal({ proposal: p, onClose, onRefresh, canValidate }) {
   const [validations, setValidations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [validating, setValidating] = useState(false);
+  const [validationForm, setValidationForm] = useState({ status: '', comments: '' });
+
+  const handleValidate = async () => {
+    if (!validationForm.status) return toast.error('Veuillez choisir une décision');
+    const projectId = p.project_id || p.Project?.id;
+    if (!projectId) return;
+    setValidating(true);
+    try {
+      await proposalsAPI.validate(projectId, p.id, validationForm);
+      toast.success('Validation enregistrée');
+      setValidationForm({ status: '', comments: '' });
+      onRefresh();
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.error?.message || 'Erreur lors de la validation');
+    } finally {
+      setValidating(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -209,6 +232,56 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh }) {
           <div><span className="text-ink-400">Créée le:</span> <span className="text-ink-700 ml-1">{formatDate(p.created_at)}</span></div>
           <div><span className="text-ink-400">Mise à jour:</span> <span className="text-ink-700 ml-1">{formatDate(p.updated_at)}</span></div>
         </div>
+
+        {/* Validate action for client validators */}
+        {canValidate && ['submitted', 'pending_validation'].includes(p.status) && (
+          <div className="border border-primary-200 bg-primary-50/50 rounded-xl p-4 space-y-3">
+            <h4 className="text-label font-semibold text-ink-700">Valider cette proposition</h4>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setValidationForm((f) => ({ ...f, status: 'approved' }))}
+                className={`flex-1 py-2 rounded-lg text-body-sm font-medium border transition-default ${
+                  validationForm.status === 'approved'
+                    ? 'bg-success-100 border-success-400 text-success-700'
+                    : 'border-surface-300 text-ink-500 hover:bg-surface-100'
+                }`}
+              >
+                Approuver
+              </button>
+              <button
+                onClick={() => setValidationForm((f) => ({ ...f, status: 'needs_revision' }))}
+                className={`flex-1 py-2 rounded-lg text-body-sm font-medium border transition-default ${
+                  validationForm.status === 'needs_revision'
+                    ? 'bg-warning-100 border-warning-400 text-warning-700'
+                    : 'border-surface-300 text-ink-500 hover:bg-surface-100'
+                }`}
+              >
+                À modifier
+              </button>
+              <button
+                onClick={() => setValidationForm((f) => ({ ...f, status: 'rejected' }))}
+                className={`flex-1 py-2 rounded-lg text-body-sm font-medium border transition-default ${
+                  validationForm.status === 'rejected'
+                    ? 'bg-danger-100 border-danger-400 text-danger-700'
+                    : 'border-surface-300 text-ink-500 hover:bg-surface-100'
+                }`}
+              >
+                Refuser
+              </button>
+            </div>
+            <Textarea
+              placeholder="Commentaire (optionnel)"
+              value={validationForm.comments}
+              onChange={(e) => setValidationForm((f) => ({ ...f, comments: e.target.value }))}
+              rows={2}
+            />
+            <div className="flex justify-end">
+              <Button onClick={handleValidate} loading={validating} disabled={!validationForm.status}>
+                Soumettre la validation
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Validation history */}
         <div>

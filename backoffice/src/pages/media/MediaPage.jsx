@@ -10,7 +10,7 @@ import {
 } from '../../components/ui';
 import { mediaAPI } from '../../api/services';
 import { formatDate, formatFileSize, extractList } from '../../utils/helpers';
-import { useAuthStore } from '../../store/authStore';
+import { usePermissions } from '../../hooks';
 import toast from 'react-hot-toast';
 
 const typeIcons = {
@@ -26,8 +26,7 @@ const typeColors = {
 };
 
 export default function MediaPage() {
-  const { user: currentUser } = useAuthStore();
-  const canUpload = currentUser?.user_type === 'internal' || ['client_admin', 'client_contributor'].includes(currentUser?.role);
+  const { canUploadMedia: canUpload } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const [files, setFiles] = useState([]);
   const [total, setTotal] = useState(0);

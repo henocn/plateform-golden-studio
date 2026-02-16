@@ -1,4 +1,69 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useAuthStore } from '../store/authStore';
+
+// ── Permission matrix (mirrors backend role.middleware.js) ──
+const PERMISSIONS = {
+  // Internal roles
+  super_admin: ['*'],
+  admin:       ['projects.*', 'tasks.*', 'proposals.*', 'calendar.*', 'media.*', 'users.manage', 'organizations.*', 'reporting.*', 'audit.*'],
+  validator:   ['projects.view', 'tasks.view', 'tasks.create', 'proposals.*', 'calendar.*', 'media.*', 'reporting.view'],
+  contributor: ['projects.view', 'tasks.view', 'tasks.create', 'proposals.create', 'proposals.view', 'calendar.view', 'media.*'],
+  viewer:      ['projects.view', 'tasks.view', 'proposals.view', 'calendar.view', 'media.view'],
+  // Client roles
+  client_admin:       ['projects.view', 'tasks.view', 'proposals.view', 'proposals.validate', 'calendar.view', 'media.view', 'media.upload', 'users.manage_org', 'reporting.view_org'],
+  client_validator:   ['projects.view', 'tasks.view', 'proposals.view', 'proposals.validate', 'calendar.view', 'media.view'],
+  client_contributor: ['projects.view', 'tasks.view', 'tasks.comment', 'proposals.view', 'calendar.view', 'media.view', 'media.upload'],
+  client_reader:      ['projects.view', 'tasks.view', 'proposals.view', 'calendar.view', 'media.view'],
+};
+
+/**
+ * Role & permission helper hook.
+ * Returns booleans and a `can()` function for granular permission checks.
+ */
+export function usePermissions() {
+  const { user } = useAuthStore();
+
+  return useMemo(() => {
+    const role = user?.role || '';
+    const userType = user?.user_type || '';
+    const isInternal = userType === 'internal';
+    const isClient = userType === 'client';
+    const perms = PERMISSIONS[role] || [];
+    const isSuperAdmin = role === 'super_admin';
+
+    const can = (permission) => {
+      if (isSuperAdmin) return true;
+      if (perms.includes('*')) return true;
+      if (perms.includes(permission)) return true;
+      // Wildcard match: 'projects.*' covers 'projects.create'
+      const [domain] = permission.split('.');
+      return perms.includes(`${domain}.*`);
+    };
+
+    return {
+      user,
+      role,
+      userType,
+      isInternal,
+      isClient,
+      isSuperAdmin,
+      isAdmin: ['super_admin', 'admin'].includes(role),
+      isValidator: role === 'validator' || role === 'client_validator',
+      isClientAdmin: role === 'client_admin',
+      can,
+      // Shortcuts
+      canCreateProject: can('projects.create') && isInternal,
+      canCreateTask: can('tasks.create') && isInternal,
+      canCreateProposal: can('proposals.create') && isInternal,
+      canValidateProposal: can('proposals.validate'),
+      canCreateEvent: can('calendar.create') && isInternal,
+      canUploadMedia: can('media.upload'),
+      canManageUsers: can('users.manage') || can('users.manage_org'),
+      canViewAudit: can('audit.*') || can('audit.view'),
+      canViewReporting: can('reporting.*') || can('reporting.view') || can('reporting.view_org'),
+    };
+  }, [user]);
+}
 
 /**
  * Hook for async data fetching with loading / error states

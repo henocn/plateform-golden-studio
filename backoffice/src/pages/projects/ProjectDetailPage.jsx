@@ -7,11 +7,13 @@ import {
 import { Card, Button, Badge, Tabs, Skeleton, Avatar, EmptyState, Textarea } from '../../components/ui';
 import { projectsAPI, briefsAPI, tasksAPI, proposalsAPI, publicationsAPI } from '../../api/services';
 import { formatDate, formatRelative, PROJECT_STATUS, TASK_STATUS, PROPOSAL_STATUS, PRIORITY, extractList } from '../../utils/helpers';
+import { usePermissions } from '../../hooks';
 import toast from 'react-hot-toast';
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isInternal, can } = usePermissions();
   const [project, setProject] = useState(null);
   const [briefs, setBriefs] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -98,7 +100,7 @@ export default function ProjectDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <StatusDropdown project={project} onUpdate={loadProject} />
+          {can('projects.update') && <StatusDropdown project={project} onUpdate={loadProject} />}
         </div>
       </div>
 
