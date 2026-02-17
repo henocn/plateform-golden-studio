@@ -16,7 +16,7 @@
  *           type: string
  *         status:
  *           type: string
- *           enum: [draft, in_progress, pending_validation, completed, archived]
+ *           enum: [draft, in_production, in_validation, published, archived]
  *         priority:
  *           type: string
  *           enum: [low, medium, high, urgent]
@@ -69,7 +69,7 @@
  *         name: status
  *         schema:
  *           type: string
- *           enum: [draft, in_progress, pending_validation, completed, archived]
+ *           enum: [brief_received, in_production, in_validation, published, archived]
  *       - in: query
  *         name: priority
  *         schema:
@@ -201,7 +201,7 @@
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [draft, in_progress, pending_validation, completed, archived]
+ *                 enum: [brief_received, in_production, in_validation, published, archived]
  *     responses:
  *       200:
  *         description: Status updated
