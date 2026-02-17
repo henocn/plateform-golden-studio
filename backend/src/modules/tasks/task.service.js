@@ -68,9 +68,9 @@ class TaskService {
   }
 
   /**
-   * Add comment — is_internal auto-deduced from user_type
+   * Add comment — is_internal transmis par le front (sauf client)
    */
-  async addComment(taskId, content, user) {
+  async addComment(taskId, content, user, is_internal) {
     const task = await taskRepository.findById(taskId);
     if (!task) throw ApiError.notFound('Task');
 
@@ -79,19 +79,21 @@ class TaskService {
       throw ApiError.forbidden('Cannot comment on internal-only tasks');
     }
 
+    // Un client ne peut jamais poster en interne
+    const internalFlag = user.user_type === 'client' ? false : Boolean(is_internal);
+
     return taskRepository.createComment({
       task_id: taskId,
       organization_id: task.organization_id,
       user_id: user.id,
       content,
-      is_internal: user.user_type === 'internal',
+      is_internal: internalFlag,
     });
   }
 
   async deleteComment(commentId, userId) {
     const comment = await taskRepository.findCommentById(commentId);
     if (!comment) throw ApiError.notFound('Comment');
-    // Only the author can delete their own comment
     if (comment.user_id !== userId) {
       throw ApiError.forbidden('You can only delete your own comments');
     }

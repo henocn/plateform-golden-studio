@@ -82,7 +82,12 @@ const listComments = async (req, res, next) => {
 
 const addComment = async (req, res, next) => {
   try {
-    const comment = await taskService.addComment(req.params.id, req.body.content, req.user);
+    const comment = await taskService.addComment(
+      req.params.id,
+      req.body.content,
+      req.user,
+      req.body.is_internal
+    );
     return ApiResponse.created(res, comment, 'Comment added');
   } catch (error) {
     return next(error);
