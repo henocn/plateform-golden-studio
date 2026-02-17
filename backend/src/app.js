@@ -28,21 +28,21 @@ app.use(
 );
 
 // ─── Rate Limiting (global) ─────────────────────────────────
-const globalLimiter = rateLimit({
-  windowMs: env.RATE_LIMIT_WINDOW_MS,
-  max: env.RATE_LIMIT_MAX,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    error: {
-      code: 'RATE_LIMIT_EXCEEDED',
-      message: 'Too many requests, please try again later.',
-      details: [],
-    },
-  },
-});
-app.use(globalLimiter);
+// const globalLimiter = rateLimit({
+//   windowMs: env.RATE_LIMIT_WINDOW_MS,
+//   max: env.RATE_LIMIT_MAX,
+//   standardHeaders: true,
+//   legacyHeaders: false,
+//   message: {
+//     success: false,
+//     error: {
+//       code: 'RATE_LIMIT_EXCEEDED',
+//       message: 'Too many requests, please try again later.',
+//       details: [],
+//     },
+//   },
+// });
+// app.use(globalLimiter);
 
 // ─── Body Parsers ────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
