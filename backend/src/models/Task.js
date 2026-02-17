@@ -35,7 +35,7 @@ module.exports = (sequelize) => {
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM('todo', 'in_progress', 'done', 'blocked', 'cancelled'),
+      type: DataTypes.ENUM('todo', 'in_production', 'done', 'blocked', 'cancelled'),
       allowNull: false,
       defaultValue: 'todo',
     },

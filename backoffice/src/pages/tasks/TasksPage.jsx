@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   CheckSquare, Plus, Filter, Clock, AlertTriangle, List, LayoutGrid,
@@ -64,7 +64,7 @@ export default function TasksPage() {
     setSearchParams(p);
   };
 
-  const columns = ['todo', 'in_progress', 'done', 'blocked'];
+  const columns = ['todo', 'in_production', 'done', 'blocked'];
   const columnConfig = {
      todo:        { label: 'À faire',   accent: 'bg-surface-400' },
      in_production: { label: 'En cours',  accent: 'bg-info-500' },
@@ -78,6 +78,33 @@ export default function TasksPage() {
     (Array.isArray(tasks) ? tasks : []).forEach((t) => { if (map[t.status]) map[t.status].push(t); });
     return map;
   }, [tasks]);
+
+  // Drag & Drop logic
+  const [draggedTask, setDraggedTask] = useState(null);
+  const dragOverCol = useRef(null);
+
+  const handleDragStart = (task) => setDraggedTask(task);
+  const handleDragEnd = () => {
+    setDraggedTask(null);
+    dragOverCol.current = null;
+  };
+  const handleDragOver = (col) => (e) => {
+    e.preventDefault();
+    dragOverCol.current = col;
+  };
+  const handleDrop = async (col) => {
+    if (!draggedTask || draggedTask.status === col) return;
+    try {
+      await tasksAPI.patchStatus(draggedTask.id, { status: col });
+      toast.success('Statut de la tâche mis à jour');
+      loadTasks();
+    } catch (err) {
+      toast.error('Erreur lors du changement de statut');
+    } finally {
+      setDraggedTask(null);
+      dragOverCol.current = null;
+    }
+  };
 
   const isOverdue = (t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done';
 
@@ -139,15 +166,27 @@ export default function TasksPage() {
             const cfg = columnConfig[col];
             const items = grouped[col] || [];
             return (
-              <div key={col} className="flex flex-col min-h-[280px]">
+              <div
+                key={col}
+                className={`flex flex-col min-h-[280px] ${dragOverCol.current === col ? 'ring-2 ring-info-400' : ''}`}
+                onDragOver={handleDragOver(col)}
+                onDrop={() => handleDrop(col)}
+              >
                 <div className="flex items-center gap-2.5 mb-3">
                   <div className={`w-2.5 h-2.5 rounded-full ${cfg.accent}`} />
                   <h3 className="text-label font-semibold text-ink-700">{cfg.label}</h3>
                   <span className="ml-auto text-body-sm text-ink-400 bg-surface-100 px-2 py-0.5 rounded-full">{items.length}</span>
                 </div>
-                <div className="space-y-2.5 flex-1">
+                <div className="space-y-2.5 flex-1 min-h-[80px]">
                   {items.map((t) => (
-                    <TaskCard key={t.id} task={t} isOverdue={isOverdue(t)} />
+                    <TaskCard
+                      key={t.id}
+                      task={t}
+                      isOverdue={isOverdue(t)}
+                      draggable
+                      onDragStart={() => handleDragStart(t)}
+                      onDragEnd={handleDragEnd}
+                    />
                   ))}
                   {items.length === 0 && (
                     <div className="border-2 border-dashed border-surface-300 rounded-xl flex items-center justify-center h-24 text-body-sm text-ink-400">Aucune tâche</div>
@@ -201,9 +240,15 @@ export default function TasksPage() {
   );
 }
 
-function TaskCard({ task: t, isOverdue }) {
+function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd }) {
   return (
-    <div className={`bg-white rounded-xl border p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${isOverdue ? 'border-danger-300 bg-danger-50/30' : 'border-surface-300'}`}>
+    <div
+      className={`bg-white rounded-xl border p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${isOverdue ? 'border-danger-300 bg-danger-50/30' : 'border-surface-300'}`}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      style={draggable ? { cursor: 'grab' } : {}}
+    >
       <p className="text-body-md font-medium text-ink-900 mb-1">{t.title}</p>
       {t.description && <p className="text-body-sm text-ink-400 line-clamp-2 mb-2.5">{t.description}</p>}
       <div className="flex items-center justify-between">

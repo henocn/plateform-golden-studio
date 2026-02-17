@@ -16,7 +16,7 @@
  *           type: string
  *         status:
  *           type: string
- *           enum: [todo, in_progress, done, blocked, cancelled]
+ *           enum: [todo, in_production, done, blocked, cancelled]
  *         priority:
  *           type: string
  *           enum: [low, normal, high, urgent]
@@ -88,7 +88,7 @@
  *         name: status
  *         schema:
  *           type: string
- *           enum: [todo, in_progress, done, blocked, cancelled]
+ *           enum: [todo, in_production, done, blocked, cancelled]
  *       - in: query
  *         name: overdue
  *         schema:
@@ -202,7 +202,7 @@
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [todo, in_progress, done, blocked, cancelled]
+ *                 enum: [todo, in_production, done, blocked, cancelled]
  *     responses:
  *       200:
  *         description: Status changed

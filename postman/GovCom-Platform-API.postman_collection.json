@@ -704,7 +704,7 @@
                 { "key": "page", "value": "1" },
                 { "key": "limit", "value": "20" },
                 { "key": "projectId", "value": "{{projectId_mipise_1}}", "disabled": true },
-                { "key": "status", "value": "in_progress", "disabled": true },
+                { "key": "status", "value": "in_production", "disabled": true },
                 { "key": "priority", "value": "high", "disabled": true },
                 { "key": "visibility", "value": "client_visible", "disabled": true },
                 { "key": "organizationId", "value": "{{orgId_mipise}}", "disabled": true }

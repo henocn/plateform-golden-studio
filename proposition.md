@@ -254,7 +254,7 @@ title           VARCHAR NOT NULL
 description     TEXT
 assigned_to     FK → users nullable      ← Peut être internal ou client selon config
 due_date        DATE
-status          ENUM: 'todo', 'in_progress', 'done', 'blocked', 'cancelled'
+status          ENUM: 'todo', 'in_production', 'done', 'blocked', 'cancelled'
 priority        ENUM: 'low', 'normal', 'high', 'urgent'
 visibility      ENUM: 'internal_only', 'client_visible'  ← Tâches internes cachées au client
 created_by      FK → users

@@ -291,7 +291,7 @@
 
 - [x] **2.5.1** Vue transversale toutes tâches tous projets (CDC §MODULE 3 — pilotage opérationnel)
 - [x] **2.5.2** Filtres : par collaborateur, par statut, par projet, overdue, urgent
-- [x] **2.5.3** Vue Kanban (colonnes : todo, in_progress, done, blocked)
+- [x] **2.5.3** Vue Kanban (colonnes : todo, in_production, done, blocked)
 - [x] **2.5.4** Création / édition tâche : titre, description, assignation, date limite, priorité, visibility (internal_only / client_visible)
 - [x] **2.5.5** Commentaires sur tâche (is_internal affiché différemment, badge "interne")
 - [x] **2.5.6** Indicateurs visuels : retards en rouge, urgences avec badge

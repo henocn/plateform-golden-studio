@@ -44,7 +44,7 @@ module.exports = {
         allowNull: true,
       },
       status: {
-        type: Sequelize.ENUM('todo', 'in_progress', 'done', 'blocked', 'cancelled'),
+        type: Sequelize.ENUM('todo', 'in_production', 'done', 'blocked', 'cancelled'),
         allowNull: false,
         defaultValue: 'todo',
       },
