@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
-  const { canCreateProject, can, isInternal } = usePermissions();
+  const { can, isInternal, userType } = usePermissions();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -52,7 +52,7 @@ export default function ProjectsPage() {
           <h1 className="text-display-lg">Projets</h1>
           <p className="text-body-md text-ink-500 mt-1">Gestion des projets de communication</p>
         </div>
-        {canCreateProject && <Button icon={Plus} onClick={() => setShowCreate(true)}>Nouveau projet</Button>}
+        {can('projects.create') && <Button icon={Plus} onClick={() => setShowCreate(true)}>Nouveau projet</Button>}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -77,7 +77,7 @@ export default function ProjectsPage() {
           </div>
         ) : projects.length === 0 ? (
           <EmptyState icon={FolderKanban} title="Aucun projet" description="Créez votre premier projet de communication"
-            action={canCreateProject ? <Button icon={Plus} onClick={() => setShowCreate(true)}>Créer un projet</Button> : null} />
+            action={can('projects.create') ? <Button icon={Plus} onClick={() => setShowCreate(true)}>Créer un projet</Button> : null} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -158,6 +158,7 @@ function ProjectActions({ project, onRefresh, canDelete }) {
     }
   };
 
+  const [showEdit, setShowEdit] = useState(false);
   return (
     <div className="relative">
       <button
@@ -171,7 +172,7 @@ function ProjectActions({ project, onRefresh, canDelete }) {
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-8 z-20 bg-white rounded-xl shadow-dropdown border border-surface-200 py-1 w-44 animate-fade-in">
             <button
-              onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}`); }}
+              onClick={(e) => { e.stopPropagation(); setShowEdit(true); setOpen(false); }}
               className="w-full flex items-center gap-2 px-3 py-2 text-body-sm text-ink-700 hover:bg-surface-100 transition-default"
             >
               <Edit className="w-4 h-4" /> Modifier
@@ -187,59 +188,125 @@ function ProjectActions({ project, onRefresh, canDelete }) {
           </div>
         </>
       )}
+      {showEdit && (
+        <CreateProjectModal
+          open={showEdit}
+          onClose={() => setShowEdit(false)}
+          onCreated={() => { setShowEdit(false); onRefresh(); }}
+          project={project}
+        />
+      )}
     </div>
   );
 }
 
-function CreateProjectModal({ open, onClose, onCreated }) {
+function CreateProjectModal({ open, onClose, onCreated, project }) {
   const [loading, setLoading] = useState(false);
   const [orgs, setOrgs] = useState([]);
   const [internalUsers, setInternalUsers] = useState([]);
-  const [form, setForm] = useState({
-    title: '', description: '', organization_id: '', agency_direction: '',
-    priority: 'normal', target_date: '', internal_manager_id: '', studio_manager_id: '',
+  const { userType, user } = usePermissions();
+  const [form, setForm] = useState(() => {
+    if (project) {
+      return {
+        title: project.title || '',
+        description: project.description || '',
+        organization_id: project.organization_id || (userType === 'client' && user?.organization_id ? user.organization_id : ''),
+        agency_direction: project.agency_direction || '',
+        priority: project.priority || 'normal',
+        target_date: project.target_date || '',
+        internal_manager_id: project.internal_manager_id || '',
+        studio_manager_id: project.studio_manager_id || '',
+      };
+    }
+    return {
+      title: '', description: '',
+      organization_id: userType === 'client' && user?.organization_id ? user.organization_id : '',
+      agency_direction: '',
+      priority: 'normal', target_date: '', internal_manager_id: '', studio_manager_id: '',
+    };
   });
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    if (userType === 'internal') {
       organizationsAPI.list({ limit: 100 }).then(({ data }) => {
         setOrgs(extractList(data.data).items);
       }).catch(() => {});
       usersAPI.listMembers({ type: 'internal' }).then(({ data }) => {
         setInternalUsers(extractList(data.data).items);
       }).catch(() => {});
+    } else if (userType === 'client' && user?.organization_id) {
+      setOrgs([{ id: user.organization_id, name: user.organization?.name || 'Mon organisation' }]);
     }
-  }, [open]);
+    // Si on édite, on synchronise le form avec le projet (utile si on rouvre le modal sur un autre projet)
+    if (project) {
+      setForm({
+        title: project.title || '',
+        description: project.description || '',
+        organization_id: project.organization_id || (userType === 'client' && user?.organization_id ? user.organization_id : ''),
+        agency_direction: project.agency_direction || '',
+        priority: project.priority || 'normal',
+        target_date: project.target_date || '',
+        internal_manager_id: project.internal_manager_id || '',
+        studio_manager_id: project.studio_manager_id || '',
+      });
+    }
+  }, [open, userType, user, project]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const payload = { ...form };
+      const is_parametrized = !!(form.internal_manager_id || form.studio_manager_id);
+      const payload = { ...form, is_parametrized };
       if (!payload.internal_manager_id) delete payload.internal_manager_id;
       if (!payload.studio_manager_id) delete payload.studio_manager_id;
-      await projectsAPI.create(payload);
-      toast.success('Projet créé avec succès');
+      if (project) {
+        await projectsAPI.update(project.id, payload);
+        toast.success('Projet modifié avec succès');
+      } else {
+        await projectsAPI.create(payload);
+        toast.success('Projet créé avec succès');
+      }
       onCreated();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur lors de la création');
+      toast.error(err.response?.data?.error?.message || 'Erreur lors de la sauvegarde');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Nouveau projet" size="lg"
-      footer={<><Button variant="ghost" onClick={onClose}>Annuler</Button><Button loading={loading} onClick={handleSubmit}>Créer</Button></>}>
-      <form className="space-y-4">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={project ? 'Modifier le projet' : 'Nouveau projet'}
+      size="lg"
+      closable={!project}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button loading={loading} onClick={handleSubmit}>{project ? 'Enregistrer' : 'Créer'}</Button>
+        </>
+      }
+    >
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <Input label="Titre" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Campagne de communication…" />
         <Textarea label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
         <div className="grid grid-cols-2 gap-4">
-          <Select label="Organisation" required value={form.organization_id} onChange={(e) => setForm({ ...form, organization_id: e.target.value })}
-            options={orgs.map((o) => ({ value: o.id, label: o.name }))} />
+          {userType === 'internal' && (
+            <Select
+              label="Organisation"
+              required
+              value={form.organization_id}
+              onChange={e => setForm({ ...form, organization_id: e.target.value })}
+              options={orgs.map((o) => ({ value: o.id, label: o.name }))}
+            />
+          )}
           <Input label="Direction / Agence" value={form.agency_direction} onChange={(e) => setForm({ ...form, agency_direction: e.target.value })} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        {userType === 'internal' && (
+          <div className="grid grid-cols-2 gap-4">
             <Select
               label="Responsable interne"
               value={form.internal_manager_id}
@@ -258,7 +325,8 @@ function CreateProjectModal({ open, onClose, onCreated }) {
                 ...internalUsers.map(u => ({ value: u.id, label: `${u.first_name} ${u.last_name}` }))
               ]}
             />
-        </div>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-4">
           <Select label="Priorité" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}
             options={Object.entries(PRIORITY).map(([k, v]) => ({ value: k, label: v.label }))} />

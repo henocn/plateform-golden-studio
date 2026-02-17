@@ -36,7 +36,11 @@ export default function ProjectDetailPage() {
       ]);
       if (projRes.status === 'fulfilled') setProject(projRes.value.data.data);
       if (briefRes.status === 'fulfilled') setBriefs(extractList(briefRes.value.data.data).items);
-      if (taskRes.status === 'fulfilled') setTasks(extractList(taskRes.value.data.data).items);
+      if (taskRes.status === 'fulfilled') {
+        // Filtrage strict côté client au cas où l'API ne filtre pas
+        const allTasks = extractList(taskRes.value.data.data).items;
+        setTasks(allTasks.filter(t => String(t.project_id) === String(id)));
+      }
       if (propRes.status === 'fulfilled') {
         const propData = propRes.value.data.data;
         setProposals(Array.isArray(propData) ? propData : extractList(propData).items);

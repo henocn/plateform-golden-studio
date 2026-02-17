@@ -34,6 +34,11 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+    status: {
+      type: DataTypes.ENUM('scheduled', 'published', 'draft', 'archived'),
+      allowNull: false,
+      defaultValue: 'published',
+    },
     archive_path: {
       type: DataTypes.STRING,
       allowNull: true,

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useAuthStore } from '../store/authStore';
-import PERMISSIONS_MAP from '../config/permissions';
+import PERMISSIONS from '../config/permissions';
 
 /**
  * Role & permission helper hook.
@@ -19,7 +19,7 @@ export function usePermissions() {
     /** Check if the current user's role has the given permission */
     const can = (permission) => {
       if (isSuperAdmin) return true;
-      const allowedRoles = PERMISSIONS_MAP[permission];
+      const allowedRoles = PERMISSIONS[permission];
       if (!allowedRoles) return false;
       return allowedRoles.includes(role);
     };
@@ -36,7 +36,7 @@ export function usePermissions() {
       isClientAdmin: role === 'client_admin',
       can,
       // Shortcuts
-      canCreateProject: can('projects.create') && isInternal,
+      canCreateProject: can('projects.create'),
       canCreateTask: can('tasks.create') && isInternal,
       canCreateProposal: can('proposals.create') && isInternal,
       canValidateProposal: can('proposals.validate_client'),

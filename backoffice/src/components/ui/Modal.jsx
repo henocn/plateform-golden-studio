@@ -57,6 +57,7 @@ export default function Modal({
           animate-slide-up
           max-h-[85vh] flex flex-col
         `}
+        onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface-200 shrink-0">

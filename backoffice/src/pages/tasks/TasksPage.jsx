@@ -13,7 +13,7 @@ import { usePermissions } from '../../hooks';
 import toast from 'react-hot-toast';
 
 export default function TasksPage() {
-  const { isInternal, canCreateTask } = usePermissions();
+  const { isInternal, can } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -105,7 +105,7 @@ export default function TasksPage() {
               <List className="w-4 h-4" />
             </button>
           </div>
-          {canCreateTask && <Button onClick={() => setShowCreate(true)} icon={Plus}>Nouvelle tâche</Button>}
+          {can('tasks.create') && <Button onClick={() => setShowCreate(true)} icon={Plus}>Nouvelle tâche</Button>}
         </div>
       </div>
 
