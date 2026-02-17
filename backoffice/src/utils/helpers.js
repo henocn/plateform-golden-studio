@@ -40,7 +40,7 @@ export const PROJECT_STATUS = {
 
 export const TASK_STATUS = {
   todo:        { label: 'À faire',    color: 'neutral' },
-  in_progress: { label: 'En cours',   color: 'info' },
+  in_production: { label: 'En cours',   color: 'info' },
   done:        { label: 'Terminé',    color: 'success' },
   blocked:     { label: 'Bloqué',     color: 'danger' },
 };

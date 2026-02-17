@@ -66,10 +66,10 @@ export default function TasksPage() {
 
   const columns = ['todo', 'in_progress', 'done', 'blocked'];
   const columnConfig = {
-    todo:        { label: 'À faire',   accent: 'bg-surface-400' },
-    in_progress: { label: 'En cours',  accent: 'bg-info-500' },
-    done:        { label: 'Terminé',   accent: 'bg-success-500' },
-    blocked:     { label: 'Bloqué',    accent: 'bg-danger-500' },
+     todo:        { label: 'À faire',   accent: 'bg-surface-400' },
+     in_production: { label: 'En cours',  accent: 'bg-info-500' },
+     done:        { label: 'Terminé',   accent: 'bg-success-500' },
+     blocked:     { label: 'Bloqué',    accent: 'bg-danger-500' },
   };
 
   const grouped = useMemo(() => {

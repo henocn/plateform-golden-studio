@@ -204,10 +204,10 @@ function TasksTab({ tasks }) {
   }
 
   // Group by status for Kanban-like view
-  const columns = ['todo', 'in_progress', 'done', 'blocked'];
+  const columns = ['todo', 'in_production', 'done', 'blocked'];
   const colMap = {
     todo: { label: 'À faire', color: 'bg-surface-300' },
-    in_progress: { label: 'En cours', color: 'bg-info-500' },
+    in_production: { label: 'En cours', color: 'bg-info-500' },
     done: { label: 'Terminé', color: 'bg-success-500' },
     blocked: { label: 'Bloqué', color: 'bg-danger-500' },
   };
