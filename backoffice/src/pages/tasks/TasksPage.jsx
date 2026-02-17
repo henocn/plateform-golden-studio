@@ -4,7 +4,7 @@ import {
   CheckSquare, Plus, Filter, Clock, AlertTriangle, List, LayoutGrid,
 } from 'lucide-react';
 import {
-  Card, Button, Badge, Modal, Input, Select, Textarea, SearchInput,
+  Card, Button, Badge, Modal, Input, Select, Textarea, SearchInput, Autocomplete,
   Pagination, EmptyState, Skeleton, Avatar,
 } from '../../components/ui';
 import { tasksAPI, projectsAPI, usersAPI } from '../../api/services';
@@ -19,7 +19,7 @@ export default function TasksPage() {
   const [projects, setProjects] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('kanban'); // kanban | list
+  const [view, setView] = useState('kanban');
   const [showCreate, setShowCreate] = useState(false);
 
   const page = parseInt(searchParams.get('page') || '1');
@@ -37,11 +37,13 @@ export default function TasksPage() {
       const params = { page, limit: 100 };
       if (status) params.status = status;
       if (priority) params.priority = priority;
-      if (projectId) params.project_id = projectId;
+      if (projectId) params.projectId = projectId; // Respecte l'API backend : projectId
       if (search) params.search = search;
       const { data } = await tasksAPI.list(params);
       const { items, total } = extractList(data.data);
-      setTasks(items);
+      // Trie toujours côté frontend (sécurité UX)
+      const sorted = items.slice().sort((a, b) => new Date(b.created_at || b.updated_at || 0) - new Date(a.created_at || a.updated_at || 0));
+      setTasks(sorted);
       setTotal(total);
     } catch (err) {
       toast.error('Erreur lors du chargement des tâches');
@@ -76,6 +78,7 @@ export default function TasksPage() {
     const map = {};
     columns.forEach((c) => (map[c] = []));
     (Array.isArray(tasks) ? tasks : []).forEach((t) => { if (map[t.status]) map[t.status].push(t); });
+    // Les tâches sont déjà triées globalement, donc chaque colonne hérite du tri
     return map;
   }, [tasks]);
 
@@ -139,20 +142,28 @@ export default function TasksPage() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <SearchInput value={search} onChange={(v) => updateParam('q', v)} placeholder="Rechercher une tâche…" className="w-64" />
-        <Select value={projectId} onChange={(e) => updateParam('project', e.target.value)} className="w-48">
-          <option value="">Tous les projets</option>
-          {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-        </Select>
-        <Select value={priority} onChange={(e) => updateParam('priority', e.target.value)} className="w-36">
-          <option value="">Priorité</option>
-          {Object.entries(PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </Select>
-        {view === 'list' && (
-          <Select value={status} onChange={(e) => updateParam('status', e.target.value)} className="w-36">
-            <option value="">Statut</option>
-            {Object.entries(TASK_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </Select>
-        )}
+        <Autocomplete
+          label={null}
+          value={projectId}
+          onChange={v => updateParam('project', v)}
+          options={[{ value: '', label: 'Tous les projets' }, ...projects.map(p => ({ value: p.id, label: p.title }))]}
+          placeholder="Projet..."
+          className="w-48"
+        />
+        <Select
+          value={priority}
+          onChange={e => updateParam('priority', e.target.value)}
+          className="w-36"
+          options={[{ value: '', label: 'Toutes priorités' }, ...Object.entries(PRIORITY).map(([k, v]) => ({ value: k, label: v.label }))]}
+          placeholder="Priorité"
+        />
+        <Select
+          value={status}
+          onChange={e => updateParam('status', e.target.value)}
+          className="w-36"
+          options={[{ value: '', label: 'Tous statuts' }, ...Object.entries(TASK_STATUS).map(([k, v]) => ({ value: k, label: v.label }))]}
+          placeholder="Statut"
+        />
       </div>
 
       {/* Content */}
@@ -202,34 +213,33 @@ export default function TasksPage() {
             <thead>
               <tr className="border-b border-surface-200">
                 <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Titre</th>
-                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Projet</th>
                 <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Statut</th>
                 <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Priorité</th>
-                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Assigné</th>
                 <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Échéance</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-200">
               {tasks.length === 0 ? (
-                <tr><td colSpan={6} className="px-5 py-12 text-center text-body-sm text-ink-400">Aucune tâche trouvée</td></tr>
-              ) : tasks.map((t) => {
-                const s = TASK_STATUS[t.status] || { label: t.status, color: 'neutral' };
-                const p = PRIORITY[t.priority] || { label: t.priority, color: 'neutral' };
-                const over = isOverdue(t);
-                return (
-                  <tr key={t.id} className="hover:bg-surface-50 transition-default">
-                    <td className="px-5 py-3 text-body-sm font-medium text-ink-900">{t.title}</td>
-                    <td className="px-5 py-3 text-body-sm text-ink-500">{t.Project?.title || '—'}</td>
-                    <td className="px-5 py-3"><Badge color={s.color} dot size="sm">{s.label}</Badge></td>
-                    <td className="px-5 py-3"><Badge color={p.color} size="sm">{p.label}</Badge></td>
-                    <td className="px-5 py-3 text-body-sm text-ink-500">{t.Assignee ? `${t.Assignee.first_name} ${t.Assignee.last_name}` : '—'}</td>
-                    <td className={`px-5 py-3 text-body-sm ${over ? 'text-danger-600 font-medium' : 'text-ink-500'}`}>
-                      {t.due_date ? formatDate(t.due_date) : '—'}
-                      {over && <AlertTriangle className="inline w-3.5 h-3.5 ml-1 -mt-0.5" />}
-                    </td>
-                  </tr>
-                );
-              })}
+                <tr><td colSpan={4} className="px-5 py-12 text-center text-body-sm text-ink-400">Aucune tâche trouvée</td></tr>
+              ) : tasks
+                .slice()
+                .sort((a, b) => new Date(b.created_at || b.updated_at || 0) - new Date(a.created_at || a.updated_at || 0))
+                .map((t) => {
+                  const s = TASK_STATUS[t.status] || { label: t.status, color: 'neutral' };
+                  const p = PRIORITY[t.priority] || { label: t.priority, color: 'neutral' };
+                  const over = isOverdue(t);
+                  return (
+                    <tr key={t.id} className="hover:bg-surface-50 transition-default">
+                      <td className="px-5 py-3 text-body-sm font-medium text-ink-900">{t.title}</td>
+                      <td className="px-5 py-3"><Badge color={s.color} dot size="sm">{s.label}</Badge></td>
+                      <td className="px-5 py-3"><Badge color={p.color} size="sm">{p.label}</Badge></td>
+                      <td className={`px-5 py-3 text-body-sm ${over ? 'text-danger-600 font-medium' : 'text-ink-500'}`}> 
+                        {t.due_date ? formatDate(t.due_date) : '—'}
+                        {over && <AlertTriangle className="inline w-3.5 h-3.5 ml-1 -mt-0.5" />}
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         </Card>
