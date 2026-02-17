@@ -107,7 +107,7 @@ class OrganizationRepository {
       Project.count({
         where: {
           organization_id: organizationId,
-          status: { [Op.in]: ['in_progress', 'pending_validation'] },
+          status: { [Op.in]: ['in_production', 'in_validation'] },
         },
       }),
     ]);
