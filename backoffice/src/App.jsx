@@ -15,6 +15,7 @@ const UsersPage = lazy(() => import('./pages/users/UsersPage'));
 const ProjectsPage = lazy(() => import('./pages/projects/ProjectsPage'));
 const ProjectDetailPage = lazy(() => import('./pages/projects/ProjectDetailPage'));
 const TasksPage = lazy(() => import('./pages/tasks/TasksPage'));
+const TaskDetailPage = lazy(() => import('./pages/tasks/TaskDetailPage'));
 const ProposalsPage = lazy(() => import('./pages/proposals/ProposalsPage'));
 const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage'));
 const MediaPage = lazy(() => import('./pages/media/MediaPage'));
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="projects" element={<ProjectsPage />} />
             <Route path="projects/:id" element={<ProjectDetailPage />} />
             <Route path="tasks" element={<TasksPage />} />
+            <Route path="tasks/:id" element={<TaskDetailPage />} />
             <Route path="proposals" element={<ProposalsPage />} />
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="media" element={<MediaPage />} />

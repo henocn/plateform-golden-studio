@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   CheckSquare, Plus, Filter, Clock, AlertTriangle, List, LayoutGrid,
 } from 'lucide-react';
@@ -13,6 +13,7 @@ import { usePermissions } from '../../hooks';
 import toast from 'react-hot-toast';
 
 export default function TasksPage() {
+  const navigate = useNavigate();
   const { isInternal, can } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const [tasks, setTasks] = useState([]);
@@ -190,14 +191,15 @@ export default function TasksPage() {
                 </div>
                 <div className="space-y-2.5 flex-1 min-h-[80px]">
                   {items.map((t) => (
-                    <TaskCard
-                      key={t.id}
-                      task={t}
-                      isOverdue={isOverdue(t)}
-                      draggable
-                      onDragStart={() => handleDragStart(t)}
-                      onDragEnd={handleDragEnd}
-                    />
+                    <div key={t.id} onClick={() => navigate(`/tasks/${t.id}`)} style={{ cursor: 'pointer' }}>
+                      <TaskCard
+                        task={t}
+                        isOverdue={isOverdue(t)}
+                        draggable
+                        onDragStart={() => handleDragStart(t)}
+                        onDragEnd={handleDragEnd}
+                      />
+                    </div>
                   ))}
                   {items.length === 0 && (
                     <div className="border-2 border-dashed border-surface-300 rounded-xl flex items-center justify-center h-24 text-body-sm text-ink-400">Aucune tâche</div>
@@ -229,7 +231,7 @@ export default function TasksPage() {
                   const p = PRIORITY[t.priority] || { label: t.priority, color: 'neutral' };
                   const over = isOverdue(t);
                   return (
-                    <tr key={t.id} className="hover:bg-surface-50 transition-default">
+                    <tr key={t.id} className="hover:bg-surface-50 transition-default cursor-pointer" onClick={() => navigate(`/tasks/${t.id}`)}>
                       <td className="px-5 py-3 text-body-sm font-medium text-ink-900">{t.title}</td>
                       <td className="px-5 py-3"><Badge color={s.color} dot size="sm">{s.label}</Badge></td>
                       <td className="px-5 py-3"><Badge color={p.color} size="sm">{p.label}</Badge></td>
@@ -291,9 +293,9 @@ function CreateTaskModal({ projects, onClose, onCreated }) {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const { data } = await usersAPI.listMembers();
+        const { data } = await usersAPI.listInternal();
         const all = extractList(data.data).items;
-        setUsers(all.map((u) => ({ ...u, _type: u.user_type })));
+        setUsers(all);
       } catch {}
     };
     loadUsers();
@@ -323,37 +325,27 @@ function CreateTaskModal({ projects, onClose, onCreated }) {
         <Input label="Nom *" value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="Titre de la tâche" />
         <Textarea label="Description" value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} />
         <div className="grid grid-cols-2 gap-4">
-          <Select label="Projet *" value={form.project_id} onChange={(e) => set('project_id', e.target.value)}>
-            <option value="">Sélectionner un projet</option>
-            {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-          </Select>
-          <Select label="Assignation" value={form.assigned_to} onChange={(e) => set('assigned_to', e.target.value)}>
-            <option value="">Non assigné</option>
-            {users.filter((u) => u._type === 'internal').length > 0 && (
-              <optgroup label="Internes">
-                {users.filter((u) => u._type === 'internal').map((u) => (
-                  <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
-                ))}
-              </optgroup>
-            )}
-            {users.filter((u) => u._type === 'client').length > 0 && (
-              <optgroup label="Clients">
-                {users.filter((u) => u._type === 'client').map((u) => (
-                  <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
-                ))}
-              </optgroup>
-            )}
-          </Select>
+          <Autocomplete label="Projet *" value={form.project_id} onChange={v => set('project_id', v)}
+            options={projects.map(p => ({ value: p.id, label: p.title }))}
+          />
+          <Autocomplete label="Assignation" value={form.assigned_to} onChange={v => set('assigned_to', v)}
+            options={[
+              { value: '', label: 'Non assigné' },
+              ...users.map(u => ({ value: u.id, label: `${u.first_name} ${u.last_name}` })),
+            ]}
+          />
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <Select label="Priorité" value={form.priority} onChange={(e) => set('priority', e.target.value)}>
-            {Object.entries(PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </Select>
-          <Input label="Date limite" type="date" value={form.due_date} onChange={(e) => set('due_date', e.target.value)} />
-          <Select label="Visibilité" value={form.visibility} onChange={(e) => set('visibility', e.target.value)}>
-            <option value="client_visible">Visible client</option>
-            <option value="internal_only">Interne uniquement</option>
-          </Select>
+          <Select label="Priorité" value={form.priority} onChange={e => set('priority', e.target.value)}
+            options={Object.entries(PRIORITY).map(([k, v]) => ({ value: k, label: v.label }))}
+          />
+          <Input label="Date limite" type="date" value={form.due_date} onChange={e => set('due_date', e.target.value)} />
+          <Select label="Visibilité" value={form.visibility} onChange={e => set('visibility', e.target.value)}
+            options={[
+              { value: 'client_visible', label: 'Visible client' },
+              { value: 'internal_only', label: 'Interne uniquement' },
+            ]}
+          />
         </div>
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" onClick={onClose}>Annuler</Button>
