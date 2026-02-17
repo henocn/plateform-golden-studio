@@ -1,3 +1,4 @@
+export { default as Checkbox } from './Checkbox';
 export { default as Autocomplete } from './Autocomplete';
 // UI Components barrel export
 export { default as Button } from './Button';
