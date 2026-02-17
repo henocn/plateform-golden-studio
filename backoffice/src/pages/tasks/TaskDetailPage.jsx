@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { tasksAPI, usersAPI, projectsAPI } from "../../api/services";
+import { useAuthStore } from "../../store/authStore";
 import {
   Card,
   Button,
@@ -31,7 +32,7 @@ export default function TaskDetailPage() {
   const [commentLoading, setCommentLoading] = useState(true);
   const [commentContent, setCommentContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [me, setMe] = useState(null);
+  const me = useAuthStore((state) => state.user);
   const [isInternal, setIsInternal] = useState(false);
   const intervalRef = useRef();
 
@@ -71,10 +72,6 @@ export default function TaskDetailPage() {
       }
     };
     fetchComments();
-    usersAPI
-      .me?.()
-      .then(({ data }) => setMe(data.data))
-      .catch(() => setMe(null));
     intervalRef.current = setInterval(() => {
       fetchComments(false);
     }, 5000);
@@ -88,7 +85,7 @@ export default function TaskDetailPage() {
     try {
       await tasksAPI.addComment(id, {
         content: commentContent,
-        is_internal: isInternal,
+        is_internal: Boolean(isInternal),
       });
       setCommentContent("");
       setIsInternal(false);
@@ -167,6 +164,12 @@ export default function TaskDetailPage() {
               comments
                 .slice()
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .filter((c) => {
+                  if (c.is_internal) {
+                    return me?.user_type === "internal";
+                  }
+                  return true;
+                })
                 .map((c, idx, arr) => {
                   const isOwn = me && c.author?.id === me.id;
                   const isLast = idx === 0;
@@ -244,8 +247,8 @@ export default function TaskDetailPage() {
             {me?.user_type === "internal" && (
               <div className="flex items-center mt-2">
                 <Checkbox
-                  checked={isInternal}
-                  onChange={setIsInternal}
+                  checked={!!isInternal}
+                  onChange={checked => setIsInternal(!!checked)}
                   label="Interne uniquement (admin)"
                 />
               </div>
