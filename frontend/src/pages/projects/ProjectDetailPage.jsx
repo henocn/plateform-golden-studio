@@ -116,7 +116,7 @@ export default function ProjectDetailPage() {
           </span>
         )}
         <span className="flex items-center gap-1.5">
-          <Calendar className="w-4 h-4 text-ink-400" /> Créé le {formatDate(project.created_at)}
+          <Calendar className="w-4 h-4 text-ink-400" /> Créé le {formatDate(project.createdAt)}
         </span>
       </div>
 
