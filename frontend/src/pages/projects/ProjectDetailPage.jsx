@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FolderKanban, FileText, CheckSquare, Send, History,
-  Calendar, MessageSquare, Paperclip, Clock, User,
+  Calendar, Paperclip, Clock,
 } from 'lucide-react';
-import { Card, Button, Badge, Tabs, Skeleton, Avatar, EmptyState, Textarea } from '../../components/ui';
+import { Card, Badge, Tabs, Skeleton, EmptyState } from '../../components/ui';
 import { projectsAPI, briefsAPI, tasksAPI, proposalsAPI, publicationsAPI } from '../../api/services';
-import { formatDate, formatRelative, PROJECT_STATUS, TASK_STATUS, PROPOSAL_STATUS, PRIORITY, extractList } from '../../utils/helpers';
+import { formatDate, formatRelative, PROJECT_STATUS, PROPOSAL_STATUS, PRIORITY, extractList } from '../../utils/helpers';
 import { usePermissions } from '../../hooks';
 import toast from 'react-hot-toast';
 
@@ -126,7 +126,7 @@ export default function ProjectDetailPage() {
       {/* Tab Content */}
       <div className="animate-fade-in">
         {activeTab === 'brief' && <BriefTab briefs={briefs} projectId={id} onRefresh={loadProject} />}
-        {activeTab === 'tasks' && <TasksTab tasks={tasks} />}
+        {activeTab === 'tasks' && <TasksTab tasks={tasks} onRefresh={loadProject} />}
         {activeTab === 'proposals' && <ProposalsTab proposals={proposals} />}
         {activeTab === 'validations' && <ValidationsTab proposals={proposals} />}
         {activeTab === 'publications' && <PublicationsTab publications={publications} />}
@@ -198,12 +198,40 @@ function BriefTab({ briefs }) {
   );
 }
 
-function TasksTab({ tasks }) {
+
+
+function TasksTab({ tasks, onRefresh }) {
+  const navigate = useNavigate();
+  const [draggedTask, setDraggedTask] = useState(null);
+  const dragOverCol = useRef(null);
+
+  const handleDragStart = (task) => setDraggedTask(task);
+  const handleDragEnd = () => {
+    setDraggedTask(null);
+    dragOverCol.current = null;
+  };
+  const handleDragOver = (col) => (e) => {
+    e.preventDefault();
+    dragOverCol.current = col;
+  };
+  const handleDrop = async (col) => {
+    if (!draggedTask || draggedTask.status === col) return;
+    try {
+      await tasksAPI.patchStatus(draggedTask.id, { status: col });
+      toast.success('Statut de la tâche mis à jour');
+      if (typeof onRefresh === 'function') onRefresh();
+    } catch (err) {
+      toast.error('Erreur lors du changement de statut');
+    } finally {
+      setDraggedTask(null);
+      dragOverCol.current = null;
+    }
+  };
+
   if (tasks.length === 0) {
     return <EmptyState icon={CheckSquare} title="Aucune tâche" description="Aucune tâche associée à ce projet" />;
   }
 
-  // Group by status for Kanban-like view
   const columns = ['todo', 'in_production', 'done', 'blocked'];
   const colMap = {
     todo: { label: 'À faire', color: 'bg-surface-300' },
@@ -218,7 +246,12 @@ function TasksTab({ tasks }) {
         const colTasks = tasks.filter((t) => t.status === col);
         const info = colMap[col];
         return (
-          <div key={col} className="space-y-3">
+          <div
+            key={col}
+            className={`space-y-3 min-h-[280px] ${dragOverCol.current === col ? 'ring-2 ring-info-400' : ''}`}
+            onDragOver={handleDragOver(col)}
+            onDrop={() => handleDrop(col)}
+          >
             <div className="flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${info.color}`} />
               <h4 className="text-label text-ink-700">{info.label}</h4>
@@ -226,7 +259,14 @@ function TasksTab({ tasks }) {
             </div>
             <div className="space-y-2">
               {colTasks.map((t) => (
-                <div key={t.id} className="bg-white rounded-xl border border-surface-300 p-3 shadow-card hover:shadow-card-hover transition-shadow">
+                <div
+                  key={t.id}
+                  className="bg-white rounded-xl border border-surface-300 p-3 shadow-card hover:shadow-card-hover transition-shadow cursor-pointer"
+                  draggable
+                  onDragStart={() => handleDragStart(t)}
+                  onDragEnd={handleDragEnd}
+                  onClick={() => navigate(`/tasks/${t.id}`)}
+                >
                   <p className="text-body-md font-medium text-ink-900 mb-1">{t.title}</p>
                   {t.description && <p className="text-body-sm text-ink-400 line-clamp-2 mb-2">{t.description}</p>}
                   <div className="flex items-center justify-between">
