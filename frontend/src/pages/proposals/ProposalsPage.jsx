@@ -544,18 +544,17 @@ function CreateProposalModal({ projects, onClose, onCreated }) {
           onChange={(e) => set("description", e.target.value)}
           rows={3}
         />
-        <Select
-          label="Projet *"
+        <Autocomplete
+          label={null}
           value={form.project_id}
-          onChange={(e) => set("project_id", e.target.value)}
-        >
-          <option value="">Sélectionner un projet</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.title}
-            </option>
-          ))}
-        </Select>
+          onChange={(v) => set("project_id", v)}
+          options={[
+            { value: "", label: "Tous les projets" },
+            ...projects.map((p) => ({ value: p.id, label: p.title })),
+          ]}
+          placeholder="Projet..."
+          className="w-52"
+        />
         <div>
           <label className="block text-label text-ink-600 mb-1">Fichier</label>
           <input
