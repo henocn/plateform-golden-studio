@@ -39,7 +39,9 @@ const PERMISSIONS = {
   'briefs.submit':              ['client_admin', 'client_contributor'],
 
   // ─── Validations internes ────────────────────────────────
-  'validations.internal':       ['super_admin', 'admin', 'validator'],
+  // 'validations.internal':       ['super_admin', 'admin', 'validator'],
+  'proposals.validate':         ['super_admin', 'admin', 'validator', 'client_validator'],
+  'proposals.create':           ['super_admin', 'admin', 'contributor'],
 
   // ─── Calendrier ──────────────────────────────────────────
   'calendar.manage':            ['super_admin', 'admin', 'contributor'],

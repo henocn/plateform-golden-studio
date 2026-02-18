@@ -116,13 +116,6 @@ export default function ProposalsPage() {
     "approved",
     "rejected",
   ];
-  const stepLabels = {
-    draft: "Brouillon",
-    submitted: "Soumis",
-    pending_validation: "En validation",
-    approved: "Validé",
-    rejected: "Refusé",
-  };
 
   const getStepIndex = (status) => workflowSteps.indexOf(status);
 
@@ -137,7 +130,7 @@ export default function ProposalsPage() {
         </div>
         {canCreateProposal && (
           <Button onClick={() => setShowCreate(true)} icon={Plus}>
-            Nouvelle proposition
+            Nouvelle
           </Button>
         )}
       </div>
@@ -236,10 +229,10 @@ export default function ProposalsPage() {
                     </div>
 
                     <div className="flex items-center gap-4 mt-2 text-body-sm text-ink-400">
-                      <span>Projet: {p.Project?.title || "—"}</span>
+                      <span>Projet: {p.project?.title || "—"}</span>
                       <span>
-                        Par {p.Author?.first_name || "—"}{" "}
-                        {p.Author?.last_name || ""}
+                        Par {p.author?.first_name || "—"}{" "}
+                        {p.author?.last_name || ""}
                       </span>
                       <span>{formatRelative(p.created_at)}</span>
                     </div>
@@ -293,7 +286,7 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh, canValidate }) {
   const handleValidate = async () => {
     if (!validationForm.status)
       return toast.error("Veuillez choisir une décision");
-    const projectId = p.project_id || p.Project?.id;
+    const projectId = p.project_id || p.project?.id;
     if (!projectId) return;
     setValidating(true);
     try {
@@ -314,7 +307,7 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh, canValidate }) {
   useEffect(() => {
     (async () => {
       try {
-        const projectId = p.project_id || p.Project?.id;
+        const projectId = p.project_id || p.project?.id;
         if (!projectId) {
           setLoading(false);
           return;
@@ -352,24 +345,24 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh, canValidate }) {
         <div className="grid grid-cols-2 gap-4 text-body-sm">
           <div>
             <span className="text-ink-400">Projet:</span>{" "}
-            <span className="text-ink-700 ml-1">{p.Project?.title || "—"}</span>
+            <span className="text-ink-700 ml-1">{p.project?.title || "—"}</span>
           </div>
           <div>
             <span className="text-ink-400">Auteur:</span>{" "}
             <span className="text-ink-700 ml-1">
-              {p.Author?.first_name || "—"} {p.Author?.last_name || ""}
+              {p.author?.first_name || "—"} {p.author?.last_name || ""}
             </span>
           </div>
           <div>
             <span className="text-ink-400">Créée le:</span>{" "}
             <span className="text-ink-700 ml-1">
-              {formatDate(p.created_at)}
+              {formatDate(p.createdAt)}
             </span>
           </div>
           <div>
             <span className="text-ink-400">Mise à jour:</span>{" "}
             <span className="text-ink-700 ml-1">
-              {formatDate(p.updated_at)}
+              {formatDate(p.updatedAt)}
             </span>
           </div>
         </div>
