@@ -367,7 +367,6 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh, canValidate }) {
             </span>
           </div>
         </div>
-        {console.log(canValidate)}
 
         {/* Validate action for client validators */}
         {canValidate &&
@@ -461,8 +460,8 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh, canValidate }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 text-body-sm">
                       <span className="font-medium text-ink-700">
-                        {v.Validator?.first_name || "—"}{" "}
-                        {v.Validator?.last_name || ""}
+                        {v.validator?.first_name || "—"}{" "}
+                        {v.validator?.last_name || ""}
                       </span>
                       <Badge
                         color={
