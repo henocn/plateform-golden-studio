@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 const { Router } = require('express');
 const { authenticate } = require('../../middlewares/auth.middleware');
@@ -13,6 +13,7 @@ const {
 } = require('./organization.validation');
 
 const router = Router();
+
 
 // All organization routes require authentication + internal user
 router.use(authenticate, internalOnly);
@@ -40,5 +41,8 @@ router.get('/:id/projects', orgController.getProjects);
 
 // GET /organizations/:id/stats — KPIs of this org
 router.get('/:id/stats', orgController.getStats);
+
+// DELETE /organizations/:id — supprimer une organisation
+router.delete('/:id', authorize('organizations.manage'), orgController.remove);
 
 module.exports = router;

@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-const { Organization, User, Project } = require('../../models');
-const { Op } = require('sequelize');
+const { Organization, User, Project } = require("../../models");
+const { Op } = require("sequelize");
 
 /**
  * Organization Repository — CRUD with tenant filtering support
@@ -10,11 +10,18 @@ class OrganizationRepository {
   /**
    * Find all organizations with optional filters
    */
-  async findAll({ type, is_active, search, page = 1, limit = 20, offset = 0 } = {}) {
+  async findAll({
+    type,
+    is_active,
+    search,
+    page = 1,
+    limit = 20,
+    offset = 0,
+  } = {}) {
     const where = {};
 
     if (type) where.type = type;
-    if (typeof is_active === 'boolean') where.is_active = is_active;
+    if (typeof is_active === "boolean") where.is_active = is_active;
     if (search) {
       where[Op.or] = [
         { name: { [Op.iLike]: `%${search}%` } },
@@ -25,7 +32,7 @@ class OrganizationRepository {
 
     const { rows, count } = await Organization.findAndCountAll({
       where,
-      order: [['created_at', 'DESC']],
+      order: [["created_at", "DESC"]],
       limit,
       offset,
     });
@@ -39,7 +46,10 @@ class OrganizationRepository {
   async findById(id) {
     return Organization.findByPk(id, {
       include: [
-        { association: 'creator', attributes: ['id', 'first_name', 'last_name', 'email'] },
+        {
+          association: "creator",
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
       ],
     });
   }
@@ -75,7 +85,7 @@ class OrganizationRepository {
   async findUsers(organizationId, { page = 1, limit = 20, offset = 0 } = {}) {
     const { rows, count } = await User.findAndCountAll({
       where: { organization_id: organizationId },
-      order: [['created_at', 'DESC']],
+      order: [["created_at", "DESC"]],
       limit,
       offset,
     });
@@ -86,10 +96,13 @@ class OrganizationRepository {
   /**
    * Get projects for an organization
    */
-  async findProjects(organizationId, { page = 1, limit = 20, offset = 0 } = {}) {
+  async findProjects(
+    organizationId,
+    { page = 1, limit = 20, offset = 0 } = {},
+  ) {
     const { rows, count } = await Project.findAndCountAll({
       where: { organization_id: organizationId },
-      order: [['created_at', 'DESC']],
+      order: [["created_at", "DESC"]],
       limit,
       offset,
     });
@@ -107,7 +120,7 @@ class OrganizationRepository {
       Project.count({
         where: {
           organization_id: organizationId,
-          status: { [Op.in]: ['in_production', 'in_validation'] },
+          status: { [Op.in]: ["in_production", "in_validation"] },
         },
       }),
     ]);
@@ -117,6 +130,16 @@ class OrganizationRepository {
       total_projects: projectsCount,
       active_projects: activeProjectsCount,
     };
+  }
+
+  /**
+   * Delete organization
+   */
+  async remove(id) {
+    const organization = await Organization.findByPk(id);
+    if (!organization) return null;
+    await organization.destroy();
+    return organization;
   }
 }
 

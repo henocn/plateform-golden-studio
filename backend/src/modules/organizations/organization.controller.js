@@ -1,8 +1,11 @@
-'use strict';
+"use strict";
 
-const organizationService = require('./organization.service');
-const ApiResponse = require('../../utils/ApiResponse');
-const { parsePagination, buildPaginationMeta } = require('../../utils/pagination');
+const organizationService = require("./organization.service");
+const ApiResponse = require("../../utils/ApiResponse");
+const {
+  parsePagination,
+  buildPaginationMeta,
+} = require("../../utils/pagination");
 
 /**
  * GET /api/v1/organizations
@@ -22,7 +25,7 @@ const list = async (req, res, next) => {
     const { data, total } = await organizationService.list(filters);
     const meta = buildPaginationMeta(page, limit, total);
 
-    return ApiResponse.success(res, { data, meta }, 'Organizations retrieved');
+    return ApiResponse.success(res, { data, meta }, "Organizations retrieved");
   } catch (error) {
     return next(error);
   }
@@ -33,8 +36,15 @@ const list = async (req, res, next) => {
  */
 const create = async (req, res, next) => {
   try {
-    const organization = await organizationService.create(req.body, req.user.id);
-    return ApiResponse.created(res, organization, 'Organization created successfully');
+    const organization = await organizationService.create(
+      req.body,
+      req.user.id,
+    );
+    return ApiResponse.created(
+      res,
+      organization,
+      "Organization created successfully",
+    );
   } catch (error) {
     return next(error);
   }
@@ -46,7 +56,7 @@ const create = async (req, res, next) => {
 const getById = async (req, res, next) => {
   try {
     const organization = await organizationService.getById(req.params.id);
-    return ApiResponse.success(res, organization, 'Organization retrieved');
+    return ApiResponse.success(res, organization, "Organization retrieved");
   } catch (error) {
     return next(error);
   }
@@ -57,8 +67,15 @@ const getById = async (req, res, next) => {
  */
 const update = async (req, res, next) => {
   try {
-    const organization = await organizationService.update(req.params.id, req.body);
-    return ApiResponse.success(res, organization, 'Organization updated successfully');
+    const organization = await organizationService.update(
+      req.params.id,
+      req.body,
+    );
+    return ApiResponse.success(
+      res,
+      organization,
+      "Organization updated successfully",
+    );
   } catch (error) {
     return next(error);
   }
@@ -69,8 +86,15 @@ const update = async (req, res, next) => {
  */
 const patchStatus = async (req, res, next) => {
   try {
-    const organization = await organizationService.updateStatus(req.params.id, req.body.is_active);
-    return ApiResponse.success(res, organization, `Organization ${req.body.is_active ? 'activated' : 'deactivated'} successfully`);
+    const organization = await organizationService.updateStatus(
+      req.params.id,
+      req.body.is_active,
+    );
+    return ApiResponse.success(
+      res,
+      organization,
+      `Organization ${req.body.is_active ? "activated" : "deactivated"} successfully`,
+    );
   } catch (error) {
     return next(error);
   }
@@ -82,10 +106,18 @@ const patchStatus = async (req, res, next) => {
 const getUsers = async (req, res, next) => {
   try {
     const { page, limit, offset } = parsePagination(req.query);
-    const { data, total } = await organizationService.getUsers(req.params.id, { page, limit, offset });
+    const { data, total } = await organizationService.getUsers(req.params.id, {
+      page,
+      limit,
+      offset,
+    });
     const meta = buildPaginationMeta(page, limit, total);
 
-    return ApiResponse.success(res, { data, meta }, 'Organization users retrieved');
+    return ApiResponse.success(
+      res,
+      { data, meta },
+      "Organization users retrieved",
+    );
   } catch (error) {
     return next(error);
   }
@@ -97,10 +129,17 @@ const getUsers = async (req, res, next) => {
 const getProjects = async (req, res, next) => {
   try {
     const { page, limit, offset } = parsePagination(req.query);
-    const { data, total } = await organizationService.getProjects(req.params.id, { page, limit, offset });
+    const { data, total } = await organizationService.getProjects(
+      req.params.id,
+      { page, limit, offset },
+    );
     const meta = buildPaginationMeta(page, limit, total);
 
-    return ApiResponse.success(res, { data, meta }, 'Organization projects retrieved');
+    return ApiResponse.success(
+      res,
+      { data, meta },
+      "Organization projects retrieved",
+    );
   } catch (error) {
     return next(error);
   }
@@ -112,7 +151,19 @@ const getProjects = async (req, res, next) => {
 const getStats = async (req, res, next) => {
   try {
     const stats = await organizationService.getStats(req.params.id);
-    return ApiResponse.success(res, stats, 'Organization stats retrieved');
+    return ApiResponse.success(res, stats, "Organization stats retrieved");
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * DELETE /api/v1/organizations/:id
+ */
+const remove = async (req, res, next) => {
+  try {
+    await organizationService.remove(req.params.id);
+    return ApiResponse.success(res, null, "Organization deleted successfully");
   } catch (error) {
     return next(error);
   }
@@ -127,4 +178,5 @@ module.exports = {
   getUsers,
   getProjects,
   getStats,
+  remove,
 };

@@ -16,6 +16,7 @@ export const organizationsAPI = {
   getById: (id) => api.get(`/organizations/${id}`),
   create: (data) => api.post('/organizations', data),
   update: (id, data) => api.put(`/organizations/${id}`, data),
+  delete: (id) => api.delete(`/organizations/${id}`),
   patchStatus: (id, data) => api.patch(`/organizations/${id}/status`, data),
   getUsers: (id, params) => api.get(`/organizations/${id}/users`, { params }),
   getProjects: (id, params) => api.get(`/organizations/${id}/projects`, { params }),

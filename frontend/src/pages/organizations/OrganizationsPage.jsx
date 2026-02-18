@@ -1,6 +1,117 @@
+
+function OrganizationActions({ organization, onRefresh }) {
+  const [open, setOpen] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ ...organization });
+  const [formLoading, setFormLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const handleEdit = async (e) => {
+    e.preventDefault();
+    setFormLoading(true);
+    setError(null);
+    try {
+      await organizationsAPI.update(organization.id, form);
+      toast.success("Organisation modifiée avec succès");
+      setShowEdit(false);
+      if (typeof onRefresh === 'function') onRefresh();
+    } catch (err) {
+      setError(err.response?.data?.error?.message || "Erreur lors de la modification");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+  const handleDelete = async () => {
+    setLoading(true); 
+    setError(null);
+    try {
+      await organizationsAPI.delete(organization.id);
+      toast.success("Organisation supprimée");
+      setShowDelete(false);
+      if (typeof onRefresh === 'function') onRefresh();
+    } catch (err) {
+      setError(err.response?.data?.error?.message || "Erreur lors de la suppression");
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <div className="relative">
+      <button
+        className="p-1 rounded-lg text-ink-400 hover:bg-surface-200"
+        onClick={e => { e.stopPropagation(); setOpen(!open); }}
+      >
+        <MoreVertical className="w-4 h-4" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-8 z-20 bg-white rounded-xl shadow-dropdown border border-surface-200 py-1 w-44 animate-fade-in">
+            <button
+              onClick={e => { e.stopPropagation(); setShowEdit(true); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-body-sm text-ink-700 hover:bg-surface-100 transition-default"
+            >
+              <Edit className="w-4 h-4" /> Modifier
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); setShowDelete(true); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-body-sm text-danger-600 hover:bg-danger-50 transition-default"
+            >
+              <Trash2 className="w-4 h-4" /> Supprimer
+            </button>
+          </div>
+        </>
+      )}
+      {showEdit && (
+        <Modal open={showEdit} onClose={() => setShowEdit(false)} title="Modifier l'organisation" size="md"
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setShowEdit(false)}>Annuler</Button>
+              <Button loading={formLoading} onClick={handleEdit}>Enregistrer</Button>
+            </>
+          }
+        >
+          <form className="space-y-4" onSubmit={handleEdit}>
+            <Input label="Nom" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+            <Input label="Nom court" required value={form.short_name} onChange={e => setForm({ ...form, short_name: e.target.value })} />
+            <Select label="Type" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
+              options={[
+                { value: 'ministry', label: 'Ministère' },
+                { value: 'agency', label: 'Agence' },
+                { value: 'institution', label: 'Institution' },
+                { value: 'enterprise', label: 'Entreprise' },
+              ]}
+            />
+            <Input label="Email de contact" type="email" value={form.contact_email} onChange={e => setForm({ ...form, contact_email: e.target.value })} />
+            <Input label="Téléphone" value={form.contact_phone} onChange={e => setForm({ ...form, contact_phone: e.target.value })} />
+            <Input label="Adresse" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
+            {error && <div className="text-danger-600 text-sm mt-2">{error}</div>}
+          </form>
+        </Modal>
+      )}
+      {showDelete && (
+        <Modal open={showDelete} onClose={() => setShowDelete(false)} title="Supprimer l'organisation" size="sm"
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setShowDelete(false)}>Annuler</Button>
+              <Button loading={loading} variant="danger" onClick={handleDelete}>Supprimer</Button>
+            </>
+          }
+        >
+          <div className="p-4 text-center">
+            <p>Êtes-vous sûr de vouloir supprimer cette organisation ? Cette action est irréversible.</p>
+            {error && <div className="text-danger-600 text-sm mt-2">{error}</div>}
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Building2, Users, FolderKanban, MoreVertical } from 'lucide-react';
+import { Plus, Building2, Users, FolderKanban, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Card, Button, Badge, SearchInput, Pagination, EmptyState, Skeleton, Modal, Input, Select } from '../../components/ui';
 import { organizationsAPI } from '../../api/services';
 import { usePagination, useDebounce } from '../../hooks';
@@ -121,9 +232,7 @@ export default function OrganizationsPage() {
                     </td>
                     <td className="px-5 py-3 text-body-sm text-ink-400">{formatDate(org.created_at)}</td>
                     <td className="px-5 py-3">
-                      <button className="p-1 rounded-lg text-ink-400 hover:bg-surface-200 transition-default">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+                      <OrganizationActions organization={org} onRefresh={loadOrgs} />
                     </td>
                   </tr>
                 ))}
