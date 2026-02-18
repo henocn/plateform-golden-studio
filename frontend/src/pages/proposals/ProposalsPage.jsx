@@ -23,6 +23,7 @@ import {
 } from "../../utils/helpers";
 import { usePermissions } from "../../hooks";
 import toast from "react-hot-toast";
+import { ca } from "date-fns/locale";
 
 export default function ProposalsPage() {
   const { isInternal, isClient, canCreateProposal, canValidateProposal } =
@@ -366,10 +367,11 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh, canValidate }) {
             </span>
           </div>
         </div>
+        {console.log(canValidate)}
 
         {/* Validate action for client validators */}
         {canValidate &&
-          ["submitted", "pending_validation"].includes(p.status) && (
+          ["submitted", "pending_client_validation"].includes(p.status) && (
             <div className="border border-primary-200 bg-primary-50/50 rounded-xl p-4 space-y-3">
               <h4 className="text-label font-semibold text-ink-700">
                 Valider cette proposition

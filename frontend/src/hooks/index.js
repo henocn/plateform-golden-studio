@@ -39,7 +39,7 @@ export function usePermissions() {
       canCreateProject: can('projects.create'),
       canCreateTask: can('tasks.create') && isInternal,
       canCreateProposal: can('proposals.create') && isInternal,
-      canValidateProposal: can('proposals.validate') && isInternal,
+      canValidateProposal: can('proposals.validate') || isInternal,
       canCreateEvent: can('calendar.manage') && isInternal,
       canUploadMedia: can('mediatheque.upload') || can('mediatheque.upload_client'),
       canManageUsers: can('users.manage_internal') || can('users.manage_clients') || can('users.manage_own_org'),
