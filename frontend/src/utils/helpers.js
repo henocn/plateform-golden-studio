@@ -59,6 +59,16 @@ export const PRIORITY = {
   normal: { label: "Normale", color: "info" },
   high: { label: "Haute", color: "warning" },
   urgent: { label: "Urgente", color: "danger" },
+}; 
+
+export const MEDIA_TYPES = {
+  logo: { label: "Logo", color: "info" },
+  graphic_charter: { label: "Charte graphique", color: "primary" },
+  video: { label: "Vidéo", color: "success" },
+  photo: { label: "Photo", color: "warning" },
+  template: { label: "Template", color: "neutral" },
+  document: { label: "Document", color: "info" },
+  other: { label: "Autre", color: "neutral" },
 };
 
 export const ROLE_LABELS = {
