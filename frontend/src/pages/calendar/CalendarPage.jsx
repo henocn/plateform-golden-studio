@@ -306,7 +306,7 @@ function EventDetailModal({ event: ev, onClose }) {
           <div>
             <span className="text-ink-400">Type:</span>{" "}
             <span className="text-ink-700 ml-1 capitalize">
-              {CALENDAR_EVENT_TYPES[ev.event_type]?.label || ev.type}
+              {CALENDAR_EVENT_TYPES[ev.type]?.label || ev.type}
             </span>
           </div>
           <div>
@@ -335,7 +335,7 @@ function CreateEventModal({ projects, onClose, onCreated }) {
   const [form, setForm] = useState({
     title: "",
     description: "",
-    type: "meeting",
+    type: "",
     start_date: "",
     end_date: "",
     project_id: null,
@@ -378,8 +378,8 @@ function CreateEventModal({ projects, onClose, onCreated }) {
         />
         <Select
           label="Type"
-          value={form.event_type}
-          onChange={(e) => set("event_type", e.target.value)}
+          value={form.type}
+          onChange={(e) => set("type", e.target.value)}
           options={Object.entries(CALENDAR_EVENT_TYPES).map(([k, v]) => ({
             value: k,
             label: v.label,
