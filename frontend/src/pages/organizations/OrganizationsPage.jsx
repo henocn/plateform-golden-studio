@@ -232,7 +232,7 @@ export default function OrganizationsPage() {
                         {org.is_active ? 'Actif' : 'Inactif'}
                       </Badge>
                     </td>
-                    <td className="px-5 py-3 text-body-sm text-ink-400">{formatDate(org.created_at)}</td>
+                    <td className="px-5 py-3 text-body-sm text-ink-400">{formatDate(org.createdAt)}</td>
                     <td className="px-5 py-3">
                       <OrganizationActions organization={org} onRefresh={loadOrgs} />
                     </td>
