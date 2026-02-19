@@ -77,7 +77,7 @@ const eventTypeColors = {
 };
 
 export default function CalendarPage() {
-    const handleSelectEvent = useCallback((event) => setSelectedEvent(event), []);
+  const handleSelectEvent = useCallback((event) => setSelectedEvent(event), []);
   const { canCreateEvent } = usePermissions();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,13 +102,34 @@ export default function CalendarPage() {
       const { data } = await calendarAPI.list(params);
       const raw = extractList(data.data).items;
       setEvents(
-        raw.map((e) => ({
-          ...e,
-          title: e.title,
-          start: new Date(e.start_date || e.event_date),
-          end: new Date(e.end_date || e.start_date || e.event_date),
-          allDay: !e.end_date,
-        })),
+        raw.map((e) => {
+          let start = e.start_date
+            ? new Date(e.start_date)
+            : e.event_date
+              ? new Date(e.event_date)
+              : null;
+          let end = e.end_date
+            ? new Date(e.end_date)
+            : e.start_date
+              ? new Date(e.start_date)
+              : e.event_date
+                ? new Date(e.event_date)
+                : null;
+          if (start && end && start.toDateString() !== end.toDateString()) {
+            end = new Date(
+              end.getFullYear(),
+              end.getMonth(),
+              end.getDate() + 1,
+            );
+          }
+          return {
+            ...e,
+            title: e.title,
+            start,
+            end,
+            allDay: !e.end_date,
+          };
+        }),
       );
     } catch {
       toast.error("Erreur lors du chargement du calendrier");
@@ -141,14 +162,16 @@ export default function CalendarPage() {
     const colors = eventTypeColors[event.event_type] || eventTypeColors.other;
     return (
       <div
-        className={`px-2 py-0.5 rounded text-body-sm font-medium border-l-2 ${colors.bg} ${colors.text} ${colors.border} truncate`}
+        className={`px-2 py-1 rounded text-base font-bold border-l-4 ${colors.bg} ${colors.text} ${colors.border} truncate shadow-sm`}
         style={{
-          maxWidth: '100%',
-          maxHeight: 32,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          display: 'block',
+          maxWidth: "100%",
+          maxHeight: 40,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          display: "block",
+          backgroundColor: "rgba(0,0,0,0.14)", // accentue le fond
+          borderLeftWidth: 6, // accentue la bordure
         }}
         title={event.title}
       >
@@ -219,7 +242,8 @@ export default function CalendarPage() {
             onChange={(e) => setTypeFilter(e.target.value)}
             className="w-40"
             options={Object.entries(CALENDAR_EVENT_TYPES).map(([k, v]) => ({
-              value: k, label: v.label
+              value: k,
+              label: v.label,
             }))}
           />
           {/* Boutons semaine/jour supprimés, vue fixée à mois */}
@@ -301,6 +325,12 @@ function EventDetailModal({ event: ev, onClose }) {
           />
           <h3 className="text-display-sm">{ev.title}</h3>
         </div>
+        <div>
+          <span className="text-ink-400">Auteur:</span>{" "}
+          <span className="text-ink-700 ml-1">
+            {ev.creator.first_name} {ev.creator.last_name}
+          </span>
+        </div>
         {ev.description && (
           <p className="text-body-md text-ink-500">{ev.description}</p>
         )}
@@ -308,12 +338,16 @@ function EventDetailModal({ event: ev, onClose }) {
           <div>
             <span className="text-ink-400">Type:</span>{" "}
             <span className="text-ink-700 ml-1 capitalize">
-              {CALENDAR_EVENT_TYPES[ev.event_type]?.label || ev.event_type}
+              {CALENDAR_EVENT_TYPES[ev.event_type]?.label || ev.type}
             </span>
           </div>
           <div>
             <span className="text-ink-400">Date:</span>{" "}
-            <span className="text-ink-700 ml-1">{formatDate(ev.start)}</span>
+            <span className="text-ink-700 ml-1">
+              {formatDate(ev.start_date)}
+            </span>{" "}
+            au
+            <span className="text-ink-700 mx-1">{formatDate(ev.end_date)}</span>
           </div>
           {ev.Project && (
             <div>
@@ -328,7 +362,8 @@ function EventDetailModal({ event: ev, onClose }) {
 }
 
 function CreateEventModal({ projects, onClose, onCreated }) {
-  const organizationId = projects.length > 0 ? projects[0].organization_id : null;
+  const organizationId =
+    projects.length > 0 ? projects[0].organization_id : null;
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -373,23 +408,30 @@ function CreateEventModal({ projects, onClose, onCreated }) {
           onChange={(e) => set("description", e.target.value)}
           rows={2}
         />
+        <Select
+          label="Type"
+          value={form.event_type}
+          onChange={(e) => set("event_type", e.target.value)}
+          options={Object.entries(CALENDAR_EVENT_TYPES).map(([k, v]) => ({
+            value: k,
+            label: v.label,
+          }))}
+        />
         <div className="grid grid-cols-2 gap-4">
-          <Select
-            label="Type"
-            value={form.event_type}
-            onChange={(e) => set("event_type", e.target.value)}
-            options={Object.entries(CALENDAR_EVENT_TYPES).map(([k, v]) => (
-              { value: k, label: v.label }
-            ))}
+          <Input
+            label="Date de début *"
+            type="date"
+            value={form.start_date}
+            onChange={(e) => set("start_date", e.target.value)}
           />
           <Input
-            label="Date *"
+            label="Date de fin (optionnelle)"
             type="date"
-            value={form.event_date}
-            onChange={(e) => set("event_date", e.target.value)}
+            value={form.end_date}
+            onChange={(e) => set("end_date", e.target.value)}
           />
         </div>
-         <Autocomplete
+        <Autocomplete
           label={null}
           value={form.project_id}
           onChange={(v) => set("project_id", v)}
