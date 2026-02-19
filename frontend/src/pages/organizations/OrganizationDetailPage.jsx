@@ -46,7 +46,8 @@ export default function OrganizationDetailPage() {
       toast.success(org.is_active ? 'Organisation désactivée' : 'Organisation activée');
       loadOrganization();
     } catch (err) {
-      toast.error('Erreur');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     }
   };
 

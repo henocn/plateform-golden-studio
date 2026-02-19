@@ -27,55 +27,55 @@ class ApiError extends Error {
 
   // ─── Factory methods ───────────────────────────────────────
 
-  static badRequest(message = 'Bad request', details = []) {
+  static badRequest(message = 'Mauvaise requête', details = []) {
     return new ApiError(400, 'BAD_REQUEST', message, details);
   }
 
-  static unauthorized(message = 'Unauthorized') {
+  static unauthorized(message = 'Non autorisé') {
     return new ApiError(401, 'UNAUTHORIZED', message);
   }
 
-  static invalidCredentials(message = 'Invalid email or password') {
+  static invalidCredentials(message = 'Email ou mot de passe invalide') {
     return new ApiError(401, 'INVALID_CREDENTIALS', message);
   }
 
-  static tokenExpired(message = 'Token expired') {
+  static tokenExpired(message = 'Session expirée, veuillez vous reconnecter') {
     return new ApiError(401, 'TOKEN_EXPIRED', message);
   }
 
-  static forbidden(message = 'Forbidden') {
+  static forbidden(message = 'Accès interdit à cette ressource') {
     return new ApiError(403, 'FORBIDDEN', message);
   }
 
-  static insufficientRole(message = 'Insufficient role for this action') {
+  static insufficientRole(message = 'Rôle insuffisant pour cette action') {
     return new ApiError(403, 'INSUFFICIENT_ROLE', message);
   }
 
-  static unauthorizedOrgAccess(message = 'You do not have access to this organization') {
+  static unauthorizedOrgAccess(message = 'Vous n\'avez pas accès à cette organisation') {
     return new ApiError(403, 'UNAUTHORIZED_ORG_ACCESS', message);
   }
 
-  static notFound(message = 'Resource not found') {
+  static notFound(message = 'Ressource non trouvée') {
     return new ApiError(404, 'RESOURCE_NOT_FOUND', message);
   }
 
-  static conflict(message = 'Conflict') {
+  static conflict(message = 'Conflit') {
     return new ApiError(409, 'CONFLICT', message);
   }
 
-  static validationError(message = 'Validation error', details = []) {
+  static validationError(message = 'Erreur de validation', details = []) {
     return new ApiError(422, 'VALIDATION_ERROR', message, details);
   }
 
-  static proposalNotSubmittable(message = 'Proposal is not in a submittable state') {
+  static proposalNotSubmittable(message = 'La proposition n\'est pas dans un état soumis') {
     return new ApiError(422, 'PROPOSAL_NOT_SUBMITTABLE', message);
   }
 
-  static validationAlreadyExists(message = 'Validation already submitted for this proposal') {
+  static validationAlreadyExists(message = 'Une validation a déjà été soumise pour cette proposition') {
     return new ApiError(409, 'VALIDATION_ALREADY_EXISTS', message);
   }
 
-  static internal(message = 'Internal server error') {
+  static internal(message = 'Erreur interne du serveur') {
     return new ApiError(500, 'INTERNAL_ERROR', message);
   }
 

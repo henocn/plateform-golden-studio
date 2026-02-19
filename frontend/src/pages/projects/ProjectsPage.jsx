@@ -4,7 +4,7 @@ import { Plus, FolderKanban, Filter, MoreVertical, Edit, Trash2 } from 'lucide-r
 import { Card, Button, Badge, SearchInput, Select, Pagination, EmptyState, Skeleton, Modal, Input, Textarea } from '../../components/ui';
 import { projectsAPI, organizationsAPI, usersAPI } from '../../api/services';
 import { usePagination, useDebounce, usePermissions } from '../../hooks';
-import { formatDate, PROJECT_STATUS, PRIORITY, extractList } from '../../utils/helpers';
+import { formatDate, PROJECT_STATUS, PRIORITY, extractList, formatErrorMessage } from '../../utils/helpers';
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
@@ -154,7 +154,11 @@ function ProjectActions({ project, onRefresh, canDelete }) {
       toast.success('Projet supprimé');
       onRefresh();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur lors de la suppression');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
+      if (details.length === 0) {
+        toast.error("Erreur");
+      }
     }
   };
 
@@ -270,7 +274,8 @@ function CreateProjectModal({ open, onClose, onCreated, project }) {
       }
       onCreated();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur lors de la sauvegarde');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setLoading(false);
     }

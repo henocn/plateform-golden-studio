@@ -20,6 +20,7 @@ import {
   formatRelative,
   PROPOSAL_STATUS,
   extractList,
+  formatErrorMessage,
 } from "../../utils/helpers";
 import { usePermissions } from "../../hooks";
 import toast from "react-hot-toast";
@@ -297,9 +298,8 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh, canValidate }) {
       onRefresh();
       onClose();
     } catch (err) {
-      toast.error(
-        err.response?.data?.error?.message || "Erreur lors de la validation",
-      );
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setValidating(false);
     }
@@ -524,7 +524,8 @@ function CreateProposalModal({ projects, onClose, onCreated }) {
       toast.success("Proposition créée");
       onCreated();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || "Erreur");
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setSubmitting(false);
     }

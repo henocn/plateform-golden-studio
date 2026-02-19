@@ -1,43 +1,64 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay, addMonths, subMonths } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Calendar as BigCalendar, dateFnsLocalizer } from "react-big-calendar";
 import {
-  Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Filter,
-} from 'lucide-react';
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  addMonths,
+  subMonths,
+} from "date-fns";
+import { fr } from "date-fns/locale";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import {
-  Card, Button, Badge, Modal, Input, Select, Textarea, EmptyState, Skeleton,
-} from '../../components/ui';
-import { calendarAPI, projectsAPI } from '../../api/services';
-import { formatDate, CALENDAR_EVENT_TYPES, extractList } from '../../utils/helpers';
-import { usePermissions } from '../../hooks';
-import toast from 'react-hot-toast';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+  Card,
+  Button,
+  Modal,
+  Input,
+  Select,
+  Textarea,
+  Skeleton,
+  Autocomplete,
+} from "../../components/ui";
+import { calendarAPI, projectsAPI } from "../../api/services";
+import {
+  formatDate,
+  CALENDAR_EVENT_TYPES,
+  extractList,
+  formatErrorMessage,
+} from "../../utils/helpers";
+import { usePermissions } from "../../hooks";
+import toast from "react-hot-toast";
+import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const locales = { fr };
-const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
 
-const eventTypeColors = {
-  publication: { bg: 'bg-primary-100', text: 'text-primary-700', border: 'border-l-primary-500' },
-  deadline:    { bg: 'bg-danger-100',  text: 'text-danger-700',  border: 'border-l-danger-500' },
-  meeting:     { bg: 'bg-info-100',    text: 'text-info-700',    border: 'border-l-info-500' },
-  reminder:    { bg: 'bg-warning-100', text: 'text-warning-700', border: 'border-l-warning-500' },
-  other:       { bg: 'bg-surface-200', text: 'text-ink-700',     border: 'border-l-ink-400' },
-};
+
 
 export default function CalendarPage() {
+  const handleSelectEvent = useCallback((event) => setSelectedEvent(event), []);
   const { canCreateEvent } = usePermissions();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState(new Date());
-  const [view, setView] = useState('month');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [projects, setProjects] = useState([]);
 
-  useEffect(() => { loadProjects(); }, []);
-  useEffect(() => { loadEvents(); }, [date, typeFilter]);
+  useEffect(() => {
+    loadProjects();
+  }, []);
+  useEffect(() => {
+    loadEvents();
+  }, [date, typeFilter]);
 
   const loadEvents = async () => {
     setLoading(true);
@@ -46,15 +67,38 @@ export default function CalendarPage() {
       if (typeFilter) params.event_type = typeFilter;
       const { data } = await calendarAPI.list(params);
       const raw = extractList(data.data).items;
-      setEvents(raw.map((e) => ({
-        ...e,
-        title: e.title,
-        start: new Date(e.start_date || e.event_date),
-        end: new Date(e.end_date || e.start_date || e.event_date),
-        allDay: !e.end_date,
-      })));
+      setEvents(
+        raw.map((e) => {
+          let start = e.start_date
+            ? new Date(e.start_date)
+            : e.event_date
+              ? new Date(e.event_date)
+              : null;
+          let end = e.end_date
+            ? new Date(e.end_date)
+            : e.start_date
+              ? new Date(e.start_date)
+              : e.event_date
+                ? new Date(e.event_date)
+                : null;
+          if (start && end && start.toDateString() !== end.toDateString()) {
+            end = new Date(
+              end.getFullYear(),
+              end.getMonth(),
+              end.getDate() + 1,
+            );
+          }
+          return {
+            ...e,
+            title: e.title,
+            start,
+            end,
+            allDay: !e.end_date,
+          };
+        }),
+      );
     } catch {
-      toast.error('Erreur lors du chargement du calendrier');
+      toast.error("Erreur lors du chargement du calendrier");
     } finally {
       setLoading(false);
     }
@@ -68,24 +112,37 @@ export default function CalendarPage() {
   };
 
   const handleNavigate = useCallback((newDate) => setDate(newDate), []);
-  const handleViewChange = useCallback((v) => setView(v), []);
-  const handleSelectEvent = useCallback((event) => setSelectedEvent(event), []);
 
   const eventStyleGetter = useCallback((event) => {
-    const colors = eventTypeColors[event.event_type] || eventTypeColors.other;
+    const colors = CALENDAR_EVENT_TYPES[event.event_type] || CALENDAR_EVENT_TYPES.other;
     return {
       style: {
-        backgroundColor: 'transparent',
-        border: 'none',
+        backgroundColor: "transparent",
+        border: "none",
         padding: 0,
       },
     };
   }, []);
 
   const EventComponent = ({ event }) => {
-    const colors = eventTypeColors[event.event_type] || eventTypeColors.other;
+    const colors = CALENDAR_EVENT_TYPES[event.type];
     return (
-      <div className={`px-2 py-0.5 rounded text-body-sm font-medium border-l-2 ${colors.bg} ${colors.text} ${colors.border} truncate`}>
+      <div
+        className={`px-2 py-1 rounded text-base font-bold border-l-4 ${colors.bg} ${colors.text} ${colors.border} truncate shadow-sm`}
+        style={{
+          maxWidth: "100%",
+          maxHeight: 40,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          borderColor: colors.border,
+          borderWidth: 1,
+          display: "block",
+          backgroundColor: "rgba(0,0,0,0.34)",
+          borderLeftWidth: 4,
+        }}
+        title={event.title}
+      >
         {event.title}
       </div>
     );
@@ -93,13 +150,13 @@ export default function CalendarPage() {
 
   const messages = {
     today: "Aujourd'hui",
-    previous: 'Précédent',
-    next: 'Suivant',
-    month: 'Mois',
-    week: 'Semaine',
-    day: 'Jour',
-    agenda: 'Agenda',
-    noEventsInRange: 'Aucun événement dans cette période',
+    previous: "Précédent",
+    next: "Suivant",
+    month: "Mois",
+    week: "Semaine",
+    day: "Jour",
+    agenda: "Agenda",
+    noEventsInRange: "Aucun événement dans cette période",
   };
 
   return (
@@ -108,51 +165,72 @@ export default function CalendarPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-display-lg">Calendrier</h1>
-          <p className="text-body-md text-ink-400 mt-1">{events.length} événement{events.length !== 1 ? 's' : ''}</p>
+          <p className="text-body-md text-ink-400 mt-1">
+            {events.length} événement{events.length !== 1 ? "s" : ""}
+          </p>
         </div>
-        {canCreateEvent && <Button onClick={() => setShowCreate(true)} icon={Plus}>Nouvel événement</Button>}
+        {canCreateEvent && (
+          <Button onClick={() => setShowCreate(true)} icon={Plus}>
+            Nouvel événement
+          </Button>
+        )}
       </div>
 
       {/* Filters + Navigation */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button onClick={() => setDate(subMonths(date, 1))} className="p-2 hover:bg-surface-100 rounded-lg transition-default">
+          <button
+            onClick={() => setDate(subMonths(date, 1))}
+            className="p-2 hover:bg-surface-100 rounded-lg transition-default"
+          >
             <ChevronLeft className="w-5 h-5 text-ink-500" />
           </button>
           <h2 className="text-body-lg font-semibold text-ink-700 min-w-[180px] text-center capitalize">
-            {format(date, 'MMMM yyyy', { locale: fr })}
+            {format(date, "MMMM yyyy", { locale: fr })}
           </h2>
-          <button onClick={() => setDate(addMonths(date, 1))} className="p-2 hover:bg-surface-100 rounded-lg transition-default">
+          <button
+            onClick={() => setDate(addMonths(date, 1))}
+            className="p-2 hover:bg-surface-100 rounded-lg transition-default"
+          >
             <ChevronRight className="w-5 h-5 text-ink-500" />
           </button>
-          <Button variant="ghost" size="sm" onClick={() => setDate(new Date())} className="ml-2">Aujourd'hui</Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDate(new Date())}
+            className="ml-2"
+          >
+            Aujourd'hui
+          </Button>
         </div>
 
         <div className="flex items-center gap-3">
-          <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="w-40">
-            <option value="">Tous les types</option>
-            {Object.entries(CALENDAR_EVENT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </Select>
-          <div className="flex items-center bg-surface-100 rounded-lg p-0.5">
-            {['month', 'week', 'day'].map((v) => (
-              <button
-                key={v}
-                onClick={() => handleViewChange(v)}
-                className={`px-3 py-1 text-body-sm rounded-md transition-default ${view === v ? 'bg-white shadow-sm text-ink-700 font-medium' : 'text-ink-400'}`}
-              >
-                {v === 'month' ? 'Mois' : v === 'week' ? 'Semaine' : 'Jour'}
-              </button>
-            ))}
-          </div>
+          <Select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="w-40"
+            options={Object.entries(CALENDAR_EVENT_TYPES).map(([k, v]) => ({
+              value: k,
+              label: v.label,
+            }))}
+          />
+          {/* Boutons semaine/jour supprimés, vue fixée à mois */}
         </div>
       </div>
 
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-4">
-        {Object.entries(eventTypeColors).map(([type, colors]) => (
-          <div key={type} className="flex items-center gap-1.5 text-body-sm text-ink-500">
-            <div className={`w-3 h-3 rounded-sm ${colors.bg} border-l-2 ${colors.border}`} />
-            <span className="capitalize">{CALENDAR_EVENT_TYPES[type]?.label || type}</span>
+        {Object.entries(CALENDAR_EVENT_TYPES).map(([type, colors]) => (
+          <div
+            key={type}
+            className="flex items-center gap-1.5 text-body-sm text-ink-500"
+          >
+            <div
+              className={`w-3 h-3 rounded-sm ${colors.bg} border-l-2 ${colors.border}`}
+            />
+            <span className="capitalize">
+              {CALENDAR_EVENT_TYPES[type]?.label || type}
+            </span>
           </div>
         ))}
       </div>
@@ -169,9 +247,8 @@ export default function CalendarPage() {
               startAccessor="start"
               endAccessor="end"
               date={date}
-              view={view}
+              defaultView="month"
               onNavigate={handleNavigate}
-              onView={handleViewChange}
               onSelectEvent={handleSelectEvent}
               eventPropGetter={eventStyleGetter}
               components={{ event: EventComponent }}
@@ -185,26 +262,67 @@ export default function CalendarPage() {
         </Card>
       )}
 
-      {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />}
-      {showCreate && <CreateEventModal projects={projects} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); loadEvents(); }} />}
+      {selectedEvent && (
+        <EventDetailModal
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+        />
+      )}
+      {showCreate && (
+        <CreateEventModal
+          projects={projects}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => {
+            setShowCreate(false);
+            loadEvents();
+          }}
+        />
+      )}
     </div>
   );
 }
 
 function EventDetailModal({ event: ev, onClose }) {
-  const colors = eventTypeColors[ev.event_type] || eventTypeColors.other;
+  const colors = CALENDAR_EVENT_TYPES[ev.type];
   return (
     <Modal open onClose={onClose} title="Détail de l'événement" size="md">
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <div className={`w-3 h-3 rounded-sm ${colors.bg} border-l-2 ${colors.border}`} />
+          <div
+            className={`w-3 h-3 rounded-sm ${colors.bg} border-l-2 ${colors.border}`}
+          />
           <h3 className="text-display-sm">{ev.title}</h3>
         </div>
-        {ev.description && <p className="text-body-md text-ink-500">{ev.description}</p>}
+        <div>
+          <span className="text-ink-400">Auteur:</span>{" "}
+          <span className="text-ink-700 ml-1">
+            {ev.creator.first_name} {ev.creator.last_name}
+          </span>
+        </div>
+        {ev.description && (
+          <p className="text-body-md text-ink-500">{ev.description}</p>
+        )}
         <div className="grid grid-cols-2 gap-3 text-body-sm">
-          <div><span className="text-ink-400">Type:</span> <span className="text-ink-700 ml-1 capitalize">{CALENDAR_EVENT_TYPES[ev.event_type]?.label || ev.event_type}</span></div>
-          <div><span className="text-ink-400">Date:</span> <span className="text-ink-700 ml-1">{formatDate(ev.start)}</span></div>
-          {ev.Project && <div><span className="text-ink-400">Projet:</span> <span className="text-ink-700 ml-1">{ev.Project.title}</span></div>}
+          <div>
+            <span className="text-ink-400">Type:</span>{" "}
+            <span className="text-ink-700 ml-1 capitalize">
+              {CALENDAR_EVENT_TYPES[ev.type]?.label || ev.type}
+            </span>
+          </div>
+          <div>
+            <span className="text-ink-400">Date:</span>{" "}
+            <span className="text-ink-700 ml-1">
+              {formatDate(ev.start_date)}
+            </span>{" "}
+            au
+            <span className="text-ink-700 mx-1">{formatDate(ev.end_date)}</span>
+          </div>
+          {ev.Project && (
+            <div>
+              <span className="text-ink-400">Projet:</span>{" "}
+              <span className="text-ink-700 ml-1">{ev.Project.title}</span>
+            </div>
+          )}
         </div>
       </div>
     </Modal>
@@ -212,22 +330,33 @@ function EventDetailModal({ event: ev, onClose }) {
 }
 
 function CreateEventModal({ projects, onClose, onCreated }) {
-  const [form, setForm] = useState({ title: '', description: '', event_type: 'meeting', event_date: '', project_id: '' });
+  const organizationId =
+    projects.length > 0 ? projects[0].organization_id : null;
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    type: "",
+    start_date: "",
+    end_date: "",
+    project_id: null,
+    organization_id: organizationId,
+    visibility: "client_visible",
+  });
   const [submitting, setSubmitting] = useState(false);
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.event_date) return toast.error('Titre et date requis');
     setSubmitting(true);
     try {
       const payload = { ...form };
       if (!payload.project_id) delete payload.project_id;
       await calendarAPI.create(payload);
-      toast.success('Événement créé');
+      toast.success("Événement créé");
       onCreated();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setSubmitting(false);
     }
@@ -236,21 +365,58 @@ function CreateEventModal({ projects, onClose, onCreated }) {
   return (
     <Modal open onClose={onClose} title="Nouvel événement" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input label="Titre *" value={form.title} onChange={(e) => set('title', e.target.value)} />
-        <Textarea label="Description" value={form.description} onChange={(e) => set('description', e.target.value)} rows={2} />
+        <Input
+          label="Titre *"
+          value={form.title}
+          onChange={(e) => set("title", e.target.value)}
+        />
+        <Textarea
+          label="Description"
+          value={form.description}
+          onChange={(e) => set("description", e.target.value)}
+          rows={2}
+        />
+        <Select
+          label="Type"
+          value={form.type}
+          onChange={(e) => set("type", e.target.value)}
+          options={Object.entries(CALENDAR_EVENT_TYPES).map(([k, v]) => ({
+            value: k,
+            label: v.label,
+          }))}
+        />
         <div className="grid grid-cols-2 gap-4">
-          <Select label="Type" value={form.event_type} onChange={(e) => set('event_type', e.target.value)}>
-            {Object.entries(CALENDAR_EVENT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </Select>
-          <Input label="Date *" type="date" value={form.event_date} onChange={(e) => set('event_date', e.target.value)} />
+          <Input
+            label="Date de début *"
+            type="date"
+            value={form.start_date}
+            onChange={(e) => set("start_date", e.target.value)}
+          />
+          <Input
+            label="Date de fin (optionnelle)"
+            type="date"
+            value={form.end_date}
+            onChange={(e) => set("end_date", e.target.value)}
+          />
         </div>
-        <Select label="Projet (optionnel)" value={form.project_id} onChange={(e) => set('project_id', e.target.value)}>
-          <option value="">Aucun projet</option>
-          {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-        </Select>
+        <Autocomplete
+          label={null}
+          value={form.project_id}
+          onChange={(v) => set("project_id", v)}
+          options={[
+            { value: "", label: "Tous les projets" },
+            ...projects.map((p) => ({ value: p.id, label: p.title })),
+          ]}
+          placeholder="Projet..."
+          className="w-52"
+        />
         <div className="flex justify-end gap-3 pt-2">
-          <Button variant="secondary" onClick={onClose}>Annuler</Button>
-          <Button type="submit" loading={submitting}>Créer</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button type="submit" loading={submitting}>
+            Créer
+          </Button>
         </div>
       </form>
     </Modal>

@@ -5,7 +5,7 @@ import {
 import { Card, Button, Input, Badge, Avatar } from '../../components/ui';
 import { authAPI, usersAPI } from '../../api/services';
 import { useAuthStore } from '../../store/authStore';
-import { ROLE_LABELS } from '../../utils/helpers';
+import { formatErrorMessage, ROLE_LABELS } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
 export default function ProfilePage() {
@@ -84,7 +84,8 @@ function ProfileInfoTab({ user, onUpdate }) {
       toast.success('Profil mis à jour');
       onUpdate();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setSaving(false);
     }
@@ -122,7 +123,8 @@ function PasswordTab() {
       toast.success('Mot de passe modifié');
       setForm({ current_password: '', new_password: '', confirm_password: '' });
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setSaving(false);
     }
@@ -156,7 +158,8 @@ function TwoFactorTab({ user }) {
       const { data } = await authAPI.setup2FA();
       setQrData(data.data);
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setEnabling(false);
     }
@@ -171,7 +174,8 @@ function TwoFactorTab({ user }) {
       setQrData(null);
       setToken('');
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Code invalide');
+      const details =  formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setVerifying(false);
     }
@@ -182,7 +186,8 @@ function TwoFactorTab({ user }) {
       await authAPI.disable2FA();
       toast.success('2FA désactivé');
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     }
   };
 

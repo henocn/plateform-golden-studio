@@ -9,7 +9,7 @@ import {
   Pagination, EmptyState, Skeleton, ConfirmDialog,
 } from '../../components/ui';
 import { mediaAPI } from '../../api/services';
-import { formatDate, formatFileSize, extractList } from '../../utils/helpers';
+import { formatDate, formatFileSize, extractList, formatErrorMessage } from '../../utils/helpers';
 import { usePermissions } from '../../hooks';
 import toast from 'react-hot-toast';
 
@@ -76,7 +76,8 @@ export default function MediaPage() {
       setDeleteTarget(null);
       loadMedia();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     }
   };
 
@@ -299,7 +300,8 @@ function UploadModal({ onClose, onUploaded }) {
       toast.success(`${files.length} fichier(s) uploadé(s)`);
       onUploaded();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur lors de l\'upload');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setUploading(false);
     }
