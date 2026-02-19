@@ -20,6 +20,7 @@ import {
   TASK_STATUS,
   PRIORITY,
   extractList,
+  formatErrorMessage,
 } from "../../utils/helpers";
 import { usePermissions } from "../../hooks";
 import toast from "react-hot-toast";
@@ -127,7 +128,8 @@ export default function TasksPage() {
       toast.success("Statut de la tâche mis à jour");
       loadTasks();
     } catch (err) {
-      toast.error("Erreur lors du changement de statut");
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setDraggedTask(null);
       dragOverCol.current = null;
@@ -452,7 +454,11 @@ function CreateTaskModal({ projects, onClose, onCreated }) {
       toast.success("Tâche créée");
       onCreated();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || "Erreur");
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
+      if (details.length === 0) {
+        toast.error("Erreur");
+      }
     } finally {
       setSubmitting(false);
     }

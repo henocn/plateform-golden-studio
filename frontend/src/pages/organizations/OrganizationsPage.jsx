@@ -115,7 +115,7 @@ import { Plus, Building2, Users, FolderKanban, MoreVertical, Edit, Trash2 } from
 import { Card, Button, Badge, SearchInput, Pagination, EmptyState, Skeleton, Modal, Input, Select } from '../../components/ui';
 import { organizationsAPI } from '../../api/services';
 import { usePagination, useDebounce } from '../../hooks';
-import { formatDate, extractList } from '../../utils/helpers';
+import { formatDate, extractList, formatErrorMessage } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
 export default function OrganizationsPage() {
@@ -278,7 +278,11 @@ function CreateOrganizationModal({ open, onClose, onCreated }) {
       toast.success('Organisation créée avec succès');
       onCreated();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur lors de la création');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
+      if (details.length === 0) {
+        toast.error("Erreur");
+      }
     } finally {
       setLoading(false);
     }

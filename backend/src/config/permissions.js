@@ -28,8 +28,9 @@ const PERMISSIONS = {
   'tasks.comment':              ['client_admin', 'client_validator', 'client_contributor'],
 
   // ─── Propositions ────────────────────────────────────────
-  'proposals.create':           ['super_admin', 'admin', 'contributor', 'client_admin'],
+  'proposals.create':           ['super_admin', 'admin', 'contributor'],
   'proposals.submit_to_client': ['super_admin', 'admin', 'validator'],
+  'proposals.validate':         ['super_admin', 'admin', 'client_validator'],
   'proposals.validate_client':  ['client_admin', 'client_validator'],
 
   // ─── Briefs ──────────────────────────────────────────────
@@ -41,7 +42,7 @@ const PERMISSIONS = {
   'validations.internal':       ['super_admin', 'admin', 'validator'],
 
   // ─── Calendrier ──────────────────────────────────────────
-  'calendar.manage':            ['super_admin', 'admin', 'contributor'],
+  'calendar.manage':            ['super_admin', 'admin', 'client_admin'],
   'calendar.view':              ['client_admin', 'client_validator', 'client_contributor', 'client_reader'],
 
   // ─── Médiathèque ─────────────────────────────────────────

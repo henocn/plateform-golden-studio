@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Card, Badge, Tabs, Skeleton, EmptyState } from '../../components/ui';
 import { projectsAPI, briefsAPI, tasksAPI, proposalsAPI, publicationsAPI } from '../../api/services';
-import { formatDate, formatRelative, PROJECT_STATUS, PROPOSAL_STATUS, PRIORITY, extractList } from '../../utils/helpers';
+import { formatDate, formatRelative, PROJECT_STATUS, PROPOSAL_STATUS, PRIORITY, extractList, formatErrorMessage } from '../../utils/helpers';
 import { usePermissions } from '../../hooks';
 import toast from 'react-hot-toast';
 
@@ -146,7 +146,11 @@ function StatusDropdown({ project, onUpdate }) {
       toast.success('Statut mis à jour');
       onUpdate();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Erreur');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
+      if (details.length === 0) {
+        toast.error("Erreur");
+      }
     } finally {
       setLoading(false);
     }
@@ -221,7 +225,8 @@ function TasksTab({ tasks, onRefresh }) {
       toast.success('Statut de la tâche mis à jour');
       if (typeof onRefresh === 'function') onRefresh();
     } catch (err) {
-      toast.error('Erreur lors du changement de statut');
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setDraggedTask(null);
       dragOverCol.current = null;

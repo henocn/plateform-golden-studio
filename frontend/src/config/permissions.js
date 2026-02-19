@@ -43,7 +43,7 @@ const PERMISSIONS = {
   'validations.internal':       ['super_admin', 'admin', 'validator'],
 
   // ─── Calendrier ──────────────────────────────────────────
-  'calendar.manage':            ['super_admin', 'admin', 'contributor'],
+  'calendar.manage':            ['super_admin', 'admin', 'client_admin'],
   'calendar.view':              ['client_admin', 'client_validator', 'client_contributor', 'client_reader'],
 
   // ─── Médiathèque ─────────────────────────────────────────
