@@ -119,7 +119,7 @@ app.use((_req, res) => {
     success: false,
     error: {
       code: 'ROUTE_NOT_FOUND',
-      message: 'The requested endpoint does not exist.',
+      message: 'La ressource demandée n\'existe pas.',
       details: [],
     },
   });
