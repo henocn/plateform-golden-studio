@@ -17,7 +17,8 @@ function OrganizationActions({ organization, onRefresh }) {
       setShowEdit(false);
       if (typeof onRefresh === 'function') onRefresh();
     } catch (err) {
-      setError(err.response?.data?.error?.message || "Erreur lors de la modification");
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setFormLoading(false);
     }
@@ -31,7 +32,8 @@ function OrganizationActions({ organization, onRefresh }) {
       setShowDelete(false);
       if (typeof onRefresh === 'function') onRefresh();
     } catch (err) {
-      setError(err.response?.data?.error?.message || "Erreur lors de la suppression");
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setLoading(false);
     }
@@ -280,9 +282,6 @@ function CreateOrganizationModal({ open, onClose, onCreated }) {
     } catch (err) {
       const details = formatErrorMessage(err);
       details.forEach((detail) => toast.error(detail.message));
-      if (details.length === 0) {
-        toast.error("Erreur");
-      }
     } finally {
       setLoading(false);
     }

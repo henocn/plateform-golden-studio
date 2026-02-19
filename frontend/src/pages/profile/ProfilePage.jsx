@@ -86,9 +86,6 @@ function ProfileInfoTab({ user, onUpdate }) {
     } catch (err) {
       const details = formatErrorMessage(err);
       details.forEach((detail) => toast.error(detail.message));
-      if (details.length === 0) {
-        toast.error("Erreur");
-      }
     } finally {
       setSaving(false);
     }
@@ -128,9 +125,6 @@ function PasswordTab() {
     } catch (err) {
       const details = formatErrorMessage(err);
       details.forEach((detail) => toast.error(detail.message));
-      if (details.length === 0) {
-        toast.error("Erreur");
-      }
     } finally {
       setSaving(false);
     }
@@ -166,9 +160,6 @@ function TwoFactorTab({ user }) {
     } catch (err) {
       const details = formatErrorMessage(err);
       details.forEach((detail) => toast.error(detail.message));
-      if (details.length === 0) {
-        toast.error("Erreur");
-      }
     } finally {
       setEnabling(false);
     }
@@ -185,9 +176,6 @@ function TwoFactorTab({ user }) {
     } catch (err) {
       const details =  formatErrorMessage(err);
       details.forEach((detail) => toast.error(detail.message));
-      if (details.length === 0) {
-        toast.error("Erreur");
-      }
     } finally {
       setVerifying(false);
     }
@@ -200,9 +188,6 @@ function TwoFactorTab({ user }) {
     } catch (err) {
       const details = formatErrorMessage(err);
       details.forEach((detail) => toast.error(detail.message));
-      if (details.length === 0) {
-        toast.error("Erreur");
-      }
     }
   };
 

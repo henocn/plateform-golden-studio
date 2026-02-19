@@ -78,9 +78,6 @@ export default function MediaPage() {
     } catch (err) {
       const details = formatErrorMessage(err);
       details.forEach((detail) => toast.error(detail.message));
-      if (details.length === 0) {
-        toast.error("Erreur");
-      }
     }
   };
 
@@ -305,9 +302,6 @@ function UploadModal({ onClose, onUploaded }) {
     } catch (err) {
       const details = formatErrorMessage(err);
       details.forEach((detail) => toast.error(detail.message));
-      if (details.length === 0) {
-        toast.error("Erreur");
-      }
     } finally {
       setUploading(false);
     }

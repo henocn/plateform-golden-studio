@@ -456,9 +456,6 @@ function CreateTaskModal({ projects, onClose, onCreated }) {
     } catch (err) {
       const details = formatErrorMessage(err);
       details.forEach((detail) => toast.error(detail.message));
-      if (details.length === 0) {
-        toast.error("Erreur");
-      }
     } finally {
       setSubmitting(false);
     }

@@ -33,7 +33,6 @@ import {
   formatDate,
   CALENDAR_EVENT_TYPES,
   extractList,
-  formatErrorMessage,
 } from "../../utils/helpers";
 import { usePermissions } from "../../hooks";
 import toast from "react-hot-toast";
@@ -352,9 +351,6 @@ function CreateEventModal({ projects, onClose, onCreated }) {
     } catch (err) {
       const details = formatErrorMessage(err);
       details.forEach((detail) => toast.error(detail.message));
-      if (details.length === 0) {
-        toast.error("Erreur");
-      }
     } finally {
       setSubmitting(false);
     }

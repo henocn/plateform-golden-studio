@@ -15,6 +15,7 @@ import {
 import {
   formatDate,
   formatDateTime,
+  formatErrorMessage,
   PRIORITY,
   TASK_STATUS,
 } from "../../utils/helpers";
@@ -93,7 +94,8 @@ export default function TaskDetailPage() {
       setComments(data.data);
       toast.success("Commentaire ajouté");
     } catch (err) {
-      toast.error("Erreur lors de l'ajout du commentaire");
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setSubmitting(false);
     }

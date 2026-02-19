@@ -298,9 +298,8 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh, canValidate }) {
       onRefresh();
       onClose();
     } catch (err) {
-      toast.error(
-        err.response?.data?.error?.message || "Erreur lors de la validation",
-      );
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setValidating(false);
     }
@@ -527,9 +526,6 @@ function CreateProposalModal({ projects, onClose, onCreated }) {
     } catch (err) {
       const details = formatErrorMessage(err);
       details.forEach((detail) => toast.error(detail.message));
-      if (details.length === 0) {
-        toast.error("Erreur");
-      }
     } finally {
       setSubmitting(false);
     }

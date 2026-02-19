@@ -3,7 +3,7 @@ import { Plus, Users as UsersIcon, UserPlus, MoreVertical } from 'lucide-react';
 import { Card, Button, Badge, SearchInput, Pagination, EmptyState, Skeleton, Modal, Input, Select, Tabs, Avatar } from '../../components/ui';
 import { usersAPI, organizationsAPI } from '../../api/services';
 import { usePagination, useDebounce, usePermissions } from '../../hooks';
-import { formatDate, ROLE_LABELS, extractList } from '../../utils/helpers';
+import { formatDate, ROLE_LABELS, extractList, formatErrorMessage } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
 export default function UsersPage() {
@@ -229,14 +229,8 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
       toast.success('Utilisateur créé avec succès');
       onCreated();
     } catch (err) {
-      const errData = err.response?.data?.error;
-      let msg = 'Erreur lors de la création';
-      if (errData?.details?.length) {
-        msg = errData.details.map((d) => typeof d === 'string' ? d : d.message || JSON.stringify(d)).join(' | ');
-      } else if (typeof errData?.message === 'string') {
-        msg = errData.message;
-      }
-      toast.error(msg);
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
     } finally {
       setLoading(false);
     }

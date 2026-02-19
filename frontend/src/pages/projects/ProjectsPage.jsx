@@ -276,9 +276,6 @@ function CreateProjectModal({ open, onClose, onCreated, project }) {
     } catch (err) {
       const details = formatErrorMessage(err);
       details.forEach((detail) => toast.error(detail.message));
-      if (details.length === 0) {
-        toast.error("Erreur");
-      }
     } finally {
       setLoading(false);
     }
