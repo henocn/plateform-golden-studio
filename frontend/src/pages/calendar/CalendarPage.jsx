@@ -9,22 +9,14 @@ import {
   subMonths,
 } from "date-fns";
 import { fr } from "date-fns/locale";
-import {
-  Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Filter,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import {
   Card,
   Button,
-  Badge,
   Modal,
   Input,
   Select,
   Textarea,
-  EmptyState,
   Skeleton,
   Autocomplete,
 } from "../../components/ui";
@@ -48,33 +40,7 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-const eventTypeColors = {
-  publication: {
-    bg: "bg-primary-100",
-    text: "text-primary-700",
-    border: "border-l-primary-500",
-  },
-  deadline: {
-    bg: "bg-danger-100",
-    text: "text-danger-700",
-    border: "border-l-danger-500",
-  },
-  meeting: {
-    bg: "bg-info-100",
-    text: "text-info-700",
-    border: "border-l-info-500",
-  },
-  reminder: {
-    bg: "bg-warning-100",
-    text: "text-warning-700",
-    border: "border-l-warning-500",
-  },
-  other: {
-    bg: "bg-surface-200",
-    text: "text-ink-700",
-    border: "border-l-ink-400",
-  },
-};
+
 
 export default function CalendarPage() {
   const handleSelectEvent = useCallback((event) => setSelectedEvent(event), []);
@@ -148,7 +114,7 @@ export default function CalendarPage() {
   const handleNavigate = useCallback((newDate) => setDate(newDate), []);
 
   const eventStyleGetter = useCallback((event) => {
-    const colors = eventTypeColors[event.event_type] || eventTypeColors.other;
+    const colors = CALENDAR_EVENT_TYPES[event.event_type] || CALENDAR_EVENT_TYPES.other;
     return {
       style: {
         backgroundColor: "transparent",
@@ -159,7 +125,7 @@ export default function CalendarPage() {
   }, []);
 
   const EventComponent = ({ event }) => {
-    const colors = eventTypeColors[event.event_type] || eventTypeColors.other;
+    const colors = CALENDAR_EVENT_TYPES[event.type];
     return (
       <div
         className={`px-2 py-1 rounded text-base font-bold border-l-4 ${colors.bg} ${colors.text} ${colors.border} truncate shadow-sm`}
@@ -169,9 +135,11 @@ export default function CalendarPage() {
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
+          borderColor: colors.border,
+          borderWidth: 1,
           display: "block",
-          backgroundColor: "rgba(0,0,0,0.14)", // accentue le fond
-          borderLeftWidth: 6, // accentue la bordure
+          backgroundColor: "rgba(0,0,0,0.34)",
+          borderLeftWidth: 4,
         }}
         title={event.title}
       >
@@ -252,7 +220,7 @@ export default function CalendarPage() {
 
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-4">
-        {Object.entries(eventTypeColors).map(([type, colors]) => (
+        {Object.entries(CALENDAR_EVENT_TYPES).map(([type, colors]) => (
           <div
             key={type}
             className="flex items-center gap-1.5 text-body-sm text-ink-500"
@@ -315,7 +283,7 @@ export default function CalendarPage() {
 }
 
 function EventDetailModal({ event: ev, onClose }) {
-  const colors = eventTypeColors[ev.event_type] || eventTypeColors.other;
+  const colors = CALENDAR_EVENT_TYPES[ev.type];
   return (
     <Modal open onClose={onClose} title="Détail de l'événement" size="md">
       <div className="space-y-4">

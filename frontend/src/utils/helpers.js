@@ -74,11 +74,36 @@ export const ROLE_LABELS = {
 };
 
 export const CALENDAR_EVENT_TYPES = {
-  publication: { label: "Publication", color: "#10B981" },
-  event: { label: "Événement", color: "#3B82F6" },
-  shooting: { label: "Tournage", color: "#8B5CF6" },
-  deliverable: { label: "Livrable", color: "#F59E0B" },
-  meeting: { label: "Réunion", color: "#EF4444" },
+  publication: {
+    label: "Publication",
+    bg: "bg-info-600", // #2563EB ✓
+    text: "text-white",
+    border: "border-l-info-500", // #3B82F6 (plus proche dispo)
+  },
+  event_coverage: {
+    label: "Événement",
+    bg: "bg-success-600", // #059669 ✓
+    text: "text-white",
+    border: "border-l-success-700", // #047857 ✓
+  },
+  filming: {
+    label: "Tournage",
+    bg: "bg-[#A21CAF]", // Violet absent du config → arbitrary value statique ✓
+    text: "text-white",
+    border: "border-l-[#701A75]",
+  },
+  deliverable_deadline: {
+    label: "Livrable",
+    bg: "bg-warning-500", // #F59E0B ✓
+    text: "text-ink-700", // #374151 ✓
+    border: "border-l-warning-700", // #B45309 ✓
+  },
+  meeting: {
+    label: "Réunion",
+    bg: "bg-danger-600", // #DC2626 ✓
+    text: "text-white",
+    border: "border-l-danger-700", // #B91C1C (plus proche dispo)
+  },
 };
 
 // ── Helpers ──────────────────────────────────────────────
@@ -149,7 +174,6 @@ export function extractList(apiData) {
   if (Array.isArray(apiData)) return { items: apiData, total: apiData.length };
   return { items: [], total: 0 };
 }
-
 
 // Extract and display error details from API error response
 export function formatErrorMessage(error) {
