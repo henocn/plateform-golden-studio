@@ -33,6 +33,7 @@ import {
   formatDate,
   CALENDAR_EVENT_TYPES,
   extractList,
+  formatErrorMessage,
 } from "../../utils/helpers";
 import { usePermissions } from "../../hooks";
 import toast from "react-hot-toast";
@@ -327,20 +328,22 @@ function EventDetailModal({ event: ev, onClose }) {
 }
 
 function CreateEventModal({ projects, onClose, onCreated }) {
+  const organizationId = projects.length > 0 ? projects[0].organization_id : null;
   const [form, setForm] = useState({
     title: "",
     description: "",
-    event_type: "meeting",
-    event_date: "",
-    project_id: "",
+    type: "meeting",
+    start_date: "",
+    end_date: "",
+    project_id: null,
+    organization_id: organizationId,
+    visibility: "client_visible",
   });
   const [submitting, setSubmitting] = useState(false);
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.event_date)
-      return toast.error("Titre et date requis");
     setSubmitting(true);
     try {
       const payload = { ...form };
