@@ -64,8 +64,8 @@ export default function TasksPage() {
         .slice()
         .sort(
           (a, b) =>
-            new Date(b.created_at || b.updated_at || 0) -
-            new Date(a.created_at || a.updated_at || 0),
+            new Date(b.createdAt || b.updatedAt || 0) -
+            new Date(a.createdAt || a.updatedAt || 0),
         );
       setTasks(sorted);
       setTotal(total);

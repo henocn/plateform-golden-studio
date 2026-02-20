@@ -72,10 +72,7 @@ export default function ProposalsPage() {
           }
         }
       }
-      // Clients should not see draft proposals
-      if (isClient) {
-        allProposals = allProposals.filter((p) => p.status !== "draft");
-      }
+
       // Client-side status filter
       if (statusFilter) {
         allProposals = allProposals.filter((p) => p.status === statusFilter);
