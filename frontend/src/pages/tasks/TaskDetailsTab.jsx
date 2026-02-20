@@ -325,7 +325,6 @@ export default function TaskDetailsTab({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <UserCard label="Créateur" user={creator} />
           <UserCard label="Chargé de la tâche" user={assignee} />
-          { console.log(project)}
           <UserCard label="Superviseur" user={project.clientContact} />
         </div>
       </Card>
