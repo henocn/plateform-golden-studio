@@ -201,3 +201,11 @@ export function formatErrorMessage(error) {
         ];
   return details;
 }
+
+
+// interval de temps entre deux dates
+
+export function deltaTime(startDate, endDate) {
+  const delta = endDate ? Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) : 0;
+  return delta;
+}
