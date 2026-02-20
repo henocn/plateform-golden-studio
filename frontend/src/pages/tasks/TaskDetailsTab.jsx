@@ -294,22 +294,18 @@ export default function TaskDetailsTab({
           </div>
           <div>
             <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-0.5">
-              Visibilité
+              Dernière soumission
             </p>
-            <p className="text-body-sm text-ink-800">
-              {task.visibility === "internal_only"
-                ? "Interne uniquement"
-                : "Visible client"}
-            </p>
+            <a className="text-blue-500" href="#">Dernière soumission de proposition</a>
           </div>
         </div>
 
         {/* Description */}
         <div>
-          <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-1.5">
+          <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-1 mt-6">
             Description
           </p>
-          <div className="rounded-xl bg-surface-50 border border-surface-100 px-4 py-3 text-body-sm text-ink-700 whitespace-pre-line min-h-[60px]">
+          <div className="rounded-xl bg-surface-50 border border-surface-100 px-4 py-2 text-body-sm text-ink-700 whitespace-pre-line min-h-[60px]">
             {task.description || (
               <span className="italic text-ink-300">Aucune description</span>
             )}
