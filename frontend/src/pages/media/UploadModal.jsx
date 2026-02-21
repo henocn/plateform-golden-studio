@@ -26,8 +26,6 @@ function UploadModal({ onClose, onUploaded }) {
   const [form, setForm] = useState({
     name: "",
     type: "",
-    is_global: false,
-    organization_id: null,
     tags: "",
     folder_id: null,
   });
@@ -35,10 +33,6 @@ function UploadModal({ onClose, onUploaded }) {
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
   useEffect(() => {
     const load = async () => {
-      try {
-        const { data } = await organizationsAPI.list({ limit: 100 });
-        setOrganizations(extractList(data.data).items);
-      } catch {}
       try {
         // Charger tous les dossiers accessibles
         const { data } = await mediaAPI.folders({});
@@ -76,8 +70,8 @@ function UploadModal({ onClose, onUploaded }) {
     if (!file) return toast.error("Sélectionnez un fichier");
     if (!form.name.trim()) return toast.error("Le nom est requis");
     if (!form.type) return toast.error("Le type est requis");
-    if (!form.is_global && !form.organization_id)
-      return toast.error("Choisissez une organisation ou cochez Global");
+    if (!form.folder_id)
+      return toast.error("Sélectionnez un dossier pour uploader");
 
     setUploading(true);
     try {
@@ -85,11 +79,7 @@ function UploadModal({ onClose, onUploaded }) {
       fd.append("file", file);
       fd.append("name", form.name.trim());
       fd.append("type", form.type);
-      fd.append("is_global", String(form.is_global));
-      if (!form.is_global && form.organization_id)
-        fd.append("organization_id", form.organization_id);
-      if (form.folder_id)
-        fd.append("folder_id", form.folder_id);
+      fd.append("folder_id", form.folder_id);
 
       // Tags : on split sur la virgule et on envoie chaque tag séparément
       const tagList = form.tags
@@ -163,8 +153,8 @@ function UploadModal({ onClose, onUploaded }) {
           )}
         </div>
 
-        {/* Nom + Type + Dossier */}
-        <div className="grid grid-cols-3 gap-4">
+        {/* Nom + Type + Dossier obligatoire */}
+        <div className="grid grid-cols-2 gap-4">
           <Input
             label="Nom *"
             value={form.name}
@@ -183,16 +173,16 @@ function UploadModal({ onClose, onUploaded }) {
               })),
             ]}
           />
-          <Select
-            label="Dossier"
-            value={form.folder_id || ""}
-            onChange={(e) => set("folder_id", e.target.value)}
-            options={[
-              { value: "", label: "Racine" },
-              ...folders.map((f) => ({ value: f.id, label: f.name })),
-            ]}
-          />
         </div>
+        <Select
+          label="Dossier *"
+          value={form.folder_id || ""}
+          onChange={(e) => set("folder_id", e.target.value)}
+          options={[
+            { value: "", label: "Sélectionner un dossier" },
+            ...folders.map((f) => ({ value: f.id, label: f.name })),
+          ]}
+        />
 
         {/* Tags */}
         <Input

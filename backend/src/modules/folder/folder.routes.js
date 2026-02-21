@@ -12,27 +12,46 @@ const router = Router();
 
 router.use(authenticate, tenantMiddleware);
 
+// Liste des dossiers (avec filtres)
 router.get('/',
-  authorize('mediatheque.upload', 'mediatheque.view'),
+  authorize('folders.view'),
   validate(listFolderQuery, 'query'),
   folderController.list);
 
+// Dossiers racine d'une organisation
+router.get('/roots/:organizationId',
+  authorize('folders.view'),
+  folderController.getRootFolders);
+
+router.get('/roots',
+  authorize('folders.view'),
+  folderController.getRootFolders);
+
+// Explorer un dossier (sous-dossiers + fichiers)
+router.get('/:id/explore',
+  authorize('folders.view'),
+  folderController.explore);
+
+// Récupérer un dossier par ID
+router.get('/:id',
+  authorize('folders.view'),
+  folderController.getById);
+
+// Créer un dossier (racine ou sous-dossier)
 router.post('/',
-  authorize('mediatheque.upload'),
+  authorize('folders.create_root', 'folders.create_subfolder'),
   validate(createFolderSchema),
   folderController.create);
 
-router.get('/:id',
-  authorize('mediatheque.upload', 'mediatheque.view'),
-  folderController.getById);
-
+// Mettre à jour un dossier
 router.put('/:id',
-  authorize('mediatheque.upload'),
+  authorize('folders.edit'),
   validate(updateFolderSchema),
   folderController.update);
 
+// Supprimer un dossier
 router.delete('/:id',
-  authorize('projects.delete'),
+  authorize('folders.delete'),
   folderController.deleteFolder);
 
 module.exports = router;

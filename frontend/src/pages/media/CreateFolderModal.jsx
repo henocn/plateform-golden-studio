@@ -6,12 +6,31 @@ import toast from "react-hot-toast";
 function CreateFolderModal({ parentId, onClose, onCreated }) {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [organizationId, setOrganizationId] = useState("");
+  const [organizations, setOrganizations] = useState([]);
+
+  // Charger les organisations si racine
+  useEffect(() => {
+    if (!parentId) {
+      (async () => {
+        try {
+          const { data } = await import("../../api/services").then(m => m.organizationsAPI.list({ limit: 100 }));
+          setOrganizations((data && data.data && data.data.items) ? data.data.items : []);
+        } catch {}
+      })();
+    }
+  }, [parentId]);
 
   const handleCreate = async () => {
     if (!name.trim()) return toast.error("Le nom du dossier est requis");
+    if (!parentId && !organizationId) return toast.error("Sélectionnez une organisation");
     setLoading(true);
     try {
-      await mediaAPI.createFolder({ name: name.trim(), parent_id: parentId || null });
+      await mediaAPI.createFolder({
+        name: name.trim(),
+        parent_id: parentId || null,
+        organization_id: !parentId ? organizationId : undefined,
+      });
       toast.success("Dossier créé");
       onCreated();
     } catch (err) {
@@ -30,6 +49,15 @@ function CreateFolderModal({ parentId, onClose, onCreated }) {
           onChange={(e) => setName(e.target.value)}
           placeholder="Nom du dossier"
         />
+        {!parentId && (
+          <Autocomplete
+            label="Organisation *"
+            value={organizationId}
+            onChange={setOrganizationId}
+            options={organizations.map((o) => ({ value: o.id, label: o.name }))}
+            placeholder="Rechercher une organisation…"
+          />
+        )}
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" onClick={onClose}>
             Annuler

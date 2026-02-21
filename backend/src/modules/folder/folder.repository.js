@@ -1,6 +1,6 @@
 'use strict';
 
-const { Folder } = require('../../models');
+const { Folder, Media } = require('../../models');
 const { Op } = require('sequelize');
 
 class FolderRepository {
@@ -17,6 +17,10 @@ class FolderRepository {
     }
     const { rows, count } = await Folder.findAndCountAll({
       where,
+      include: [
+        { association: 'organization', attributes: ['id', 'name', 'short_name'] },
+        { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
+      ],
       order: [['created_at', 'DESC']],
       limit,
       offset,
@@ -24,8 +28,70 @@ class FolderRepository {
     return { data: rows, total: count };
   }
 
-  async findById(id) {
-    return Folder.findByPk(id);
+  /**
+   * Récupère les dossiers racine d'une organisation (parent_id = null)
+   */
+  async findRootFolders(organizationId) {
+    return Folder.findAll({
+      where: {
+        organization_id: organizationId,
+        parent_id: null,
+      },
+      include: [
+        { association: 'organization', attributes: ['id', 'name', 'short_name'] },
+        { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
+      ],
+      order: [['created_at', 'DESC']],
+    });
+  }
+
+  /**
+   * Explore un dossier : retourne les sous-dossiers et fichiers
+   */
+  async explore(folderId, tenantId = null) {
+    const where = { folder_id: folderId };
+    if (tenantId) {
+      where[Op.or] = [
+        { is_global: true },
+        { organization_id: tenantId },
+      ];
+    }
+
+    const [subfolders, media] = await Promise.all([
+      Folder.findAll({
+        where: { parent_id: folderId },
+        include: [
+          { association: 'organization', attributes: ['id', 'name', 'short_name'] },
+          { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
+        ],
+        order: [['name', 'ASC']],
+      }),
+      Media.findAll({
+        where,
+        include: [
+          { association: 'organization', attributes: ['id', 'name'] },
+          { association: 'uploader', attributes: ['id', 'first_name', 'last_name'] },
+        ],
+        order: [['name', 'ASC']],
+      }),
+    ]);
+
+    return { subfolders, media };
+  }
+
+  async findById(id, tenantId = null) {
+    const where = { id };
+    if (tenantId) {
+      where.organization_id = tenantId;
+    }
+    return Folder.findOne({
+      where,
+      include: [
+        { association: 'organization', attributes: ['id', 'name', 'short_name'] },
+        { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
+        { association: 'parent', attributes: ['id', 'name'] },
+      ],
+    });
   }
 
   async create(data) {
