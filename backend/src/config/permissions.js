@@ -30,7 +30,7 @@ const PERMISSIONS = {
   // ─── Propositions ────────────────────────────────────────
   'proposals.create':           ['super_admin', 'admin', 'contributor'],
   'proposals.submit_to_client': ['super_admin', 'admin', 'validator'],
-  'proposals.validate':         ['super_admin', 'admin', 'client_validator'],
+  'proposals.validate':         ['super_admin', 'admin', 'client_validator', 'client_admin'],
   'proposals.validate_client':  ['client_admin', 'client_validator'],
 
   // ─── Briefs ──────────────────────────────────────────────
