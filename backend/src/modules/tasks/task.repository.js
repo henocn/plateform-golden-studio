@@ -110,7 +110,7 @@ class TaskRepository {
   async findProposals(taskId, tenantId = null) {
     const where = { task_id: taskId };
     if (tenantId) where.organization_id = tenantId;
-    return Proposal.findAll({ where });
+    return Proposal.findAll({ where, include: [{ association: "author", attributes: ["id", "first_name", "last_name", "email"] }] });
   }
 
   async create(data) {
