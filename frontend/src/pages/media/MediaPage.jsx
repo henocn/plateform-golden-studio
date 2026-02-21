@@ -70,7 +70,9 @@ const typeColors = {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function MediaPage() {
-  const { canUploadMedia: canUpload } = usePermissions();
+  const { canUploadMedia: canUpload, canViewFolder, canCreateFolder } = usePermissions();
+  const [folders, setFolders] = useState([]);
+  const [currentFolder, setCurrentFolder] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [files, setFiles] = useState([]);
   const [total, setTotal] = useState(0);
@@ -84,10 +86,12 @@ export default function MediaPage() {
   const typeFilter = searchParams.get("type") || "";
   const search = searchParams.get("q") || "";
   const tag = searchParams.get("tag") || "";
+  const folderId = searchParams.get("folder_id") || null;
 
   useEffect(() => {
     loadMedia();
-  }, [page, typeFilter, search, tag]);
+    if (canViewFolder) loadFolders();
+  }, [page, typeFilter, search, tag, folderId]);
 
   const loadMedia = async () => {
     setLoading(true);
@@ -96,6 +100,7 @@ export default function MediaPage() {
       if (typeFilter) params.type = typeFilter;
       if (search) params.search = search;
       if (tag) params.tag = tag;
+      if (folderId) params.folder_id = folderId;
       const { data } = await mediaAPI.list(params);
       const { items, total: t } = extractList(data.data);
       setFiles(items);
@@ -104,6 +109,19 @@ export default function MediaPage() {
       toast.error("Erreur lors du chargement");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadFolders = async () => {
+    try {
+      // Charger les dossiers racine ou enfants du dossier courant
+      const params = {};
+      if (folderId) params.parent_id = folderId;
+      const { data } = await mediaAPI.folders(params);
+      setFolders(extractList(data.data).items);
+      setCurrentFolder(folderId);
+    } catch {
+      setFolders([]);
     }
   };
 
@@ -129,6 +147,27 @@ export default function MediaPage() {
 
   return (
     <div className="space-y-6">
+      {/* Navigation dossiers */}
+      {canViewFolder && (
+        <div className="flex items-center gap-2 mb-2">
+          <Button
+            variant="secondary"
+            disabled={!folderId}
+            onClick={() => updateParam("folder_id", null)}
+          >
+            Racine
+          </Button>
+          {folders.map((folder) => (
+            <Button
+              key={folder.id}
+              variant={folder.id === folderId ? "primary" : "secondary"}
+              onClick={() => updateParam("folder_id", folder.id)}
+            >
+              {folder.name}
+            </Button>
+          ))}
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

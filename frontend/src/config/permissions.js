@@ -48,6 +48,10 @@ const PERMISSIONS = {
 
   // ─── Médiathèque ─────────────────────────────────────────
   'mediatheque.upload':         ['super_admin', 'admin', 'contributor'],
+  'folders.create':             ['super_admin', 'admin', 'contributor'],
+  'folders.edit':               ['super_admin', 'admin', 'contributor'],
+  'folders.delete':             ['super_admin', 'admin'],
+  'folders.view':               ['super_admin', 'admin', 'contributor', 'client_admin', 'client_validator', 'client_contributor', 'client_reader'],
   'mediatheque.view':           ['client_admin', 'client_validator', 'client_contributor', 'client_reader'],
   'mediatheque.upload_client':  ['client_admin', 'client_contributor'],
 

@@ -22,12 +22,14 @@ function UploadModal({ onClose, onUploaded }) {
   const [uploading, setUploading] = useState(false);
   const [organizations, setOrganizations] = useState([]);
 
+  const [folders, setFolders] = useState([]);
   const [form, setForm] = useState({
     name: "",
     type: "",
     is_global: false,
     organization_id: null,
     tags: "",
+    folder_id: null,
   });
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
@@ -36,6 +38,11 @@ function UploadModal({ onClose, onUploaded }) {
       try {
         const { data } = await organizationsAPI.list({ limit: 100 });
         setOrganizations(extractList(data.data).items);
+      } catch {}
+      try {
+        // Charger tous les dossiers accessibles
+        const { data } = await mediaAPI.folders({});
+        setFolders(extractList(data.data).items);
       } catch {}
     };
     load();
@@ -81,6 +88,8 @@ function UploadModal({ onClose, onUploaded }) {
       fd.append("is_global", String(form.is_global));
       if (!form.is_global && form.organization_id)
         fd.append("organization_id", form.organization_id);
+      if (form.folder_id)
+        fd.append("folder_id", form.folder_id);
 
       // Tags : on split sur la virgule et on envoie chaque tag séparément
       const tagList = form.tags
@@ -154,8 +163,8 @@ function UploadModal({ onClose, onUploaded }) {
           )}
         </div>
 
-        {/* Nom + Type */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Nom + Type + Dossier */}
+        <div className="grid grid-cols-3 gap-4">
           <Input
             label="Nom *"
             value={form.name}
@@ -172,6 +181,15 @@ function UploadModal({ onClose, onUploaded }) {
                 value: k,
                 label: v.label,
               })),
+            ]}
+          />
+          <Select
+            label="Dossier"
+            value={form.folder_id || ""}
+            onChange={(e) => set("folder_id", e.target.value)}
+            options={[
+              { value: "", label: "Racine" },
+              ...folders.map((f) => ({ value: f.id, label: f.name })),
             ]}
           />
         </div>
