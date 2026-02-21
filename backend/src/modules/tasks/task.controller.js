@@ -18,7 +18,7 @@ const list = async (req, res, next) => {
       page, limit, offset,
     }, req.user);
     const meta = buildPaginationMeta(page, limit, total);
-    return ApiResponse.success(res, { data, meta }, 'Tasks retrieved');
+    return ApiResponse.success(res, { data, meta }, 'Tâches récupérées');
   } catch (error) {
     return next(error);
   }
@@ -27,7 +27,7 @@ const list = async (req, res, next) => {
 const create = async (req, res, next) => {
   try {
     const task = await taskService.create(req.body, req.user);
-    return ApiResponse.created(res, task, 'Task created successfully');
+    return ApiResponse.created(res, task, 'Tâche créée avec succès');
   } catch (error) {
     return next(error);
   }
@@ -36,7 +36,16 @@ const create = async (req, res, next) => {
 const getById = async (req, res, next) => {
   try {
     const task = await taskService.getById(req.params.id, req.user);
-    return ApiResponse.success(res, task, 'Task retrieved');
+    return ApiResponse.success(res, task, 'Tâche récupérée');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const getProposals = async (req, res, next) => {
+  try {
+    const proposals = await taskService.getProposals(req.params.id, req.user);
+    return ApiResponse.success(res, proposals, 'Propositions récupérées');
   } catch (error) {
     return next(error);
   }
@@ -45,7 +54,7 @@ const getById = async (req, res, next) => {
 const update = async (req, res, next) => {
   try {
     const task = await taskService.update(req.params.id, req.body);
-    return ApiResponse.success(res, task, 'Task updated successfully');
+    return ApiResponse.success(res, task, 'Tâche mise à jour');
   } catch (error) {
     return next(error);
   }
@@ -54,7 +63,7 @@ const update = async (req, res, next) => {
 const patchStatus = async (req, res, next) => {
   try {
     const task = await taskService.updateStatus(req.params.id, req.body.status);
-    return ApiResponse.success(res, task, 'Task status updated');
+    return ApiResponse.success(res, task, 'Statut de la tâche mis à jour');
   } catch (error) {
     return next(error);
   }
@@ -63,7 +72,7 @@ const patchStatus = async (req, res, next) => {
 const deleteTask = async (req, res, next) => {
   try {
     await taskService.delete(req.params.id);
-    return ApiResponse.success(res, null, 'Task deleted');
+    return ApiResponse.success(res, null, 'Tâche supprimée');
   } catch (error) {
     return next(error);
   }
@@ -74,7 +83,7 @@ const deleteTask = async (req, res, next) => {
 const listComments = async (req, res, next) => {
   try {
     const comments = await taskService.listComments(req.params.id, req.user);
-    return ApiResponse.success(res, comments, 'Comments retrieved');
+    return ApiResponse.success(res, comments, 'Commentaires récupérés');
   } catch (error) {
     return next(error);
   }
@@ -88,7 +97,7 @@ const addComment = async (req, res, next) => {
       req.user,
       req.body.is_internal
     );
-    return ApiResponse.created(res, comment, 'Comment added');
+    return ApiResponse.created(res, comment, 'Commentaire ajouté');
   } catch (error) {
     return next(error);
   }
@@ -97,10 +106,10 @@ const addComment = async (req, res, next) => {
 const deleteComment = async (req, res, next) => {
   try {
     await taskService.deleteComment(req.params.cid, req.user.id);
-    return ApiResponse.success(res, null, 'Comment deleted');
+    return ApiResponse.success(res, null, 'Commentaire supprimé');
   } catch (error) {
     return next(error);
   }
 };
 
-module.exports = { list, create, getById, update, patchStatus, deleteTask, listComments, addComment, deleteComment };
+module.exports = { list, create, getById, getProposals, update, patchStatus, deleteTask, listComments, addComment, deleteComment };

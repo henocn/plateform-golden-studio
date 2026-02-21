@@ -3,6 +3,7 @@
 const {
   Task,
   TaskComment,
+  Proposal,
   User,
   Organization,
   Project,
@@ -104,6 +105,12 @@ class TaskRepository {
         },
       ],
     });
+  }
+
+  async findProposals(taskId, tenantId = null) {
+    const where = { task_id: taskId };
+    if (tenantId) where.organization_id = tenantId;
+    return Proposal.findAll({ where });
   }
 
   async create(data) {

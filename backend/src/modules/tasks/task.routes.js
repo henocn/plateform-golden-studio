@@ -33,6 +33,10 @@ router.get('/:id',
   authorize('projects.view_all_orgs', 'projects.view_own'),
   taskController.getById);
 
+router.get('/:id/proposals',
+  authorize('projects.view_all_orgs', 'projects.view_own'),
+  taskController.getProposals);
+
 router.put('/:id',
   authorize('tasks.edit'),
   validate(updateTaskSchema),
