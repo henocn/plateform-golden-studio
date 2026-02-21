@@ -46,7 +46,7 @@ class ProposalService {
       task_id: taskId,
       author_id: user.id,
       version_number: versionNumber,
-      status: 'draft',
+      status: 'pending_client_validation',
     });
   }
 

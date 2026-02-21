@@ -104,7 +104,7 @@ function ValidationActions({ proposal, onRefresh }) {
 }
 
 /* Statuts pour lesquels la décision (approuver / révision / rejeter) est encore possible */
-const AWAITING_DECISION_STATUSES = ["pending_client_validation", "submitted"];
+const AWAITING_DECISION_STATUSES = ["pending_client_validation", "submitted", "draft"];
 
 /* ─── Carte "dernière version" ───────────────────────────────────────────── */
 function LatestProposalCard({ proposal, canValidate, onRefresh }) {
