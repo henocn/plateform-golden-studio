@@ -4,7 +4,7 @@ const { Media } = require('../../models');
 const { Op } = require('sequelize');
 
 class MediaRepository {
-  async findAll({ tenantId, type, isGlobal, search, tags, page, limit, offset } = {}) {
+  async findAll({ tenantId, type, isGlobal, search, tags, folder_id, page, limit, offset } = {}) {
     const where = {};
 
     // Client sees: global media + their org media
@@ -27,12 +27,16 @@ class MediaRepository {
       const tagsArray = Array.isArray(tags) ? tags : [tags];
       where.tags = { [Op.overlap]: tagsArray };
     }
+    if (folder_id !== undefined) {
+      where.folder_id = folder_id;
+    }
 
     const { rows, count } = await Media.findAndCountAll({
       where,
       include: [
         { association: 'organization', attributes: ['id', 'name'] },
         { association: 'uploader', attributes: ['id', 'first_name', 'last_name'] },
+        { association: 'folder', attributes: ['id', 'name'] },
       ],
       order: [['created_at', 'DESC']],
       limit,
@@ -47,6 +51,7 @@ class MediaRepository {
       include: [
         { association: 'organization', attributes: ['id', 'name'] },
         { association: 'uploader', attributes: ['id', 'first_name', 'last_name'] },
+        { association: 'folder', attributes: ['id', 'name'] },
       ],
     });
   }

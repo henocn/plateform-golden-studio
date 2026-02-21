@@ -14,6 +14,7 @@ const list = async (req, res, next) => {
       isGlobal: req.query.is_global,
       search: req.query.search,
       tags: req.query.tags,
+      folder_id: req.query.folder_id,
       page, limit, offset,
     }, req.user);
     const meta = buildPaginationMeta(page, limit, total);
@@ -44,6 +45,7 @@ const create = async (req, res, next) => {
       organization_id: req.body.organization_id || null,
       tags: req.body.tags ? (Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags)) : [],
       is_global: req.body.is_global === 'true' || req.body.is_global === true,
+      folder_id: req.body.folder_id || null,
     };
     const media = await mediaService.create(metadata, req.file, req.user);
     return ApiResponse.created(res, media, 'Media uploaded');

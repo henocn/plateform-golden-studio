@@ -9,6 +9,7 @@ class MediaService {
     if (isClient) {
       filters.tenantId = user.organization_id;
     }
+    // folder_id can be passed in filters
     return mediaRepository.findAll(filters);
   }
 
@@ -32,6 +33,7 @@ class MediaService {
       file_size: file.size,
       mime_type: file.mimetype,
       uploaded_by: user.id,
+      folder_id: data.folder_id || null,
     });
   }
 
