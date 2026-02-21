@@ -39,6 +39,7 @@ import {
 import { usePermissions } from "../../hooks";
 import toast from "react-hot-toast";
 import UploadModal from "./UploadModal";
+import CreateFolderModal from "./CreateFolderModal";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -71,6 +72,7 @@ const typeColors = {
 
 export default function MediaPage() {
   const { canUploadMedia: canUpload, canViewFolder, canCreateFolder } = usePermissions();
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [folders, setFolders] = useState([]);
   const [currentFolder, setCurrentFolder] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -147,6 +149,14 @@ export default function MediaPage() {
 
   return (
     <div className="space-y-6">
+      {/* Bouton créer dossier */}
+      {canCreateFolder && (
+        <div className="flex justify-end mb-2">
+          <Button icon={Grid3X3} onClick={() => setShowCreateFolder(true)}>
+            Créer un dossier
+          </Button>
+        </div>
+      )}
       {/* Navigation dossiers */}
       {canViewFolder && (
         <div className="flex items-center gap-2 mb-2">
@@ -167,6 +177,18 @@ export default function MediaPage() {
             </Button>
           ))}
         </div>
+      )}
+
+      {/* Modal création dossier */}
+      {showCreateFolder && (
+        <CreateFolderModal
+          parentId={folderId}
+          onClose={() => setShowCreateFolder(false)}
+          onCreated={() => {
+            setShowCreateFolder(false);
+            loadFolders();
+          }}
+        />
       )}
       {/* Header */}
       <div className="flex items-center justify-between">
