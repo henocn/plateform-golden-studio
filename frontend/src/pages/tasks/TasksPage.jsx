@@ -80,7 +80,9 @@ export default function TasksPage() {
     try {
       const { data } = await projectsAPI.list({ page: 1, limit: 100 });
       setProjects(extractList(data.data).items);
-    } catch {}
+    } catch (err) {
+      toast.error("Erreur lors du chargement des projets");
+    }
   };
 
   const updateParam = (key, value) => {
