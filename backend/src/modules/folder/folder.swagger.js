@@ -51,6 +51,7 @@
  *       201:
  *         description: Folder created
  *
+ * /folder/{id}:
  *   get:
  *     summary: Get folder by ID
  *     tags: [Folders]
