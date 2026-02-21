@@ -56,8 +56,8 @@ function ValidationActions({ proposal, onRefresh }) {
       value: "needs_revision",
       label: "Demander révision",
       icon: RefreshCw,
-      active: "bg-amber-50 border-amber-400 text-amber-700",
-      idle:   "border-surface-300 text-ink-500 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600",
+      active: "bg-warning-50 border-warning-400 text-warning-700",
+      idle:   "border-surface-300 text-ink-600 hover:bg-warning-50 hover:border-warning-300 hover:text-warning-600",
     },
     {
       value: "rejected",
@@ -103,11 +103,15 @@ function ValidationActions({ proposal, onRefresh }) {
   );
 }
 
+/* Statuts pour lesquels la décision (approuver / révision / rejeter) est encore possible */
+const AWAITING_DECISION_STATUSES = ["pending_client_validation", "submitted"];
+
 /* ─── Carte "dernière version" ───────────────────────────────────────────── */
 function LatestProposalCard({ proposal, canValidate, onRefresh }) {
   const status = PROPOSAL_STATUS[proposal.status] ?? { label: proposal.status, color: "neutral" };
   const isApproved = proposal.status === "approved";
-  const canDecide = canValidate && !isApproved;
+  const canDecide =
+    canValidate && AWAITING_DECISION_STATUSES.includes(proposal.status);
 
   const handleSave = () => {
     if (proposal.file_path) {
@@ -115,10 +119,13 @@ function LatestProposalCard({ proposal, canValidate, onRefresh }) {
     }
   };
 
+  const comments = proposal.comments || [];
+  const validations = proposal.validations || [];
+
   return (
-    <div className="rounded-2xl border-2 border-primary-200 bg-gradient-to-br from-primary-50/60 via-white to-surface-50 overflow-hidden shadow-sm">
+    <div className="rounded-2xl border-2 border-primary-300 bg-gradient-to-br from-primary-50/60 via-white to-surface-50 overflow-hidden shadow-card">
       {/* Header coloré */}
-      <div className="px-5 py-3 border-b border-primary-100 flex items-center justify-between">
+      <div className="px-5 py-3 border-b border-primary-200 flex items-center justify-between bg-primary-50/50">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-primary-400 animate-pulse" />
           <span className="text-xs font-semibold text-primary-500 uppercase tracking-widest">
@@ -183,7 +190,65 @@ function LatestProposalCard({ proposal, canValidate, onRefresh }) {
           )}
         </div>
 
-        {/* Bloc validation */}
+        {/* Commentaires de la proposition */}
+        {comments.length > 0 && (
+          <div className="border-t border-surface-200 pt-4">
+            <p className="text-label font-semibold text-ink-700 mb-2">Commentaires</p>
+            <div className="space-y-2">
+              {comments.map((c) => (
+                <div
+                  key={c.id}
+                  className="rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-body-sm"
+                >
+                  <span className="font-medium text-ink-800">
+                    {c.author?.first_name} {c.author?.last_name}
+                  </span>
+                  {c.is_internal && (
+                    <span className="ml-2 text-label text-warning-600 bg-warning-50 px-1.5 py-0.5 rounded">Interne</span>
+                  )}
+                  <p className="text-ink-600 mt-0.5 whitespace-pre-line">{c.content}</p>
+                  <p className="text-body-sm text-ink-400 mt-1">{formatDateTime(c.createdAt)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Décisions de validation (historique) */}
+        {validations.length > 0 && (
+          <div className="border-t border-surface-200 pt-4">
+            <p className="text-label font-semibold text-ink-700 mb-2">Décisions</p>
+            <div className="space-y-2">
+              {validations.map((v) => (
+                <div
+                  key={v.id}
+                  className={`rounded-lg border px-3 py-2 text-body-sm ${
+                    v.status === "approved"
+                      ? "border-success-300 bg-success-50"
+                      : v.status === "rejected"
+                        ? "border-danger-300 bg-danger-50"
+                        : "border-warning-300 bg-warning-50"
+                  }`}
+                >
+                  <span className="font-medium text-ink-800">
+                    {v.validator?.first_name} {v.validator?.last_name}
+                  </span>
+                  <Badge
+                    color={v.status === "approved" ? "success" : v.status === "rejected" ? "danger" : "warning"}
+                    size="xs"
+                    className="ml-2"
+                  >
+                    {v.status === "approved" ? "Validé" : v.status === "rejected" ? "Refusé" : "À modifier"}
+                  </Badge>
+                  {v.comments && <p className="text-ink-600 mt-1 whitespace-pre-line">{v.comments}</p>}
+                  <p className="text-body-sm text-ink-400 mt-1">{formatDateTime(v.validated_at || v.createdAt)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bloc validation : affiché uniquement si la version est en attente de décision */}
         {canDecide && (
           <ValidationActions proposal={proposal} onRefresh={onRefresh} />
         )}
@@ -197,68 +262,111 @@ function TimelineEntry({ proposal, isLast }) {
   const status = PROPOSAL_STATUS[proposal.status] ?? { label: proposal.status, color: "neutral" };
 
   const dotStyles = {
-    approved:              "border-success-400 bg-success-50 text-success-500",
-    rejected:              "border-danger-300 bg-danger-50 text-danger-400",
-    needs_revision:        "border-amber-300 bg-amber-50 text-amber-500",
-    pending_client_validation: "border-warning-300 bg-warning-50 text-warning-500",
-    submitted:             "border-info-300 bg-info-50 text-info-500",
-    draft:                 "border-surface-300 bg-surface-100 text-ink-300",
+    approved:              "border-success-400 bg-success-50 text-success-600",
+    rejected:              "border-danger-400 bg-danger-50 text-danger-600",
+    needs_revision:        "border-warning-400 bg-warning-50 text-warning-600",
+    pending_client_validation: "border-warning-400 bg-warning-50 text-warning-600",
+    submitted:             "border-primary-400 bg-primary-50 text-primary-600",
+    draft:                 "border-surface-400 bg-surface-100 text-ink-500",
   };
 
+  const comments = proposal.comments || [];
+  const validations = proposal.validations || [];
+
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-4 rounded-xl border-2 border-surface-300 bg-white p-4 shadow-card">
       {/* Ligne verticale + point */}
       <div className="flex flex-col items-center shrink-0 pt-0.5">
-        <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 ${dotStyles[proposal.status] ?? dotStyles.draft}`}>
-          <StatusIcon status={proposal.status} className="w-3.5 h-3.5" />
+        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 ${dotStyles[proposal.status] ?? dotStyles.draft}`}>
+          <StatusIcon status={proposal.status} className="w-4 h-4" />
         </div>
-        {!isLast && <div className="w-px flex-1 bg-surface-200 my-1 min-h-[20px]" />}
+        {!isLast && <div className="w-px flex-1 bg-surface-300 my-1 min-h-[24px]" />}
       </div>
 
       {/* Contenu */}
-      <div className={`flex-1 ${!isLast ? "pb-5" : ""}`}>
+      <div className={`flex-1 min-w-0 ${!isLast ? "pb-4" : ""}`}>
         <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-bold text-ink-300 uppercase tracking-widest">
+              <span className="text-label font-bold text-ink-500 uppercase tracking-wide">
                 V{proposal.version_number}
               </span>
-              <span className="text-body-sm font-medium text-ink-700">{proposal.title}</span>
+              <span className="text-body-md font-medium text-ink-800">{proposal.title}</span>
               <Badge color={status.color} size="sm">{status.label}</Badge>
             </div>
             {proposal.description && (
-              <p className="text-xs text-ink-400 line-clamp-2">{proposal.description}</p>
+              <p className="text-body-sm text-ink-500 line-clamp-2">{proposal.description}</p>
             )}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-400 pt-1">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-body-sm text-ink-500 pt-1">
               {proposal.author && (
                 <span className="flex items-center gap-1">
-                  <User className="w-3 h-3" />
+                  <User className="w-3.5 h-3.5" />
                   {proposal.author.first_name} {proposal.author.last_name}
                 </span>
               )}
               {proposal.submitted_at && (
                 <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
+                  <Clock className="w-3.5 h-3.5" />
                   {formatDate(proposal.submitted_at)}
                 </span>
               )}
             </div>
           </div>
 
-          {/* Télécharger si fichier */}
           {proposal.file_path && (
             <a
               href={proposal.file_path}
               download
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-ink-400 hover:text-primary-500 hover:underline shrink-0"
+              className="inline-flex items-center gap-1.5 text-body-sm font-medium text-primary-600 hover:text-primary-700 hover:underline shrink-0"
             >
-              <Download className="w-3 h-3" />
+              <Download className="w-4 h-4" />
               Fichier
             </a>
           )}
         </div>
+
+        {/* Commentaires sous cette version */}
+        {comments.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-surface-200">
+            <p className="text-label font-semibold text-ink-700 mb-2">Commentaires</p>
+            <div className="space-y-2">
+              {comments.map((c) => (
+                <div key={c.id} className="rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-body-sm">
+                  <span className="font-medium text-ink-800">{c.author?.first_name} {c.author?.last_name}</span>
+                  {c.is_internal && <span className="ml-2 text-label text-warning-600 bg-warning-50 px-1.5 py-0.5 rounded">Interne</span>}
+                  <p className="text-ink-600 mt-0.5 whitespace-pre-line">{c.content}</p>
+                  <p className="text-body-sm text-ink-400 mt-1">{formatDateTime(c.createdAt)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Décisions sous cette version */}
+        {validations.length > 0 && (
+          <div className="mt-3">
+            <p className="text-label font-semibold text-ink-700 mb-2">Décisions</p>
+            <div className="space-y-2">
+              {validations.map((v) => (
+                <div
+                  key={v.id}
+                  className={`rounded-lg border px-3 py-2 text-body-sm ${
+                    v.status === "approved" ? "border-success-300 bg-success-50" : v.status === "rejected" ? "border-danger-300 bg-danger-50" : "border-warning-300 bg-warning-50"
+                  }`}
+                >
+                  <span className="font-medium text-ink-800">{v.validator?.first_name} {v.validator?.last_name}</span>
+                  <Badge color={v.status === "approved" ? "success" : v.status === "rejected" ? "danger" : "warning"} size="xs" className="ml-2">
+                    {v.status === "approved" ? "Validé" : v.status === "rejected" ? "Refusé" : "À modifier"}
+                  </Badge>
+                  {v.comments && <p className="text-ink-600 mt-1 whitespace-pre-line">{v.comments}</p>}
+                  <p className="text-body-sm text-ink-400 mt-1">{formatDateTime(v.validated_at || v.createdAt)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

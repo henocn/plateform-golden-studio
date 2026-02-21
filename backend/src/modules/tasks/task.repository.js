@@ -110,7 +110,28 @@ class TaskRepository {
   async findProposals(taskId, tenantId = null) {
     const where = { task_id: taskId };
     if (tenantId) where.organization_id = tenantId;
-    return Proposal.findAll({ where, include: [{ association: "author", attributes: ["id", "first_name", "last_name", "email"] }] });
+    return Proposal.findAll({
+      where,
+      include: [
+        { association: 'author', attributes: ['id', 'first_name', 'last_name', 'email'] },
+        { association: 'project', attributes: ['id', 'title'] },
+        {
+          association: 'comments',
+          order: [['created_at', 'ASC']],
+          include: [
+            { association: 'author', attributes: ['id', 'first_name', 'last_name'] },
+          ],
+        },
+        {
+          association: 'validations',
+          order: [['validated_at', 'DESC']],
+          include: [
+            { association: 'validator', attributes: ['id', 'first_name', 'last_name'] },
+          ],
+        },
+      ],
+      order: [['version_number', 'DESC']],
+    });
   }
 
   async create(data) {

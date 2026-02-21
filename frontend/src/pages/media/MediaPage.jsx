@@ -85,7 +85,7 @@ export default function MediaPage() {
   const loadOrganizations = useCallback(async () => {
     if (!isInternal) return;
     try {
-      const { data } = await organizationsAPI.list({ limit: 200 });
+      const { data } = await organizationsAPI.list({ limit: 100 });
       const list = data?.data?.data ?? data?.data ?? [];
       const items = Array.isArray(list) ? list : list?.rows ?? [];
       setOrganizations(items);

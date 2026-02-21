@@ -29,18 +29,21 @@ class ProposalService {
   }
 
   /**
-   * Create proposal — internal contributor+, auto version numbering
+   * Create proposal — internal contributor+, versioning automatique par tâche ou par projet.
+   * Si task_id est fourni : version par tâche (pas de doublon de version pour la même tâche).
    */
   async create(projectId, data, user) {
     const project = await Project.findByPk(projectId);
     if (!project) throw ApiError.notFound('Project');
 
-    const versionNumber = await proposalRepository.getNextVersion(projectId);
+    const taskId = data.task_id || null;
+    const versionNumber = await proposalRepository.getNextVersion(projectId, taskId);
 
     return proposalRepository.create({
       ...data,
       project_id: projectId,
       organization_id: project.organization_id,
+      task_id: taskId,
       author_id: user.id,
       version_number: versionNumber,
       status: 'draft',

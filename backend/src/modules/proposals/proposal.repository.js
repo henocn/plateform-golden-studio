@@ -53,12 +53,12 @@ class ProposalRepository {
   }
 
   /**
-   * Get next version number for a project
+   * Get next version number for a task (if taskId) or for a project.
+   * Une même tâche ne peut pas avoir deux propositions avec le même numéro de version.
    */
-  async getNextVersion(projectId) {
-    const maxVersion = await Proposal.max('version_number', {
-      where: { project_id: projectId },
-    });
+  async getNextVersion(projectId, taskId = null) {
+    const where = taskId ? { task_id: taskId } : { project_id: projectId };
+    const maxVersion = await Proposal.max('version_number', { where });
     return (maxVersion || 0) + 1;
   }
 

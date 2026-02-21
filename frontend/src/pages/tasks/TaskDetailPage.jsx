@@ -10,6 +10,7 @@ import { usePermissions } from "../../hooks";
 
 import TaskDetailsTab from "./TaskDetailsTab";
 import ProposalsTab from "./ProposalsTab";
+import CreateProposalModal from "./CreateProposalModal";
 
 const TABS = [
   { key: "details", label: "Détails", icon: ClipboardList },
@@ -28,6 +29,8 @@ export default function TaskDetailPage() {
   const [commentContent, setCommentContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [isInternal, setIsInternal] = useState(false);
+  const [showCreateProposal, setShowCreateProposal] = useState(false);
+  const [proposalsRefreshKey, setProposalsRefreshKey] = useState(0);
 
   const me = useAuthStore((state) => state.user);
   const { canCreateProposal } = usePermissions();
@@ -103,11 +106,11 @@ export default function TaskDetailPage() {
         </div>
         {canCreateProposal && (
           <Button
-            color="primary"
+            variant="primary"
             icon={Plus}
-            onClick={() => navigate(`/proposals/create?taskId=${task.id}`)}
+            onClick={() => setShowCreateProposal(true)}
           >
-            Proposition
+            Nouvelle proposition
           </Button>
         )}
       </div>
@@ -148,7 +151,23 @@ export default function TaskDetailPage() {
         />
       )}
 
-      {activeTab === "proposals" && <ProposalsTab taskId={task.id} />}
+      {activeTab === "proposals" && (
+        <ProposalsTab
+          taskId={task.id}
+          key={proposalsRefreshKey}
+        />
+      )}
+
+      {showCreateProposal && (
+        <CreateProposalModal
+          task={task}
+          onClose={() => setShowCreateProposal(false)}
+          onCreated={() => {
+            setShowCreateProposal(false);
+            setProposalsRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
 
       <Button variant="secondary" onClick={() => navigate(-1)}>
         Retour

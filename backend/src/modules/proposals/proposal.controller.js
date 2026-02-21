@@ -14,7 +14,9 @@ const list = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    const proposal = await proposalService.create(req.params.projectId, req.body, req.user);
+    const body = { ...req.body };
+    if (req.file && req.file.path) body.file_path = req.file.path;
+    const proposal = await proposalService.create(req.params.projectId, body, req.user);
     return ApiResponse.created(res, proposal, 'Proposition créée avec succès');
   } catch (error) {
     return next(error);

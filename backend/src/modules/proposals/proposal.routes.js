@@ -5,6 +5,7 @@ const { authenticate } = require('../../middlewares/auth.middleware');
 const { authorize } = require('../../middlewares/role.middleware');
 const tenantMiddleware = require('../../middlewares/tenant.middleware');
 const validate = require('../../middlewares/validate.middleware');
+const { uploadSingle } = require('../../middlewares/upload.middleware');
 const proposalController = require('./proposal.controller');
 const {
   createProposalSchema,
@@ -25,6 +26,7 @@ router.get('/',
 
 router.post('/',
   authorize('proposals.create'),
+  uploadSingle('file'),
   validate(createProposalSchema),
   proposalController.create);
 

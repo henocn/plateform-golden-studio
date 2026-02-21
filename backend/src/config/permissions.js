@@ -46,7 +46,7 @@ const PERMISSIONS = {
   'calendar.view':              ['client_admin', 'client_validator', 'client_contributor', 'client_reader'],
 
   // ─── Médiathèque ─────────────────────────────────────────
-  'mediatheque.upload':         ['super_admin', 'admin', 'contributor'],
+  'mediatheque.upload':         ['super_admin', 'admin', 'contributor', 'client_admin'],
   'mediatheque.view':           ['client_admin', 'client_validator', 'client_contributor', 'client_reader'],
   'mediatheque.upload_client':  ['client_admin', 'client_contributor'],
 
