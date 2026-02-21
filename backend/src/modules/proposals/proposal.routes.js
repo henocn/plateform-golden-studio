@@ -39,7 +39,7 @@ router.put('/:id',
 
 // Submit to client (internal validator+)
 router.patch('/:id/submit',
-  authorize('proposals.submit_to_client'),
+  authorize('proposals.create'),
   proposalController.submitToClient);
 
 // ─── Comments ──────────────────────────────────────────────
