@@ -48,18 +48,18 @@ router.get('/:id/comments',
   proposalController.listComments);
 
 router.post('/:id/comments',
-  authorize('proposals.create', 'proposals.validate_client'),
+  authorize('proposals.create',),
   validate(createCommentSchema),
   proposalController.addComment);
 
 // ─── Validations (client) ──────────────────────────────────
 router.post('/:id/validate',
-  authorize('proposals.validate_client'),
+  authorize('proposals.validate'),
   validate(validateProposalSchema),
   proposalController.validateProposal);
 
 router.get('/:id/validations',
-  authorize('projects.view_all_orgs', 'proposals.validate_client'),
+  authorize('projects.view_all_orgs', 'proposals.validate'),
   proposalController.listValidations);
 
 module.exports = router;

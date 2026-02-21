@@ -52,9 +52,9 @@ class ProposalService {
    */
   async update(id, data) {
     const proposal = await proposalRepository.findById(id);
-    if (!proposal) throw ApiError.notFound('Proposal');
+    if (!proposal) throw ApiError.notFound('Proposition');
     if (proposal.status !== 'draft') {
-      throw ApiError.badRequest('Only draft proposals can be edited');
+      throw ApiError.badRequest('Seules les propositions en brouillon peuvent être modifiées');
     }
     return proposalRepository.update(id, data);
   }
@@ -65,7 +65,7 @@ class ProposalService {
    */
   async submitToClient(id, user) {
     const proposal = await proposalRepository.findById(id);
-    if (!proposal) throw ApiError.notFound('Proposal');
+    if (!proposal) throw ApiError.notFound('Proposition');
     if (!['draft', 'submitted'].includes(proposal.status)) {
       throw ApiError.proposalNotSubmittable();
     }
@@ -85,7 +85,7 @@ class ProposalService {
 
   async addComment(proposalId, content, user) {
     const proposal = await proposalRepository.findById(proposalId);
-    if (!proposal) throw ApiError.notFound('Proposal');
+    if (!proposal) throw ApiError.notFound('Proposition');
 
     return proposalRepository.createComment({
       proposal_id: proposalId,
@@ -104,10 +104,8 @@ class ProposalService {
    */
   async validate(proposalId, { status, comments }, user) {
     const proposal = await proposalRepository.findById(proposalId);
-    if (!proposal) throw ApiError.notFound('Proposal');
-    if (proposal.status !== 'pending_client_validation') {
-      throw ApiError.badRequest('Proposal is not pending client validation');
-    }
+    if (!proposal) throw ApiError.notFound('Proposition');
+    // TODO: only allow if user is assigned validator for this proposal or is client_admin of the org
 
     // Create validation record
     const validation = await proposalRepository.createValidation({

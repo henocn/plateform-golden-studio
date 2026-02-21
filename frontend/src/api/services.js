@@ -61,6 +61,7 @@ export const briefsAPI = {
 export const tasksAPI = {
   list: (params) => api.get('/tasks', { params }),
   getById: (id) => api.get(`/tasks/${id}`),
+  getProposals: (id) => api.get(`/tasks/${id}/proposals`),
   create: (data) => api.post('/tasks', data),
   update: (id, data) => api.put(`/tasks/${id}`, data),
   patchStatus: (id, data) => api.patch(`/tasks/${id}/status`, data),
