@@ -46,7 +46,8 @@ export function usePermissions() {
       canViewAudit: can('audit.view'),
       canViewReporting: can('reporting.global') || can('reporting.own_org'),
       // Folder permissions
-      canCreateFolder: can('folders.create'),
+      canCreateFolder: can('folders.create_root') || can('folders.create_subfolder'),
+      canCreateRootFolder: can('folders.create_root'),
       canEditFolder: can('folders.edit'),
       canDeleteFolder: can('folders.delete'),
       canViewFolder: can('folders.view'),

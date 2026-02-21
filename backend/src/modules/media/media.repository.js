@@ -27,8 +27,10 @@ class MediaRepository {
       const tagsArray = Array.isArray(tags) ? tags : [tags];
       where.tags = { [Op.overlap]: tagsArray };
     }
-    if (folder_id !== undefined) {
+    if (folder_id !== undefined && folder_id !== null && folder_id !== '') {
       where.folder_id = folder_id;
+    } else if (folder_id === null || folder_id === '') {
+      where.folder_id = null;
     }
 
     const { rows, count } = await Media.findAndCountAll({

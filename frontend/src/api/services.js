@@ -114,6 +114,17 @@ export const mediaAPI = {
   download: (id) => api.get(`/media/${id}/download`, { responseType: 'blob' }),
 };
 
+export const foldersAPI = {
+  list: (params) => api.get('/folders', { params }),
+  getRootFolders: (organizationId) =>
+    organizationId ? api.get(`/folders/roots/${organizationId}`) : api.get('/folders/roots'),
+  explore: (id) => api.get(`/folders/${id}/explore`),
+  getById: (id) => api.get(`/folders/${id}`),
+  create: (data) => api.post('/folders', data),
+  update: (id, data) => api.put(`/folders/${id}`, data),
+  remove: (id) => api.delete(`/folders/${id}`),
+};
+
 export const reportingAPI = {
   overview: (params) => api.get('/reporting/overview', { params }),
   projects: (params) => api.get('/reporting/projects', { params }),

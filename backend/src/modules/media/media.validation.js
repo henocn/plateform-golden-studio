@@ -25,7 +25,7 @@ const listMediaQuery = Joi.object({
   organizationId: Joi.string().uuid().optional(),
   search: Joi.string().max(255).optional(),
   tags: Joi.alternatives().try(Joi.string(), Joi.array().items(Joi.string())).optional(),
-  folder_id: Joi.string().uuid().optional(),
+  folder_id: Joi.string().uuid().optional().allow(null, ''),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 });
