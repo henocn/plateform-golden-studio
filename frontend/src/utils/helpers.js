@@ -1,5 +1,6 @@
 import { format, formatDistanceToNow, parseISO, isValid } from "date-fns";
 import { fr } from "date-fns/locale";
+import { CheckCircle2, FileText, Hourglass, RefreshCw, XCircle } from "lucide-react";
 
 /**
  * Format a date string to a readable format
@@ -46,19 +47,30 @@ export const TASK_STATUS = {
 };
 
 export const PROPOSAL_STATUS = {
-  draft: { label: "Brouillon", color: "neutral" },
-  submitted: { label: "Soumis", color: "info" },
-  pending_client_validation: { label: "En validation", color: "warning" },
-  approved: { label: "Approuvé", color: "success" },
-  needs_revision: { label: "Révision demandée", color: "warning" },
-  rejected: { label: "Refusé", color: "danger" },
+  submitted:      { label: "Soumis", color: "info", icon: FileText },
+  rejected:       { label: "Rejetée",   color: "danger",  icon: XCircle },
+  draft:          { label: "Brouillon",  color: "neutral", icon: FileText },
+  needs_revision: { label: "À réviser",  color: "orange",  icon: RefreshCw },
+  approved:       { label: "Approuvée",  color: "success", icon: CheckCircle2 },
+  pending_client_validation: { label: "En validation", color: "warning", icon: Hourglass },
 };
+
 
 export const PRIORITY = {
   low: { label: "Basse", color: "neutral" },
   normal: { label: "Normale", color: "info" },
   high: { label: "Haute", color: "warning" },
   urgent: { label: "Urgente", color: "danger" },
+}; 
+
+export const MEDIA_TYPES = {
+  logo: { label: "Logo", color: "info" },
+  graphic_charter: { label: "Charte graphique", color: "primary" },
+  video: { label: "Vidéo", color: "success" },
+  photo: { label: "Photo", color: "warning" },
+  template: { label: "Template", color: "neutral" },
+  document: { label: "Document", color: "info" },
+  other: { label: "Autre", color: "neutral" },
 };
 
 export const ROLE_LABELS = {
@@ -190,4 +202,12 @@ export function formatErrorMessage(error) {
           },
         ];
   return details;
+}
+
+
+// interval de temps entre deux dates
+
+export function deltaTime(startDate, endDate) {
+  const delta = endDate ? Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) : 0;
+  return delta;
 }

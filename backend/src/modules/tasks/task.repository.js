@@ -1,13 +1,32 @@
-'use strict';
+"use strict";
 
-const { Task, TaskComment, User, Organization, Project } = require('../../models');
-const { Op } = require('sequelize');
+const {
+  Task,
+  TaskComment,
+  Proposal,
+  User,
+  Organization,
+  Project,
+} = require("../../models");
+const { Op } = require("sequelize");
 
 class TaskRepository {
   /**
    * Find all tasks with filters and visibility filtering
    */
-  async findAll({ tenantId, projectId, assigneeId, status, overdue, urgent, visibility, search, page, limit, offset } = {}) {
+  async findAll({
+    tenantId,
+    projectId,
+    assigneeId,
+    status,
+    overdue,
+    urgent,
+    visibility,
+    search,
+    page,
+    limit,
+    offset,
+  } = {}) {
     const where = {};
 
     if (tenantId) where.organization_id = tenantId;
@@ -15,10 +34,10 @@ class TaskRepository {
     if (assigneeId) where.assigned_to = assigneeId;
     if (status) where.status = status;
     if (visibility) where.visibility = visibility;
-    if (urgent === 'true' || urgent === true) where.priority = 'urgent';
-    if (overdue === 'true' || overdue === true) {
+    if (urgent === "true" || urgent === true) where.priority = "urgent";
+    if (overdue === "true" || overdue === true) {
       where.due_date = { [Op.lt]: new Date() };
-      where.status = { [Op.notIn]: ['done', 'cancelled'] };
+      where.status = { [Op.notIn]: ["done", "cancelled"] };
     }
     if (search) {
       where[Op.or] = [
@@ -30,12 +49,27 @@ class TaskRepository {
     const { rows, count } = await Task.findAndCountAll({
       where,
       include: [
-        { association: 'project', attributes: ['id', 'title'] },
-        { association: 'organization', attributes: ['id', 'name'] },
-        { association: 'assignee', attributes: ['id', 'first_name', 'last_name'] },
-        { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
+        {
+          association: "project",
+          attributes: ["id", "title", "client_contact_id"],
+          include: [
+            {
+              association: "clientContact",
+              attributes: ["id", "first_name", "last_name", "email"],
+            },
+          ],
+        },
+        { association: "organization", attributes: ["id", "name"] },
+        {
+          association: "assignee",
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
+        {
+          association: "creator",
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
       ],
-      order: [['created_at', 'DESC']],
+      order: [["created_at", "DESC"]],
       limit,
       offset,
     });
@@ -50,11 +84,53 @@ class TaskRepository {
     return Task.findOne({
       where,
       include: [
-        { association: 'project', attributes: ['id', 'title'] },
-        { association: 'organization', attributes: ['id', 'name'] },
-        { association: 'assignee', attributes: ['id', 'first_name', 'last_name', 'email'] },
-        { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
+        {
+          association: "project",
+          attributes: ["id", "title", "client_contact_id"],
+          include: [
+            {
+              association: "clientContact",
+              attributes: ["id", "first_name", "last_name", "email"],
+            },
+          ],
+        },
+        { association: "organization", attributes: ["id", "name"] },
+        {
+          association: "assignee",
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
+        {
+          association: "creator",
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
       ],
+    });
+  }
+
+  async findProposals(taskId, tenantId = null) {
+    const where = { task_id: taskId };
+    if (tenantId) where.organization_id = tenantId;
+    return Proposal.findAll({
+      where,
+      include: [
+        { association: 'author', attributes: ['id', 'first_name', 'last_name', 'email'] },
+        { association: 'project', attributes: ['id', 'title'] },
+        {
+          association: 'comments',
+          order: [['created_at', 'ASC']],
+          include: [
+            { association: 'author', attributes: ['id', 'first_name', 'last_name'] },
+          ],
+        },
+        {
+          association: 'validations',
+          order: [['validated_at', 'DESC']],
+          include: [
+            { association: 'validator', attributes: ['id', 'first_name', 'last_name'] },
+          ],
+        },
+      ],
+      order: [['version_number', 'DESC']],
     });
   }
 
@@ -91,9 +167,12 @@ class TaskRepository {
     return TaskComment.findAll({
       where,
       include: [
-        { association: 'author', attributes: ['id', 'first_name', 'last_name', 'user_type'] },
+        {
+          association: "author",
+          attributes: ["id", "first_name", "last_name", "user_type"],
+        },
       ],
-      order: [['created_at', 'ASC']],
+      order: [["created_at", "ASC"]],
     });
   }
 

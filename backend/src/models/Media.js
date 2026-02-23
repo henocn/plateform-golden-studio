@@ -11,7 +11,11 @@ module.exports = (sequelize) => {
     },
     organization_id: {
       type: DataTypes.UUID,
-      allowNull: true, // NULL = global resource
+      allowNull: true,
+    },
+    folder_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
     },
     name: {
       type: DataTypes.STRING,
@@ -62,6 +66,7 @@ module.exports = (sequelize) => {
   Media.associate = (models) => {
     Media.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
     Media.belongsTo(models.User, { as: 'uploader', foreignKey: 'uploaded_by' });
+    Media.belongsTo(models.Folder, { as: 'folder', foreignKey: 'folder_id' });
   };
 
   return Media;

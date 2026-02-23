@@ -28,6 +28,12 @@ class TaskService {
     return task;
   }
 
+  async getProposals(id, user) {
+    const isClient = user.user_type === 'client';
+    const proposals = await taskRepository.findProposals(id, isClient ? user.organization_id : null);
+    return proposals;
+  }
+
   /**
    * Create task — internal only, must link to existing project
    */

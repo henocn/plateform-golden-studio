@@ -31,7 +31,7 @@ const PERMISSIONS = {
   // ─── Propositions ────────────────────────────────────────
   'proposals.create':           ['super_admin', 'admin', 'contributor'],
   'proposals.submit_to_client': ['super_admin', 'admin', 'validator'],
-  'proposals.validate':         ['super_admin', 'admin', 'client_validator'],
+  'proposals.validate':         ['super_admin', 'client_validator'],
   'proposals.validate_client':  ['client_admin', 'client_validator'],
 
   // ─── Briefs ──────────────────────────────────────────────
@@ -47,8 +47,13 @@ const PERMISSIONS = {
   'calendar.view':              ['client_admin', 'client_validator', 'client_contributor', 'client_reader'],
 
   // ─── Médiathèque ─────────────────────────────────────────
-  'mediatheque.upload':         ['super_admin', 'admin', 'contributor'],
-  'mediatheque.view':           ['client_admin', 'client_validator', 'client_contributor', 'client_reader'],
+  'mediatheque.upload':         ['super_admin', 'admin', 'contributor', 'client_admin'],
+  'folders.create_root':        ['super_admin'],
+  'folders.create_subfolder':   ['super_admin', 'admin', 'contributor', 'client_admin', 'client_contributor'],
+  'folders.edit':               ['super_admin', 'admin', 'contributor', 'client_admin', 'client_contributor'],
+  'folders.delete':             ['super_admin', 'admin', 'client_admin'],
+  'folders.view':               ['super_admin', 'admin', 'validator', 'contributor', 'reader', 'client_admin', 'client_validator', 'client_contributor', 'client_reader'],
+  'mediatheque.view':           ['client_admin', 'admin', 'client_admin', 'client_validator', 'client_contributor', 'client_reader'],
   'mediatheque.upload_client':  ['client_admin', 'client_contributor'],
 
   // ─── Publications ────────────────────────────────────────

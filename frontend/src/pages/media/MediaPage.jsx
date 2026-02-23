@@ -1,265 +1,534 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from "react";
 import {
-  Image, Upload, Grid3X3, List, Search, Tag, FileImage, FileVideo, FileText,
-  Download, Trash2, Eye, X, FolderUp,
-} from 'lucide-react';
+  FolderOpen,
+  FolderPlus,
+  Upload,
+  Grid3X3,
+  List,
+  FileImage,
+  FileVideo,
+  FileText,
+  Download,
+  Trash2,
+  Eye,
+  ChevronRight,
+  Building2,
+  Image,
+} from "lucide-react";
 import {
-  Card, Button, Badge, Modal, Input, Select, SearchInput,
-  Pagination, EmptyState, Skeleton, ConfirmDialog,
-} from '../../components/ui';
-import { mediaAPI } from '../../api/services';
-import { formatDate, formatFileSize, extractList, formatErrorMessage } from '../../utils/helpers';
-import { usePermissions } from '../../hooks';
-import toast from 'react-hot-toast';
+  Button,
+  Modal,
+  Select,
+  SearchInput,
+  EmptyState,
+  Skeleton,
+  ConfirmDialog,
+} from "../../components/ui";
+import { mediaAPI, foldersAPI, organizationsAPI } from "../../api/services";
+import {
+  formatDate,
+  formatFileSize,
+  extractList,
+  formatErrorMessage,
+  MEDIA_TYPES,
+} from "../../utils/helpers";
+import { useAuthStore } from "../../store/authStore";
+import { usePermissions } from "../../hooks";
+import toast from "react-hot-toast";
+import UploadModal from "./UploadModal";
+import CreateFolderModal from "./CreateFolderModal";
 
-const typeIcons = {
-  image: FileImage,
-  video: FileVideo,
-  document: FileText,
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
+const buildUrl = (filePath) => (filePath ? `${API_BASE}/${filePath}` : null);
+
+const getFileCategory = (mime) => {
+  if (!mime) return "document";
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  return "document";
 };
 
-const typeColors = {
-  image: 'bg-info-100 text-info-600',
-  video: 'bg-danger-100 text-danger-600',
-  document: 'bg-warning-100 text-warning-600',
+const fileIcons = { image: FileImage, video: FileVideo, document: FileText };
+const fileIconColors = {
+  image: "bg-info-100 text-info-600",
+  video: "bg-primary-100 text-primary-600",
+  document: "bg-surface-200 text-ink-500",
 };
 
 export default function MediaPage() {
-  const { canUploadMedia: canUpload } = usePermissions();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [files, setFiles] = useState([]);
-  const [total, setTotal] = useState(0);
+  const { user } = useAuthStore();
+  const {
+    canUploadMedia: canUpload,
+    canViewFolder,
+    canCreateFolder,
+    isInternal,
+    isSuperAdmin,
+  } = usePermissions();
+
+  const [organizations, setOrganizations] = useState([]);
+  const [currentOrgId, setCurrentOrgId] = useState(null);
+  const [breadcrumb, setBreadcrumb] = useState([]);
+  const [subfolders, setSubfolders] = useState([]);
+  const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('grid');
+  const [view, setView] = useState("grid");
+  const [search, setSearch] = useState("");
   const [showUpload, setShowUpload] = useState(false);
-  const [preview, setPreview] = useState(null);
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const page = parseInt(searchParams.get('page') || '1');
-  const typeFilter = searchParams.get('type') || '';
-  const search = searchParams.get('q') || '';
-  const tag = searchParams.get('tag') || '';
+  const currentFolderId = breadcrumb.length > 0 ? breadcrumb[breadcrumb.length - 1]?.id ?? null : null;
+  const isAtRoot = breadcrumb.length <= 1;
 
-  useEffect(() => { loadMedia(); }, [page, typeFilter, search, tag]);
+  const loadOrganizations = useCallback(async () => {
+    if (!isInternal) return;
+    try {
+      const { data } = await organizationsAPI.list({ limit: 100 });
+      const list = data?.data?.data ?? data?.data ?? [];
+      const items = Array.isArray(list) ? list : list?.rows ?? [];
+      setOrganizations(items);
+      if (items.length > 0 && !currentOrgId) setCurrentOrgId(items[0].id);
+    } catch {
+      setOrganizations([]);
+    }
+  }, [isInternal, currentOrgId]);
 
-  const loadMedia = async () => {
+  useEffect(() => {
+    if (isInternal) loadOrganizations();
+    else if (user?.organization_id) setCurrentOrgId(user.organization_id);
+  }, [isInternal, user?.organization_id]);
+
+  const loadContent = useCallback(async () => {
+    if (!currentOrgId) {
+      setLoading(false);
+      setSubfolders([]);
+      setMedia([]);
+      return;
+    }
     setLoading(true);
     try {
-      const params = { page, limit: 24 };
-      if (typeFilter) params.type = typeFilter;
-      if (search) params.search = search;
-      if (tag) params.tag = tag;
-      const { data } = await mediaAPI.list(params);
-      const { items, total: t } = extractList(data.data);
-      setFiles(items);
-      setTotal(t);
-    } catch {
-      toast.error('Erreur lors du chargement');
+      if (!currentFolderId) {
+        const [rootsRes, mediaRes] = await Promise.all([
+          foldersAPI.getRootFolders(currentOrgId),
+          mediaAPI.list({
+            limit: 100,
+            folder_id: '', // racine : uniquement médias sans dossier
+            ...(isInternal && currentOrgId ? { organizationId: currentOrgId } : {}),
+          }),
+        ]);
+        const rootsData = rootsRes?.data?.data ?? rootsRes?.data;
+        const roots = Array.isArray(rootsData) ? rootsData : [];
+        const payload = mediaRes?.data?.data ?? mediaRes?.data;
+        const { items: mediaList } = extractList(payload);
+        setSubfolders(roots);
+        setMedia(mediaList ?? []);
+      } else {
+        const { data } = await foldersAPI.explore(currentFolderId);
+        const result = data?.data ?? data;
+        setSubfolders(result?.subfolders ?? []);
+        setMedia(result?.media ?? []);
+      }
+    } catch (err) {
+      toast.error("Erreur lors du chargement");
+      setSubfolders([]);
+      setMedia([]);
     } finally {
       setLoading(false);
     }
+  }, [currentOrgId, currentFolderId, isInternal]);
+
+  useEffect(() => {
+    loadContent();
+  }, [loadContent]);
+
+  useEffect(() => {
+    if (currentOrgId && isAtRoot) {
+      const org = organizations.find((o) => o.id === currentOrgId) || { name: "Racine" };
+      setBreadcrumb([{ id: null, name: org.name || "Racine", isRoot: true }]);
+    }
+  }, [currentOrgId, organizations, isAtRoot]);
+
+  const openFolder = (folder) => {
+    setBreadcrumb((prev) => {
+      const upToRoot = prev.findIndex((b) => b.isRoot);
+      const base = upToRoot >= 0 ? prev.slice(0, upToRoot + 1) : prev;
+      return [...base, { id: folder.id, name: folder.name, isRoot: false }];
+    });
   };
 
-  const updateParam = (key, value) => {
-    const p = new URLSearchParams(searchParams);
-    if (value) p.set(key, value); else p.delete(key);
-    if (key !== 'page') p.set('page', '1');
-    setSearchParams(p);
+  const goToBreadcrumb = (index) => {
+    setBreadcrumb((prev) => prev.slice(0, index + 1));
+  };
+
+  const handleCreateFolder = () => {
+    setShowCreateFolder(true);
+  };
+
+  const handleFolderCreated = () => {
+    setShowCreateFolder(false);
+    loadContent();
+  };
+
+  const handleUploaded = () => {
+    setShowUpload(false);
+    loadContent();
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await mediaAPI.delete(deleteTarget.id);
-      toast.success('Fichier supprimé');
+      await mediaAPI.remove(deleteTarget.id);
+      toast.success("Fichier supprimé");
       setDeleteTarget(null);
-      loadMedia();
+      loadContent();
     } catch (err) {
-      const details = formatErrorMessage(err);
-      details.forEach((detail) => toast.error(detail.message));
+      formatErrorMessage(err).forEach((d) => toast.error(d.message));
     }
   };
 
-  const getFileType = (mime) => {
-    if (!mime) return 'document';
-    if (mime.startsWith('image/')) return 'image';
-    if (mime.startsWith('video/')) return 'video';
-    return 'document';
-  };
+  const currentOrg = organizations.find((o) => o.id === currentOrgId) || (user?.organization_id === currentOrgId ? { name: user?.organization_name || "Mon organisation" } : null);
+  const filteredFolders = search
+    ? subfolders.filter((f) => f.name?.toLowerCase().includes(search.toLowerCase()))
+    : subfolders;
+  const filteredMedia = search
+    ? media.filter(
+        (m) =>
+          m.name?.toLowerCase().includes(search.toLowerCase()) ||
+          m.file_name?.toLowerCase().includes(search.toLowerCase())
+      )
+    : media;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full min-h-0">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-display-lg">Médiathèque</h1>
-          <p className="text-body-md text-ink-400 mt-1">{total} fichier{total !== 1 ? 's' : ''}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-surface-100 rounded-lg p-0.5">
-            <button onClick={() => setView('grid')} className={`p-1.5 rounded-md ${view === 'grid' ? 'bg-white shadow-sm text-ink-700' : 'text-ink-400'}`}>
-              <Grid3X3 className="w-4 h-4" />
-            </button>
-            <button onClick={() => setView('list')} className={`p-1.5 rounded-md ${view === 'list' ? 'bg-white shadow-sm text-ink-700' : 'text-ink-400'}`}>
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-          {canUpload && <Button onClick={() => setShowUpload(true)} icon={Upload}>Uploader</Button>}
+          <h1 className="text-display-lg text-ink-900">Médiathèque</h1>
+          <p className="text-body-md text-ink-500 mt-0.5">
+            Explorateur de fichiers par organisation
+          </p>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <SearchInput value={search} onChange={(v) => updateParam('q', v)} placeholder="Rechercher un fichier…" className="w-64" />
-        <Select value={typeFilter} onChange={(e) => updateParam('type', e.target.value)} className="w-40">
-          <option value="">Tous les types</option>
-          <option value="image">Images</option>
-          <option value="video">Vidéos</option>
-          <option value="document">Documents</option>
-        </Select>
-        {tag && (
-          <div className="flex items-center gap-1 bg-primary-50 text-primary-700 px-2.5 py-1 rounded-lg text-body-sm">
-            <Tag className="w-3.5 h-3.5" /> {tag}
-            <button onClick={() => updateParam('tag', '')} className="ml-1 hover:text-primary-900"><X className="w-3.5 h-3.5" /></button>
-          </div>
+      <div className="flex gap-6 flex-1 min-h-0">
+        {/* Sidebar — Organisations (internes uniquement) */}
+        {isInternal && (
+          <aside className="w-56 shrink-0 flex flex-col rounded-xl border border-surface-300 bg-white shadow-card overflow-hidden">
+            <div className="px-4 py-3 border-b border-surface-200 bg-surface-100">
+              <span className="text-label text-ink-500 font-medium">Organisations</span>
+            </div>
+            <nav className="flex-1 overflow-y-auto py-2">
+              {organizations.map((org) => (
+                <button
+                  key={org.id}
+                  onClick={() => {
+                    setCurrentOrgId(org.id);
+                    setBreadcrumb([{ id: null, name: org.name, isRoot: true }]);
+                  }}
+                  className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-default ${
+                    currentOrgId === org.id
+                      ? "bg-primary-50 text-primary-700 border-r-2 border-primary-500"
+                      : "text-ink-700 hover:bg-surface-100"
+                  }`}
+                >
+                  <Building2 className="w-4 h-4 shrink-0 text-ink-400" />
+                  <span className="text-body-sm font-medium truncate">{org.name}</span>
+                </button>
+              ))}
+            </nav>
+          </aside>
         )}
-      </div>
 
-      {/* Content */}
-      {loading ? (
-        view === 'grid' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-4">
-            {[...Array(12)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
+        {/* Zone principale */}
+        <main className="flex-1 flex flex-col min-w-0 rounded-xl border border-surface-300 bg-white shadow-card overflow-hidden">
+          {/* Fil d'Ariane */}
+          <div className="px-5 py-3 border-b border-surface-200 bg-surface-50 flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setCurrentOrgId(null)}
+              className="text-body-sm text-ink-500 hover:text-primary-600 transition-default"
+            >
+              Médiathèque
+            </button>
+            {breadcrumb.map((item, i) => (
+              <span key={i} className="flex items-center gap-2">
+                <ChevronRight className="w-4 h-4 text-ink-300" />
+                <button
+                  onClick={() => goToBreadcrumb(i)}
+                  className={`text-body-sm font-medium transition-default ${
+                    i === breadcrumb.length - 1
+                      ? "text-primary-600"
+                      : "text-ink-600 hover:text-primary-600"
+                  }`}
+                >
+                  {item.name}
+                </button>
+              </span>
+            ))}
           </div>
-        ) : (
-          <div className="space-y-2">{[1,2,3,4].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}</div>
-        )
-      ) : files.length === 0 ? (
-        <EmptyState icon={Image} title="Médiathèque vide" description="Aucun fichier uploadé pour le moment" action={canUpload ? <Button onClick={() => setShowUpload(true)} icon={Upload}>Uploader un fichier</Button> : null} />
-      ) : view === 'grid' ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-4">
-          {files.map((f) => {
-            const ft = getFileType(f.mime_type);
-            const Icon = typeIcons[ft] || FileText;
-            return (
-              <div key={f.id} className="group relative bg-white rounded-xl border border-surface-300 overflow-hidden shadow-card hover:shadow-card-hover transition-shadow">
-                {/* Thumbnail area */}
-                <div className="aspect-square bg-surface-50 flex items-center justify-center relative overflow-hidden">
-                  {ft === 'image' && f.url ? (
-                    <img src={f.url} alt={f.file_name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className={`w-12 h-12 rounded-xl ${typeColors[ft] || 'bg-surface-200 text-ink-400'} flex items-center justify-center`}>
-                      <Icon className="w-6 h-6" />
-                    </div>
-                  )}
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-ink-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <button onClick={() => setPreview(f)} className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-default">
-                      <Eye className="w-4 h-4 text-white" />
-                    </button>
-                    <a href={f.url} download className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-default">
-                      <Download className="w-4 h-4 text-white" />
-                    </a>
-                    <button onClick={() => setDeleteTarget(f)} className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-default">
-                      <Trash2 className="w-4 h-4 text-white" />
-                    </button>
-                  </div>
-                </div>
-                {/* File info */}
-                <div className="px-2.5 py-2">
-                  <p className="text-body-sm font-medium text-ink-700 truncate">{f.file_name}</p>
-                  <p className="text-body-sm text-ink-400">{formatFileSize(f.file_size)}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <Card padding={false}>
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-surface-200">
-                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Fichier</th>
-                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Type</th>
-                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Taille</th>
-                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Tags</th>
-                <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Date</th>
-                <th className="text-right text-label text-ink-500 font-medium px-5 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-200">
-              {files.map((f) => {
-                const ft = getFileType(f.mime_type);
-                const Icon = typeIcons[ft] || FileText;
-                return (
-                  <tr key={f.id} className="hover:bg-surface-50 transition-default">
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg ${typeColors[ft] || 'bg-surface-200 text-ink-400'} flex items-center justify-center shrink-0`}>
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <span className="text-body-sm font-medium text-ink-700 truncate max-w-xs">{f.file_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-body-sm text-ink-500 capitalize">{ft}</td>
-                    <td className="px-5 py-3 text-body-sm text-ink-500">{formatFileSize(f.file_size)}</td>
-                    <td className="px-5 py-3">
-                      <div className="flex gap-1">
-                        {(f.tags || []).slice(0, 3).map((tg) => (
-                          <button key={tg} onClick={() => updateParam('tag', tg)}
-                            className="text-body-sm px-1.5 py-0.5 bg-surface-100 rounded text-ink-500 hover:bg-primary-50 hover:text-primary-600 transition-default">
-                            {tg}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-body-sm text-ink-400">{formatDate(f.created_at)}</td>
-                    <td className="px-5 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => setPreview(f)} className="p-1.5 hover:bg-surface-100 rounded-lg"><Eye className="w-4 h-4 text-ink-400" /></button>
-                        <a href={f.url} download className="p-1.5 hover:bg-surface-100 rounded-lg"><Download className="w-4 h-4 text-ink-400" /></a>
-                        <button onClick={() => setDeleteTarget(f)} className="p-1.5 hover:bg-danger-50 rounded-lg"><Trash2 className="w-4 h-4 text-ink-400 hover:text-danger-500" /></button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </Card>
-      )}
 
-      <Pagination page={page} totalPages={Math.ceil(total / 24) || 1} total={total} limit={24} onPageChange={(p) => updateParam('page', String(p))} />
-
-      {/* Upload Modal */}
-      {showUpload && <UploadModal onClose={() => setShowUpload(false)} onUploaded={() => { setShowUpload(false); loadMedia(); }} />}
-
-      {/* Preview Modal */}
-      {preview && (
-        <Modal open onClose={() => setPreview(null)} title={preview.file_name} size="lg">
-          <div className="space-y-4">
-            {getFileType(preview.mime_type) === 'image' && preview.url ? (
-              <img src={preview.url} alt={preview.file_name} className="w-full rounded-lg max-h-[500px] object-contain bg-surface-50" />
-            ) : (
-              <div className="h-64 bg-surface-50 rounded-lg flex items-center justify-center">
-                <p className="text-body-md text-ink-400">Aperçu non disponible</p>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-3 text-body-sm">
-              <div><span className="text-ink-400">Taille:</span> <span className="text-ink-700 ml-1">{formatFileSize(preview.file_size)}</span></div>
-              <div><span className="text-ink-400">Type:</span> <span className="text-ink-700 ml-1">{preview.mime_type}</span></div>
-              <div><span className="text-ink-400">Uploadé le:</span> <span className="text-ink-700 ml-1">{formatDate(preview.created_at)}</span></div>
+          {/* Barre d’outils */}
+          <div className="px-5 py-3 border-b border-surface-200 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder="Rechercher dans ce dossier…"
+                className="w-56"
+              />
+              {canCreateFolder && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={FolderPlus}
+                  onClick={handleCreateFolder}
+                >
+                  Nouveau dossier
+                </Button>
+              )}
+              {canUpload && (
+                <Button size="sm" icon={Upload} onClick={() => setShowUpload(true)}>
+                  Déposer un fichier
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center bg-surface-100 rounded-lg p-0.5">
+              <button
+                onClick={() => setView("grid")}
+                className={`p-1.5 rounded-md transition-default ${
+                  view === "grid" ? "bg-white shadow-sm text-primary-600" : "text-ink-400 hover:text-ink-600"
+                }`}
+                aria-label="Vue grille"
+              >
+                <Grid3X3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setView("list")}
+                className={`p-1.5 rounded-md transition-default ${
+                  view === "list" ? "bg-white shadow-sm text-primary-600" : "text-ink-400 hover:text-ink-600"
+                }`}
+                aria-label="Vue liste"
+              >
+                <List className="w-4 h-4" />
+              </button>
             </div>
           </div>
-        </Modal>
+
+          {/* Contenu */}
+          <div className="flex-1 overflow-auto p-5">
+            {loading ? (
+              <div className={view === "grid" ? "grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4" : "space-y-2"}>
+                {view === "grid"
+                  ? [...Array(10)].map((_, i) => (
+                      <Skeleton key={i} className="aspect-square rounded-xl" />
+                    ))
+                  : [...Array(6)].map((_, i) => (
+                      <Skeleton key={i} className="h-14 rounded-lg" />
+                    ))}
+              </div>
+            ) : !currentOrgId ? (
+              <EmptyState
+                icon={FolderOpen}
+                title="Sélectionnez une organisation"
+                description="Choisissez une organisation dans la liste pour afficher sa médiathèque."
+              />
+            ) : filteredFolders.length === 0 && filteredMedia.length === 0 ? (
+              <EmptyState
+                icon={FolderOpen}
+                title="Dossier vide"
+                description="Aucun fichier ni sous-dossier. Créez un dossier ou déposez un fichier."
+                action={
+                  (canCreateFolder || canUpload) ? (
+                    <div className="flex flex-wrap justify-center gap-3">
+                      {canCreateFolder && (
+                        <Button variant="secondary" icon={FolderPlus} onClick={handleCreateFolder}>
+                          Créer un dossier
+                        </Button>
+                      )}
+                      {canUpload && (
+                        <Button icon={Upload} onClick={() => setShowUpload(true)}>
+                          Déposer un fichier
+                        </Button>
+                      )}
+                    </div>
+                  ) : null
+                }
+              />
+            ) : (
+              <>
+                {view === "grid" ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                    {filteredFolders.map((folder) => (
+                      <button
+                        key={folder.id}
+                        onClick={() => openFolder(folder)}
+                        className="group flex flex-col items-center p-4 rounded-xl border border-surface-300 bg-surface-50 hover:bg-primary-50 hover:border-primary-200 transition-default text-center"
+                      >
+                        <div className="w-14 h-14 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center mb-2 group-hover:bg-primary-200 transition-default">
+                          <FolderOpen className="w-7 h-7" />
+                        </div>
+                        <span className="text-body-sm font-medium text-ink-700 truncate w-full">
+                          {folder.name}
+                        </span>
+                      </button>
+                    ))}
+                    {filteredMedia.map((f) => {
+                      const cat = getFileCategory(f.mime_type);
+                      const Icon = fileIcons[cat] || FileText;
+                      const url = buildUrl(f.file_path);
+                      return (
+                        <div
+                          key={f.id}
+                          className="group relative flex flex-col rounded-xl border border-surface-300 bg-white overflow-hidden shadow-card hover:shadow-card-hover transition-all"
+                        >
+                          <div className="aspect-square bg-surface-100 flex items-center justify-center relative overflow-hidden">
+                            {cat === "image" && url ? (
+                              <img
+                                src={url}
+                                alt={f.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div
+                                className={`w-12 h-12 rounded-xl flex items-center justify-center ${fileIconColors[cat]}`}
+                              >
+                                <Icon className="w-6 h-6" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-ink-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => setPreviewFile(f)}
+                                className="p-2 rounded-lg bg-white/20 hover:bg-white/30"
+                              >
+                                <Eye className="w-4 h-4 text-white" />
+                              </button>
+                              {url && (
+                                <a
+                                  href={url}
+                                  download={f.file_name}
+                                  className="p-2 rounded-lg bg-white/20 hover:bg-white/30"
+                                >
+                                  <Download className="w-4 h-4 text-white" />
+                                </a>
+                              )}
+                              <button
+                                onClick={() => setDeleteTarget(f)}
+                                className="p-2 rounded-lg bg-white/20 hover:bg-white/30"
+                              >
+                                <Trash2 className="w-4 h-4 text-white" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="px-2.5 py-2">
+                            <p className="text-body-sm font-medium text-ink-700 truncate" title={f.name}>
+                              {f.name}
+                            </p>
+                            <p className="text-body-sm text-ink-400">{formatFileSize(f.file_size)}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {filteredFolders.map((folder) => (
+                      <button
+                        key={folder.id}
+                        onClick={() => openFolder(folder)}
+                        className="w-full flex items-center gap-4 px-4 py-3 rounded-lg border border-surface-200 bg-white hover:bg-primary-50 hover:border-primary-200 transition-default text-left"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center shrink-0">
+                          <FolderOpen className="w-5 h-5" />
+                        </div>
+                        <span className="text-body-md font-medium text-ink-700 flex-1 truncate">
+                          {folder.name}
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-ink-400 shrink-0" />
+                      </button>
+                    ))}
+                    {filteredMedia.map((f) => {
+                      const cat = getFileCategory(f.mime_type);
+                      const Icon = fileIcons[cat] || FileText;
+                      const url = buildUrl(f.file_path);
+                      return (
+                        <div
+                          key={f.id}
+                          className="w-full flex items-center gap-4 px-4 py-3 rounded-lg border border-surface-200 bg-white hover:bg-surface-50 transition-default"
+                        >
+                          <div
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${fileIconColors[cat]}`}
+                          >
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-body-md font-medium text-ink-700 truncate">{f.name}</p>
+                            <p className="text-body-sm text-ink-400">
+                              {formatFileSize(f.file_size)} · {formatDate(f.createdAt)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => setPreviewFile(f)}
+                              className="p-2 rounded-lg hover:bg-surface-200 text-ink-500"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            {url && (
+                              <a
+                                href={url}
+                                download={f.file_name}
+                                className="p-2 rounded-lg hover:bg-surface-200 text-ink-500"
+                              >
+                                <Download className="w-4 h-4" />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => setDeleteTarget(f)}
+                              className="p-2 rounded-lg hover:bg-danger-50 text-ink-500 hover:text-danger-500"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </main>
+      </div>
+
+      {showCreateFolder && (
+        <CreateFolderModal
+          isRoot={isAtRoot}
+          parentId={currentFolderId}
+          organizationId={currentOrgId}
+          organizationName={currentOrg?.name}
+          isSuperAdmin={isSuperAdmin}
+          onClose={() => setShowCreateFolder(false)}
+          onCreated={handleFolderCreated}
+        />
       )}
 
-      {/* Delete Confirm */}
+      {showUpload && (
+        <UploadModal
+          folderId={currentFolderId}
+          folderName={breadcrumb[breadcrumb.length - 1]?.name}
+          onClose={() => setShowUpload(false)}
+          onUploaded={handleUploaded}
+        />
+      )}
+
+      {previewFile && (
+        <PreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
+      )}
+
       <ConfirmDialog
         open={!!deleteTarget}
         title="Supprimer le fichier"
-        message={`Supprimer "${deleteTarget?.file_name}" ? Cette action est irréversible.`}
+        message={`Supprimer « ${deleteTarget?.name} » ? Cette action est irréversible.`}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
@@ -267,86 +536,49 @@ export default function MediaPage() {
   );
 }
 
-function UploadModal({ onClose, onUploaded }) {
-  const [files, setFiles] = useState([]);
-  const [tags, setTags] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setDragOver(false);
-    const dropped = Array.from(e.dataTransfer.files);
-    setFiles((prev) => [...prev, ...dropped]);
-  }, []);
-
-  const handleFileSelect = (e) => {
-    const selected = Array.from(e.target.files);
-    setFiles((prev) => [...prev, ...selected]);
-  };
-
-  const removeFile = (idx) => setFiles((prev) => prev.filter((_, i) => i !== idx));
-
-  const handleUpload = async () => {
-    if (files.length === 0) return toast.error('Sélectionnez au moins un fichier');
-    setUploading(true);
-    try {
-      for (const file of files) {
-        const fd = new FormData();
-        fd.append('file', file);
-        if (tags) fd.append('tags', tags);
-        await mediaAPI.upload(fd);
-      }
-      toast.success(`${files.length} fichier(s) uploadé(s)`);
-      onUploaded();
-    } catch (err) {
-      const details = formatErrorMessage(err);
-      details.forEach((detail) => toast.error(detail.message));
-    } finally {
-      setUploading(false);
-    }
-  };
+function PreviewModal({ file, onClose }) {
+  const cat = getFileCategory(file?.mime_type);
+  const url = buildUrl(file?.file_path);
+  const Icon = fileIcons[cat] || FileText;
 
   return (
-    <Modal open onClose={onClose} title="Uploader des fichiers" size="lg">
-      <div className="space-y-4">
-        {/* Drop zone */}
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${dragOver ? 'border-primary-400 bg-primary-50' : 'border-surface-300 bg-surface-50'}`}
-        >
-          <FolderUp className={`w-10 h-10 mx-auto mb-3 ${dragOver ? 'text-primary-500' : 'text-ink-300'}`} />
-          <p className="text-body-md text-ink-500 mb-1">Glissez-déposez vos fichiers ici</p>
-          <p className="text-body-sm text-ink-400 mb-3">ou</p>
-          <label className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-surface-400 rounded-lg text-body-sm font-medium text-ink-700 cursor-pointer hover:bg-surface-50 transition-default">
-            <Upload className="w-4 h-4" /> Parcourir
-            <input type="file" multiple onChange={handleFileSelect} className="hidden" />
-          </label>
+    <Modal open onClose={onClose} title={file?.name} size="xl">
+      <div className="space-y-5">
+        <div className="rounded-xl overflow-hidden bg-surface-100 flex items-center justify-center min-h-[280px]">
+          {cat === "image" && url ? (
+            <img src={url} alt={file.name} className="max-h-[480px] w-full object-contain" />
+          ) : cat === "video" && url ? (
+            <video src={url} controls className="max-h-[480px] w-full" />
+          ) : file?.mime_type === "application/pdf" && url ? (
+            <iframe src={url} title={file.name} className="w-full h-[480px] border-0" />
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-12 text-ink-400">
+              <Icon className="w-14 h-14" />
+              <p className="text-body-md">Aperçu non disponible</p>
+            </div>
+          )}
         </div>
-
-        {/* File list */}
-        {files.length > 0 && (
-          <div className="space-y-1.5">
-            {files.map((f, idx) => (
-              <div key={idx} className="flex items-center justify-between px-3 py-2 bg-surface-50 rounded-lg">
-                <div className="flex items-center gap-2 min-w-0">
-                  <FileText className="w-4 h-4 text-ink-400 shrink-0" />
-                  <span className="text-body-sm text-ink-700 truncate">{f.name}</span>
-                  <span className="text-body-sm text-ink-400 shrink-0">{formatFileSize(f.size)}</span>
-                </div>
-                <button onClick={() => removeFile(idx)} className="p-1 hover:bg-danger-50 rounded"><X className="w-3.5 h-3.5 text-ink-400" /></button>
-              </div>
-            ))}
+        <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-body-sm">
+          <div>
+            <span className="text-ink-400 block">Taille</span>
+            <span className="text-ink-700 font-medium">{formatFileSize(file?.file_size)}</span>
           </div>
-        )}
-
-        <Input label="Tags (séparés par des virgules)" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="branding, logo, 2024" />
-
-        <div className="flex justify-end gap-3 pt-2">
-          <Button variant="secondary" onClick={onClose}>Annuler</Button>
-          <Button onClick={handleUpload} loading={uploading} icon={Upload}>Uploader ({files.length})</Button>
+          <div>
+            <span className="text-ink-400 block">Date</span>
+            <span className="text-ink-700 font-medium">{formatDate(file?.createdAt)}</span>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 pt-2 border-t border-surface-200">
+          <Button variant="secondary" onClick={onClose}>Fermer</Button>
+          {url && (
+            <a
+              href={url}
+              download={file?.file_name}
+              className="inline-flex items-center justify-center gap-2 h-9 px-4 text-body-md font-medium rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-default"
+            >
+              <Download className="w-4 h-4" /> Télécharger
+            </a>
+          )}
         </div>
       </div>
     </Modal>

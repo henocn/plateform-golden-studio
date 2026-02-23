@@ -5,6 +5,7 @@ const { authenticate } = require('../../middlewares/auth.middleware');
 const { authorize } = require('../../middlewares/role.middleware');
 const tenantMiddleware = require('../../middlewares/tenant.middleware');
 const validate = require('../../middlewares/validate.middleware');
+const { uploadSingle } = require('../../middlewares/upload.middleware');
 const proposalController = require('./proposal.controller');
 const {
   createProposalSchema,
@@ -25,6 +26,7 @@ router.get('/',
 
 router.post('/',
   authorize('proposals.create'),
+  uploadSingle('file'),
   validate(createProposalSchema),
   proposalController.create);
 
@@ -39,7 +41,7 @@ router.put('/:id',
 
 // Submit to client (internal validator+)
 router.patch('/:id/submit',
-  authorize('proposals.submit_to_client'),
+  authorize('proposals.create'),
   proposalController.submitToClient);
 
 // ─── Comments ──────────────────────────────────────────────
@@ -48,18 +50,18 @@ router.get('/:id/comments',
   proposalController.listComments);
 
 router.post('/:id/comments',
-  authorize('proposals.create', 'proposals.validate_client'),
+  authorize('proposals.create',),
   validate(createCommentSchema),
   proposalController.addComment);
 
 // ─── Validations (client) ──────────────────────────────────
 router.post('/:id/validate',
-  authorize('proposals.validate_client'),
+  authorize('proposals.validate'),
   validate(validateProposalSchema),
   proposalController.validateProposal);
 
 router.get('/:id/validations',
-  authorize('projects.view_all_orgs', 'proposals.validate_client'),
+  authorize('projects.view_all_orgs', 'proposals.validate'),
   proposalController.listValidations);
 
 module.exports = router;

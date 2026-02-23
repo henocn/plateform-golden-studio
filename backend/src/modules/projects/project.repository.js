@@ -74,9 +74,13 @@ class ProjectRepository {
     return project.update({ status });
   }
 
-  async delete(id) {
+  async delete(id, hardDelete = false) {
     const project = await Project.findByPk(id);
     if (!project) return null;
+    if (hardDelete) {
+      await project.destroy();
+      return project;
+    }
     return project.update({ status: 'archived' });
   }
 

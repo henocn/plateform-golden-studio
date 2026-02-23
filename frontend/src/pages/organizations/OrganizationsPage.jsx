@@ -232,7 +232,7 @@ export default function OrganizationsPage() {
                         {org.is_active ? 'Actif' : 'Inactif'}
                       </Badge>
                     </td>
-                    <td className="px-5 py-3 text-body-sm text-ink-400">{formatDate(org.created_at)}</td>
+                    <td className="px-5 py-3 text-body-sm text-ink-400">{formatDate(org.createdAt)}</td>
                     <td className="px-5 py-3">
                       <OrganizationActions organization={org} onRefresh={loadOrgs} />
                     </td>
@@ -299,6 +299,7 @@ function CreateOrganizationModal({ open, onClose, onCreated }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input label="Nom" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ministère de…" />
         <Input label="Nom court" required value={form.short_name} onChange={(e) => setForm({ ...form, short_name: e.target.value })} placeholder="MIPISE" />
+        {/* TODO: delocaliser en un tableau dans utils et syncroniser avec les enum du model organisation */}
         <Select label="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}
           options={[
             { value: 'ministry', label: 'Ministère' },

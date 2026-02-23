@@ -48,14 +48,14 @@ class ApiResponse {
   /**
    * Réponse succès avec création (201)
    */
-  static created(res, data = null, message = 'Resource created successfully') {
+  static created(res, data = null, message = 'Ressource créée') {
     return ApiResponse.success(res, data, message, 201);
   }
 
   /**
    * Réponse succès paginée
    */
-  static paginated(res, { data, page, limit, total, message = 'Success' } = {}) {
+  static paginated(res, { data, page, limit, total, message = 'Succès' } = {}) {
     const totalPages = Math.ceil(total / limit);
 
     return ApiResponse.success(res, {

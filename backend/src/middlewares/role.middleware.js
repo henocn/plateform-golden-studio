@@ -22,7 +22,7 @@ const PERMISSIONS = require('../config/permissions');
  */
 const authorize = (...requiredPermissions) => (req, _res, next) => {
   if (!req.user) {
-    return next(ApiError.unauthorized('Authentication required'));
+    return next(ApiError.unauthorized('Authentification requise'));
   }
 
   const { role } = req.user;
@@ -49,10 +49,10 @@ const authorize = (...requiredPermissions) => (req, _res, next) => {
  */
 const internalOnly = (req, _res, next) => {
   if (!req.user) {
-    return next(ApiError.unauthorized('Authentication required'));
+    return next(ApiError.unauthorized('Authentification requise'));
   }
   if (req.user.user_type !== 'internal') {
-    return next(ApiError.forbidden('This resource is restricted to internal users'));
+    return next(ApiError.forbidden('Cette ressource est réservée aux utilisateurs internes'));
   }
   return next();
 };
@@ -62,10 +62,10 @@ const internalOnly = (req, _res, next) => {
  */
 const clientOnly = (req, _res, next) => {
   if (!req.user) {
-    return next(ApiError.unauthorized('Authentication required'));
+    return next(ApiError.unauthorized('Authentification requise'));
   }
   if (req.user.user_type !== 'client') {
-    return next(ApiError.forbidden('This resource is restricted to client users'));
+    return next(ApiError.forbidden('Cette ressource est réservée aux utilisateurs clients'));
   }
   return next();
 };

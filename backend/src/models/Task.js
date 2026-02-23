@@ -65,6 +65,8 @@ module.exports = (sequelize) => {
     Task.belongsTo(models.User, { as: 'assignee', foreignKey: 'assigned_to' });
     Task.belongsTo(models.User, { as: 'creator', foreignKey: 'created_by' });
     Task.hasMany(models.TaskComment, { as: 'comments', foreignKey: 'task_id' });
+    Task.hasMany(models.Proposal, { as: 'proposals', foreignKey: 'task_id' });
+
   };
 
   return Task;

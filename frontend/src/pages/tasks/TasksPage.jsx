@@ -64,8 +64,8 @@ export default function TasksPage() {
         .slice()
         .sort(
           (a, b) =>
-            new Date(b.created_at || b.updated_at || 0) -
-            new Date(a.created_at || a.updated_at || 0),
+            new Date(b.createdAt || b.updatedAt || 0) -
+            new Date(a.createdAt || a.updatedAt || 0),
         );
       setTasks(sorted);
       setTotal(total);
@@ -80,7 +80,9 @@ export default function TasksPage() {
     try {
       const { data } = await projectsAPI.list({ page: 1, limit: 100 });
       setProjects(extractList(data.data).items);
-    } catch {}
+    } catch (err) {
+      toast.error("Erreur lors du chargement des projets");
+    }
   };
 
   const updateParam = (key, value) => {

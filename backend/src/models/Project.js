@@ -70,7 +70,7 @@ module.exports = (sequelize) => {
     Project.belongsTo(models.User, { as: 'creator', foreignKey: 'created_by' });
     Project.hasMany(models.Brief, { as: 'briefs', foreignKey: 'project_id' });
     Project.hasMany(models.Task, { as: 'tasks', foreignKey: 'project_id' });
-    Project.hasMany(models.Proposal, { as: 'proposals', foreignKey: 'project_id' });
+    // Project.hasMany(models.Proposal, { as: 'proposals', foreignKey: 'project_id' });
     Project.hasMany(models.Publication, { as: 'publications', foreignKey: 'project_id' });
     Project.hasMany(models.CalendarEvent, { as: 'calendarEvents', foreignKey: 'project_id' });
   };

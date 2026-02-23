@@ -61,6 +61,7 @@ export const briefsAPI = {
 export const tasksAPI = {
   list: (params) => api.get('/tasks', { params }),
   getById: (id) => api.get(`/tasks/${id}`),
+  getProposals: (id) => api.get(`/tasks/${id}/proposals`),
   create: (data) => api.post('/tasks', data),
   update: (id, data) => api.put(`/tasks/${id}`, data),
   patchStatus: (id, data) => api.patch(`/tasks/${id}/status`, data),
@@ -111,6 +112,17 @@ export const mediaAPI = {
   update: (id, data) => api.put(`/media/${id}`, data),
   remove: (id) => api.delete(`/media/${id}`),
   download: (id) => api.get(`/media/${id}/download`, { responseType: 'blob' }),
+};
+
+export const foldersAPI = {
+  list: (params) => api.get('/folders', { params }),
+  getRootFolders: (organizationId) =>
+    organizationId ? api.get(`/folders/roots/${organizationId}`) : api.get('/folders/roots'),
+  explore: (id) => api.get(`/folders/${id}/explore`),
+  getById: (id) => api.get(`/folders/${id}`),
+  create: (data) => api.post('/folders', data),
+  update: (id, data) => api.put(`/folders/${id}`, data),
+  remove: (id) => api.delete(`/folders/${id}`),
 };
 
 export const reportingAPI = {

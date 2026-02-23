@@ -11,11 +11,15 @@ module.exports = (sequelize) => {
     },
     project_id: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
     },
     organization_id: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
+    },
+    task_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
     },
     version_number: {
       type: DataTypes.INTEGER,
@@ -59,6 +63,7 @@ module.exports = (sequelize) => {
   Proposal.associate = (models) => {
     Proposal.belongsTo(models.Project, { as: 'project', foreignKey: 'project_id' });
     Proposal.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
+    Proposal.belongsTo(models.Task, { as: 'task', foreignKey: 'task_id' });
     Proposal.belongsTo(models.User, { as: 'author', foreignKey: 'author_id' });
     Proposal.belongsTo(models.User, { as: 'validatorUser', foreignKey: 'validator_id' });
     Proposal.hasMany(models.ProposalComment, { as: 'comments', foreignKey: 'proposal_id' });
