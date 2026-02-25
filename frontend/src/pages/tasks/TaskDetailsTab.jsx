@@ -231,7 +231,7 @@ export default function TaskDetailsTab({
   commentsEndRef,
   handleAddComment,
 }) {
-  const { assignee, project, organization, creator } = task;
+  const { assignee, project, creator } = task;
 
   return (
     <div className="space-y-6">
@@ -266,21 +266,13 @@ export default function TaskDetailsTab({
           </div>
 
           {/* Grille infos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div>
               <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-1">
                 Projet
               </p>
               <p className="text-body-md text-ink-800 font-medium">
                 {project?.title || "—"}
-              </p>
-            </div>
-            <div>
-              <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-1">
-                Organisation
-              </p>
-              <p className="text-body-md text-ink-800 font-medium">
-                {organization?.name || "—"}
               </p>
             </div>
             <div>

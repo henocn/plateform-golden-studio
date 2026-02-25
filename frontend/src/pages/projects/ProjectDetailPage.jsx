@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, FolderKanban, FileText, CheckSquare, Send, History,
+  ArrowLeft, FolderKanban, FileText, CheckSquare,
   Calendar, Paperclip, Clock,
 } from 'lucide-react';
 import { Card, Badge, Tabs, Skeleton, EmptyState } from '../../components/ui';
-import { projectsAPI, briefsAPI, tasksAPI, proposalsAPI, publicationsAPI } from '../../api/services';
-import { formatDate, formatRelative, PROJECT_STATUS, PROPOSAL_STATUS, PRIORITY, extractList, formatErrorMessage } from '../../utils/helpers';
+import { projectsAPI, briefsAPI, tasksAPI, publicationsAPI } from '../../api/services';
+import { formatDate, PROJECT_STATUS, PRIORITY, extractList, formatErrorMessage } from '../../utils/helpers';
 import { usePermissions } from '../../hooks';
 import toast from 'react-hot-toast';
 
@@ -17,7 +17,6 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState(null);
   const [briefs, setBriefs] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [proposals, setProposals] = useState([]);
   const [publications, setPublications] = useState([]);
   const [activeTab, setActiveTab] = useState('brief');
   const [loading, setLoading] = useState(true);
@@ -27,23 +26,17 @@ export default function ProjectDetailPage() {
   const loadProject = async () => {
     setLoading(true);
     try {
-      const [projRes, briefRes, taskRes, propRes, pubRes] = await Promise.allSettled([
+      const [projRes, briefRes, taskRes, pubRes] = await Promise.allSettled([
         projectsAPI.getById(id),
         briefsAPI.list(id),
         tasksAPI.list({ project_id: id, limit: 50 }),
-        proposalsAPI.list(id),
         publicationsAPI.list(id),
       ]);
       if (projRes.status === 'fulfilled') setProject(projRes.value.data.data);
       if (briefRes.status === 'fulfilled') setBriefs(extractList(briefRes.value.data.data).items);
       if (taskRes.status === 'fulfilled') {
-        // Filtrage strict côté client au cas où l'API ne filtre pas
         const allTasks = extractList(taskRes.value.data.data).items;
         setTasks(allTasks.filter(t => String(t.project_id) === String(id)));
-      }
-      if (propRes.status === 'fulfilled') {
-        const propData = propRes.value.data.data;
-        setProposals(Array.isArray(propData) ? propData : extractList(propData).items);
       }
       if (pubRes.status === 'fulfilled') setPublications(extractList(pubRes.value.data.data).items);
     } catch (err) {
@@ -72,8 +65,6 @@ export default function ProjectDetailPage() {
   const tabs = [
     { id: 'brief', label: 'Brief', icon: FileText },
     { id: 'tasks', label: 'Tâches', icon: CheckSquare, count: tasks.length },
-    { id: 'proposals', label: 'Propositions', icon: Send, count: proposals.length },
-    { id: 'validations', label: 'Validations', icon: History },
     { id: 'publications', label: 'Publications', icon: Calendar, count: publications.length },
   ];
 
@@ -127,8 +118,6 @@ export default function ProjectDetailPage() {
       <div className="animate-fade-in">
         {activeTab === 'brief' && <BriefTab briefs={briefs} projectId={id} onRefresh={loadProject} />}
         {activeTab === 'tasks' && <TasksTab tasks={tasks} onRefresh={loadProject} />}
-        {activeTab === 'proposals' && <ProposalsTab proposals={proposals} />}
-        {activeTab === 'validations' && <ValidationsTab proposals={proposals} />}
         {activeTab === 'publications' && <PublicationsTab publications={publications} />}
       </div>
     </div>
@@ -285,105 +274,6 @@ function TasksTab({ tasks, onRefresh }) {
         );
       })}
     </div>
-  );
-}
-
-function ProposalsTab({ proposals }) {
-  if (proposals.length === 0) {
-    return <EmptyState icon={Send} title="Aucune proposition" description="Aucune proposition n'a été déposée" />;
-  }
-
-  return (
-    <div className="space-y-3">
-      {proposals.map((p) => {
-        const status = PROPOSAL_STATUS[p.status] || { label: p.status, color: 'neutral' };
-        return (
-          <Card key={p.id}>
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-body-lg font-medium text-ink-900">{p.title}</h4>
-                  <Badge color="neutral" size="xs">v{p.version_number}</Badge>
-                </div>
-                <p className="text-body-sm text-ink-400">{p.description}</p>
-                <div className="flex items-center gap-3 mt-2 text-body-sm text-ink-400">
-                  <span>Par {p.Author?.first_name || '—'} {p.Author?.last_name || ''}</span>
-                  <span>•</span>
-                  <span>{formatRelative(p.created_at)}</span>
-                </div>
-              </div>
-              <Badge color={status.color} dot>{status.label}</Badge>
-            </div>
-          </Card>
-        );
-      })}
-    </div>
-  );
-}
-
-function ValidationsTab({ proposals }) {
-  const [validations, setValidations] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const allVals = [];
-        for (const p of proposals) {
-          try {
-            const projectId = p.project_id || p.Project?.id;
-            if (!projectId) continue;
-            const { data } = await proposalsAPI.getValidations(projectId, p.id);
-            const vals = Array.isArray(data.data) ? data.data : extractList(data.data).items;
-            allVals.push(...vals.map((v) => ({ ...v, proposalTitle: p.title, version: p.version_number })));
-          } catch {}
-        }
-        setValidations(allVals);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [proposals]);
-
-  if (loading) return <Skeleton className="h-32 rounded-xl" />;
-
-  if (validations.length === 0) {
-    return <EmptyState icon={History} title="Aucune validation" description="L'historique de validation est vide" />;
-  }
-
-  return (
-    <Card padding={false}>
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-surface-200">
-            <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Proposition</th>
-            <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Validateur</th>
-            <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Décision</th>
-            <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Commentaire</th>
-            <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Date</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-surface-200">
-          {validations.map((v) => (
-            <tr key={v.id}>
-              <td className="px-5 py-3 text-body-sm text-ink-700">{v.proposalTitle} (v{v.version})</td>
-              <td className="px-5 py-3 text-body-sm text-ink-500">{v.Validator?.first_name || '—'} {v.Validator?.last_name || ''}</td>
-              <td className="px-5 py-3">
-                <Badge
-                  color={v.status === 'approved' ? 'success' : v.status === 'rejected' ? 'danger' : 'warning'}
-                  dot size="sm"
-                >
-                  {v.status === 'approved' ? 'Validé' : v.status === 'rejected' ? 'Refusé' : 'À modifier'}
-                </Badge>
-              </td>
-              <td className="px-5 py-3 text-body-sm text-ink-400 max-w-xs truncate">{v.comments || '—'}</td>
-              <td className="px-5 py-3 text-body-sm text-ink-400">{formatDate(v.validated_at || v.created_at)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </Card>
   );
 }
 

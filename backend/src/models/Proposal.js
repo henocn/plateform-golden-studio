@@ -37,6 +37,11 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+    file_name: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: 'Original filename for download',
+    },
     author_id: {
       type: DataTypes.UUID,
       allowNull: true,

@@ -1,7 +1,11 @@
 'use strict';
 
+const path = require('path');
+const fs = require('fs');
 const proposalService = require('./proposal.service');
 const ApiResponse = require('../../utils/ApiResponse');
+const ApiError = require('../../utils/ApiError');
+const env = require('../../config/env');
 
 const list = async (req, res, next) => {
   try {
@@ -15,7 +19,10 @@ const list = async (req, res, next) => {
 const create = async (req, res, next) => {
   try {
     const body = { ...req.body };
-    if (req.file && req.file.path) body.file_path = req.file.path;
+    if (req.file && req.file.path) {
+      body.file_path = path.relative(env.UPLOAD_DIR, req.file.path).split(path.sep).join('/');
+      body.file_name = req.file.originalname || null;
+    }
     const proposal = await proposalService.create(req.params.projectId, body, req.user);
     return ApiResponse.created(res, proposal, 'Proposition créée avec succès');
   } catch (error) {
@@ -90,8 +97,24 @@ const listValidations = async (req, res, next) => {
   }
 };
 
+/** GET /projects/:projectId/proposals/:id/download — télécharge le fichier avec le bon nom */
+const download = async (req, res, next) => {
+  try {
+    const proposal = await proposalService.getById(req.params.id, req.user);
+    if (!proposal.file_path) return next(ApiError.notFound('Aucun fichier pour cette proposition'));
+    const absolutePath = path.resolve(env.UPLOAD_DIR, proposal.file_path);
+    if (!fs.existsSync(absolutePath)) return next(ApiError.notFound('Fichier introuvable'));
+    const downloadName = (proposal.file_name || path.basename(proposal.file_path) || 'fichier').replace(/"/g, '%22');
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+    res.sendFile(absolutePath);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   list, create, getById, update, submitToClient,
   listComments, addComment,
   validateProposal, listValidations,
+  download,
 };

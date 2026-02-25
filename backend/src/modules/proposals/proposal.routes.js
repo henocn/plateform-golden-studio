@@ -34,6 +34,10 @@ router.get('/:id',
   authorize('projects.view_all_orgs', 'projects.view_own'),
   proposalController.getById);
 
+router.get('/:id/download',
+  authorize('projects.view_all_orgs', 'projects.view_own'),
+  proposalController.download);
+
 router.put('/:id',
   authorize('proposals.create'),
   validate(updateProposalSchema),

@@ -106,16 +106,74 @@ function ValidationActions({ proposal, onRefresh }) {
 /* Statuts pour lesquels la décision (approuver / révision / rejeter) est encore possible */
 const AWAITING_DECISION_STATUSES = ["pending_client_validation", "submitted", "draft"];
 
+/* ─── Téléchargement avec auth (bon nom de fichier) ──────────────────────── */
+async function downloadProposalFile(projectId, proposalId, fileName) {
+  const res = await proposalsAPI.download(projectId, proposalId);
+  const blob = res.data;
+  const name = fileName || "fichier";
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function FileDownloadButton({ projectId, proposalId, fileName, label = "Fichier" }) {
+  const [loading, setLoading] = useState(false);
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      await downloadProposalFile(projectId, proposalId, fileName);
+    } catch {
+      toast.error("Erreur lors du téléchargement");
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={loading}
+      className="inline-flex items-center gap-1.5 text-body-sm font-medium text-primary-600 hover:text-primary-700 hover:underline shrink-0 disabled:opacity-50"
+    >
+      <Download className="w-4 h-4" />
+      {label}
+    </button>
+  );
+}
+
 /* ─── Carte "dernière version" ───────────────────────────────────────────── */
 function LatestProposalCard({ proposal, canValidate, onRefresh }) {
+  const [downloading, setDownloading] = useState(false);
   const status = PROPOSAL_STATUS[proposal.status] ?? { label: proposal.status, color: "neutral" };
   const isApproved = proposal.status === "approved";
   const canDecide =
     canValidate && AWAITING_DECISION_STATUSES.includes(proposal.status);
 
-  const handleSave = () => {
-    if (proposal.file_path) {
-      window.open(proposal.file_path, "_blank");
+  const hasFile = Boolean(proposal.file_path);
+  const projectId = proposal.project_id || proposal.project?.id;
+  const handleDownload = async () => {
+    if (!hasFile || !projectId) return;
+    setDownloading(true);
+    try {
+      await downloadProposalFile(projectId, proposal.id, proposal.file_name);
+    } catch {
+      toast.error("Erreur lors du téléchargement");
+    } finally {
+      setDownloading(false);
+    }
+  };
+  const handleOpenInTab = async () => {
+    if (!hasFile || !projectId) return;
+    try {
+      const res = await proposalsAPI.download(projectId, proposal.id);
+      const url = URL.createObjectURL(res.data);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      toast.error("Erreur lors de l'ouverture");
     }
   };
 
@@ -171,21 +229,21 @@ function LatestProposalCard({ proposal, canValidate, onRefresh }) {
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-1">
-          {proposal.file_path && (
-            <a
-              href={proposal.file_path}
-              download
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-surface-300 text-body-sm text-ink-600 hover:bg-surface-100 transition-default"
+          {hasFile && (
+            <Button
+              size="sm"
+              variant="outline"
+              icon={Download}
+              loading={downloading}
+              disabled={!projectId}
+              onClick={handleDownload}
             >
-              <Download className="w-3.5 h-3.5" />
-              Télécharger
-            </a>
+              Télécharger{proposal.file_name ? ` (${proposal.file_name})` : ""}
+            </Button>
           )}
-          {isApproved && proposal.file_path && (
-            <Button size="sm" icon={Save} onClick={handleSave}>
-              Sauvegarder
+          {isApproved && hasFile && (
+            <Button size="sm" icon={Save} onClick={handleOpenInTab}>
+              Ouvrir
             </Button>
           )}
         </div>
@@ -313,17 +371,13 @@ function TimelineEntry({ proposal, isLast }) {
             </div>
           </div>
 
-          {proposal.file_path && (
-            <a
-              href={proposal.file_path}
-              download
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-body-sm font-medium text-primary-600 hover:text-primary-700 hover:underline shrink-0"
-            >
-              <Download className="w-4 h-4" />
-              Fichier
-            </a>
+          {proposal.file_path && (proposal.project_id || proposal.project?.id) && (
+            <FileDownloadButton
+              projectId={proposal.project_id || proposal.project?.id}
+              proposalId={proposal.id}
+              fileName={proposal.file_name}
+              label="Fichier"
+            />
           )}
         </div>
 
@@ -373,17 +427,19 @@ function TimelineEntry({ proposal, isLast }) {
 }
 
 /* ─── Composant principal ────────────────────────────────────────────────── */
-export default function ProposalsTab({ taskId }) {
+export default function ProposalsTab({ taskId, onProposalsLoaded }) {
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
   const { canValidateProposal } = usePermissions();
 
   const fetchProposals = async () => {
     setLoading(true);
     try {
       const response = await tasksAPI.getProposals(taskId);
-      // L'ordre vient du backend : première entrée = dernière version
-      setProposals(Array.isArray(response.data.data) ? response.data.data : []);
+      const list = Array.isArray(response.data.data) ? response.data.data : [];
+      setProposals(list);
+      if (typeof onProposalsLoaded === "function") onProposalsLoaded(list.length);
     } catch {
       toast.error("Erreur lors du chargement des propositions");
     } finally {
@@ -425,13 +481,7 @@ export default function ProposalsTab({ taskId }) {
 
   return (
     <div className="space-y-4">
-      {/* Compteur */}
-      <p className="text-body-sm text-ink-400 px-1">
-        <span className="font-semibold text-ink-700">{proposals.length}</span>{" "}
-        proposition{proposals.length > 1 ? "s" : ""}
-      </p>
-
-      {/* Dernière version — hero */}
+      {/* Une seule carte : dernière version */}
       {latest && (
         <LatestProposalCard
           proposal={latest}
@@ -440,19 +490,38 @@ export default function ProposalsTab({ taskId }) {
         />
       )}
 
-      {/* Timeline versions précédentes */}
+      {/* Bouton pour afficher l'historique des versions */}
       {previous.length > 0 && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setShowHistory((v) => !v)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-surface-300 text-body-sm font-medium text-ink-600 hover:bg-surface-100 transition-default"
+          >
+            <Paperclip className="w-4 h-4 text-ink-400" />
+            {showHistory ? "Masquer l'historique" : "Voir l'historique des versions"}
+            <span className="bg-surface-200 text-ink-600 px-2 py-0.5 rounded-full text-xs">
+              {previous.length}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Historique (fil des versions) — visible au clic */}
+      {showHistory && previous.length > 0 && (
         <Card className="p-5">
           <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider mb-5">
             Historique des versions
           </p>
-          {previous.map((p, idx) => (
-            <TimelineEntry
-              key={p.id}
-              proposal={p}
-              isLast={idx === previous.length - 1}
-            />
-          ))}
+          <div className="space-y-4">
+            {previous.map((p, idx) => (
+              <TimelineEntry
+                key={p.id}
+                proposal={p}
+                isLast={idx === previous.length - 1}
+              />
+            ))}
+          </div>
         </Card>
       )}
     </div>

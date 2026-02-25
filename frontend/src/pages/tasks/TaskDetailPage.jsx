@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { tasksAPI } from "../../api/services";
 import { useAuthStore } from "../../store/authStore";
 import { Button, Badge, Skeleton } from "../../components/ui";
@@ -36,10 +36,21 @@ export default function TaskDetailPage() {
   const me = useAuthStore((state) => state.user);
   const { canCreateProposal, can } = usePermissions();
   const [showEditTask, setShowEditTask] = useState(false);
+  const [proposalsCount, setProposalsCount] = useState(null);
   const intervalRef = useRef();
   const commentsEndRef = useRef(null);
 
   const canEditTask = task && task.status !== "done" && can("tasks.edit");
+
+  const tabItems = useMemo(() => {
+    return TABS.map(({ key, label, icon }) => ({
+      key,
+      label: key === "proposals" && proposalsCount !== null
+        ? `Propositions (${proposalsCount})`
+        : label,
+      icon,
+    }));
+  }, [proposalsCount]);
 
   useEffect(() => {
     const fetchTask = async () => {
@@ -171,7 +182,7 @@ export default function TaskDetailPage() {
         {/* Tabs */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex gap-1">
-            {TABS.map(({ key, label, icon: Icon }) => (
+            {tabItems.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
@@ -212,6 +223,7 @@ export default function TaskDetailPage() {
           <ProposalsTab
             taskId={task.id}
             key={proposalsRefreshKey}
+            onProposalsLoaded={setProposalsCount}
           />
         )}
 

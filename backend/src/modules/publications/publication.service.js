@@ -2,7 +2,7 @@
 
 const publicationRepository = require('./publication.repository');
 const ApiError = require('../../utils/ApiError');
-const { Project } = require('../../models');
+const { Project, Proposal } = require('../../models');
 
 class PublicationService {
   async listByProject(projectId, tenantId = null) {
@@ -21,18 +21,32 @@ class PublicationService {
     const project = await Project.findByPk(projectId);
     if (!project) throw ApiError.notFound('Project');
 
-    return publicationRepository.create({
+    const payload = {
       ...data,
       project_id: projectId,
       organization_id: project.organization_id,
       created_by: user.id,
-    });
+    };
+    if (data.proposal_id) {
+      const proposal = await Proposal.findByPk(data.proposal_id, { attributes: ['task_id'] });
+          if (proposal?.task_id) payload.task_id = proposal.task_id;
+    }
+    return publicationRepository.create(payload);
   }
 
   async update(id, data) {
-    const pub = await publicationRepository.update(id, data);
+    const pub = await publicationRepository.findById(id);
     if (!pub) throw ApiError.notFound('Publication');
-    return pub;
+    const payload = { ...data };
+    if (data.proposal_id !== undefined) {
+      if (data.proposal_id) {
+        const proposal = await Proposal.findByPk(data.proposal_id, { attributes: ['task_id'] });
+        if (proposal?.task_id) payload.task_id = proposal.task_id;
+      } else {
+        payload.task_id = null;
+      }
+    }
+    return publicationRepository.update(id, payload);
   }
 
   async delete(id) {

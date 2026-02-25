@@ -10,7 +10,8 @@ class PublicationRepository {
     return Publication.findAll({
       where,
       include: [
-        { association: 'proposal', attributes: ['id', 'title', 'version_number'] },
+        { association: 'proposal', attributes: ['id', 'title', 'version_number', 'task_id'] },
+        { association: 'task', attributes: ['id', 'title', 'status'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
       ],
       order: [['publication_date', 'DESC']],
@@ -26,7 +27,8 @@ class PublicationRepository {
       include: [
         { association: 'project', attributes: ['id', 'title'] },
         { association: 'organization', attributes: ['id', 'name'] },
-        { association: 'proposal', attributes: ['id', 'title', 'version_number'] },
+        { association: 'proposal', attributes: ['id', 'title', 'version_number', 'task_id'] },
+        { association: 'task', attributes: ['id', 'title', 'status'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
       ],
     });
