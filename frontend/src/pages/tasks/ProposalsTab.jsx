@@ -154,12 +154,8 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
   const { isSuperAdmin } = usePermissions();
   const { current: currentOrg, fetchCurrent } = useOrganizationStore();
   const { user } = useAuthStore();
-  const orgId =
-    proposal.organization_id ||
-    proposal.organization?.id ||
-    proposal.project?.organization_id ||
-    currentOrg?.id;
   const projectId = proposal.project_id || proposal.project?.id;
+  const orgId = currentOrg?.id ?? user?.organization_id ?? null;
 
   const [breadcrumb, setBreadcrumb] = useState([]);
   const [subfolders, setSubfolders] = useState([]);
@@ -170,7 +166,6 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
   const currentFolderId = breadcrumb.length > 0 ? breadcrumb[breadcrumb.length - 1]?.id ?? null : null;
   const isAtRoot = breadcrumb.length <= 1;
   const selectedFolderId = currentFolderId;
-  const orgName = currentOrg?.name || currentOrg?.short_name || user?.organization_name || "Racine";
 
   useEffect(() => {
     if (!orgId && !currentOrg) fetchCurrent();
@@ -190,9 +185,10 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
         const roots = Array.isArray(rootsData) ? rootsData : [];
         setSubfolders(roots);
       } else {
-        const { data } = await foldersAPI.explore(currentFolderId);
-        const result = data?.data ?? data;
-        setSubfolders(result?.subfolders ?? []);
+        const res = await foldersAPI.explore(currentFolderId, orgId ? { organizationId: orgId } : undefined);
+        const data = res?.data?.data ?? res?.data;
+        const result = data && typeof data === 'object' ? data : {};
+        setSubfolders(Array.isArray(result?.subfolders) ? result.subfolders : []);
       }
     } catch (err) {
       toast.error("Impossible de charger les dossiers");
@@ -208,9 +204,9 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
 
   useEffect(() => {
     if (orgId && isAtRoot) {
-      setBreadcrumb([{ id: null, name: orgName, isRoot: true }]);
+      setBreadcrumb([{ id: null, name: "Racine", isRoot: true }]);
     }
-  }, [orgId, orgName, isAtRoot]);
+  }, [orgId, isAtRoot]);
 
   const openFolder = (folder) => {
     setBreadcrumb((prev) => {

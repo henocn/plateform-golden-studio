@@ -116,11 +116,9 @@ export default function MediaPage() {
       } else {
         const res = await foldersAPI.explore(currentFolderId, currentOrgId ? { organizationId: currentOrgId } : undefined);
         const data = res?.data?.data ?? res?.data;
-        const result = typeof data === 'object' && data !== null ? data : {};
-        const subList = result?.subfolders ?? [];
-        const mediaList = result?.media ?? [];
-        setSubfolders(Array.isArray(subList) ? subList : []);
-        setMedia(Array.isArray(mediaList) ? mediaList : []);
+        const result = data && typeof data === 'object' ? data : {};
+        setSubfolders(Array.isArray(result?.subfolders) ? result.subfolders : []);
+        setMedia(Array.isArray(result?.media) ? result.media : []);
       }
     } catch (err) {
       toast.error("Erreur lors du chargement");
@@ -137,10 +135,9 @@ export default function MediaPage() {
 
   useEffect(() => {
     if (currentOrgId && isAtRoot) {
-      const name = currentOrg?.name || currentOrg?.short_name || user?.organization_name || "Médiathèque";
-      setBreadcrumb([{ id: null, name, isRoot: true }]);
+      setBreadcrumb([{ id: null, name: "Racine", isRoot: true }]);
     }
-  }, [currentOrgId, currentOrg, user?.organization_name, isAtRoot]);
+  }, [currentOrgId, isAtRoot]);
 
   const openFolder = (folder) => {
     setBreadcrumb((prev) => {
@@ -210,7 +207,7 @@ export default function MediaPage() {
         <div>
           <h1 className="text-display-lg text-ink-900">Médiathèque</h1>
           <p className="text-body-md text-ink-500 mt-0.5">
-            Fichiers de votre organisation
+            Fichiers de votre organisation. Les fichiers enregistrés depuis une proposition se trouvent dans le dossier que vous avez choisi lors de la sauvegarde.
           </p>
         </div>
       </div>
@@ -531,6 +528,14 @@ export default function MediaPage() {
         message={`Supprimer « ${deleteTarget?.name} » ? Cette action est irréversible.`}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteFolderTarget}
+        title="Supprimer le dossier"
+        message={`Supprimer le dossier « ${deleteFolderTarget?.name} » ? Cette action est irréversible.`}
+        onConfirm={handleDeleteFolder}
+        onCancel={() => setDeleteFolderTarget(null)}
       />
     </div>
   );
