@@ -9,8 +9,7 @@ import LoadingScreen from './components/ui/LoadingScreen';
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const TwoFactorPage = lazy(() => import('./pages/auth/TwoFactorPage'));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
-const OrganizationsPage = lazy(() => import('./pages/organizations/OrganizationsPage'));
-const OrganizationDetailPage = lazy(() => import('./pages/organizations/OrganizationDetailPage'));
+const OrganizationPage = lazy(() => import('./pages/organization/OrganizationPage'));
 const UsersPage = lazy(() => import('./pages/users/UsersPage'));
 const ProjectsPage = lazy(() => import('./pages/projects/ProjectsPage'));
 const ProjectDetailPage = lazy(() => import('./pages/projects/ProjectDetailPage'));
@@ -54,10 +53,11 @@ export default function App() {
             {/* Users — internal admins + client_admin (page adapts) */}
             <Route path="users" element={<UsersPage />} />
 
-            {/* Admin-only pages — internal users only */}
+            {/* Admin-only pages — internal users only (single-organization mode) */}
             <Route element={<AdminRoute />}>
-              <Route path="organizations" element={<OrganizationsPage />} />
-              <Route path="organizations/:id" element={<OrganizationDetailPage />} />
+              <Route path="organization" element={<OrganizationPage />} />
+              <Route path="organizations" element={<Navigate to="/organization" replace />} />
+              <Route path="organizations/:id" element={<Navigate to="/organization" replace />} />
               <Route path="reporting" element={<ReportingPage />} />
               <Route path="audit" element={<AuditPage />} />
             </Route>

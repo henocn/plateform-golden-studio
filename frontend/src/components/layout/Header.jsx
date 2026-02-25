@@ -19,6 +19,7 @@ export default function Header({ sidebarCollapsed, onMenuClick }) {
   const pathSegments = location.pathname.split('/').filter(Boolean);
   const breadcrumbLabels = {
     dashboard: 'Dashboard',
+    organization: 'Organisation',
     organizations: 'Organisations',
     users: 'Utilisateurs',
     projects: 'Projets',

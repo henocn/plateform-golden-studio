@@ -31,9 +31,7 @@ const updateOrganizationSchema = Joi.object({
   contact_email: Joi.string().email().optional().allow(null, ''),
   contact_phone: Joi.string().max(30).optional().allow(null, ''),
   address: Joi.string().max(500).optional().allow(null, ''),
-}).min(1).messages({
-  'object.min': 'At least one field must be provided',
-});
+}).min(0);
 
 const patchStatusSchema = Joi.object({
   is_active: Joi.boolean().required().messages({

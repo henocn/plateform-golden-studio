@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { useOrganizationStore } from '../../store/organizationStore';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
@@ -17,8 +18,16 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isLoading } = useAuthStore();
+  const { fetchCurrent, logoUrl, displayName } = useOrganizationStore();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState('');
+
+  useEffect(() => {
+    fetchCurrent();
+  }, [fetchCurrent]);
+
+  const logoSrc = logoUrl();
+  const orgName = displayName();
 
   const from = location.state?.from?.pathname || '/dashboard';
 
@@ -60,10 +69,14 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <span className="text-white font-bold text-lg">G</span>
+              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden shrink-0">
+                {logoSrc ? (
+                  <img src={logoSrc} alt="" className="w-full h-full object-contain" />
+                ) : (
+                  <span className="text-white font-bold text-lg">G</span>
+                )}
               </div>
-              <span className="text-xl font-bold tracking-tight">GovCom</span>
+              <span className="text-xl font-bold tracking-tight">{orgName}</span>
             </div>
             <p className="text-primary-200 text-body-md">Golden Studio Platform</p>
           </div>
@@ -89,10 +102,14 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">G</span>
+            <div className="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center overflow-hidden shrink-0">
+              {logoSrc ? (
+                <img src={logoSrc} alt="" className="w-full h-full object-contain" />
+              ) : (
+                <span className="text-white font-bold text-lg">G</span>
+              )}
             </div>
-            <span className="text-xl font-bold text-ink-900 tracking-tight">GovCom</span>
+            <span className="text-xl font-bold text-ink-900 tracking-tight">{orgName}</span>
           </div>
 
           <div className="mb-8">

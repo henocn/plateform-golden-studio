@@ -11,17 +11,27 @@ export const authAPI = {
   disable2FA: (data) => api.post('/auth/2fa/disable', data),
 };
 
+const API_BASE = '/api/v1';
+
 export const organizationsAPI = {
+  getCurrent: () => api.get('/organizations/current'),
   list: (params) => api.get('/organizations', { params }),
   getById: (id) => api.get(`/organizations/${id}`),
   create: (data) => api.post('/organizations', data),
   update: (id, data) => api.put(`/organizations/${id}`, data),
+  updateWithLogo: (id, formData) => api.put(`/organizations/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   delete: (id) => api.delete(`/organizations/${id}`),
   patchStatus: (id, data) => api.patch(`/organizations/${id}/status`, data),
   getUsers: (id, params) => api.get(`/organizations/${id}/users`, { params }),
   getProjects: (id, params) => api.get(`/organizations/${id}/projects`, { params }),
   getStats: (id) => api.get(`/organizations/${id}/stats`),
 };
+
+/** URL pour un fichier uploadé (ex: logo organisation). */
+export function uploadsUrl(relativePath) {
+  if (!relativePath) return null;
+  return `${API_BASE}/uploads/${String(relativePath).replace(/^\/+/, '')}`;
+}
 
 export const usersAPI = {
   listMembers: (params) => api.get('/users/members', { params }),

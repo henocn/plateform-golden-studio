@@ -75,14 +75,22 @@ const getById = async (req, res, next) => {
 };
 
 /**
- * PUT /api/v1/organizations/:id
+ * PUT /api/v1/organizations/:id (optional logo upload via multipart)
  */
 const update = async (req, res, next) => {
   try {
-    const organization = await organizationService.update(
-      req.params.id,
-      req.body,
-    );
+    const path = require("path");
+    const env = require("../../config/env");
+    const body = { ...req.body };
+    if (req.file && req.file.path) {
+      body.logo_path = path.relative(env.UPLOAD_DIR, req.file.path).split(path.sep).join('/');
+    }
+    const hasUpdate = Object.keys(body).length > 0;
+    if (!hasUpdate) {
+      const organization = await organizationService.getById(req.params.id);
+      return ApiResponse.success(res, organization, "No changes");
+    }
+    const organization = await organizationService.update(req.params.id, body);
     return ApiResponse.success(
       res,
       organization,

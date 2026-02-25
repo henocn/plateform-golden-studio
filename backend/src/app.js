@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -74,6 +75,9 @@ app.get('/health', (_req, res) => {
     message: 'Server is running',
   });
 });
+
+// ─── Static uploads (logos, media) ───────────────────────────
+app.use(`${env.API_PREFIX}/uploads`, express.static(path.resolve(env.UPLOAD_DIR)));
 
 // ─── API Routes ──────────────────────────────────────────────
 const authRoutes = require('./modules/auth/auth.routes');
