@@ -66,7 +66,45 @@ class TaskService {
     return task;
   }
 
-  // ─── Comments ────────────────────────────────────────────────
+
+  /**
+   * Envoie un email de rappel 1 jour avant la date limite à l'assigné et au superviseur
+   */
+  async sendDeadlineReminders() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+
+    const after = new Date(tomorrow);
+    after.setHours(23, 59, 59, 999);
+
+    // Récupère toutes les tâches dont la date limite est demain
+    const { data: tasks } = await require('./task.repository').findAll({
+      overdue: false,
+      status: 'todo',
+      due_date: { [require('sequelize').Op.between]: [tomorrow, after] },
+    });
+
+    const sendEmail = require('../../utils/sendEmail');
+
+    for (const task of tasks) {
+      // Récupère l'assigné et le superviseur
+      const assignee = task.assignee;
+      const supervisor = task.creator;
+      const emails = [];
+      if (assignee && assignee.email) emails.push(assignee.email);
+      if (supervisor && supervisor.email && supervisor.email !== assignee.email) emails.push(supervisor.email);
+
+      if (emails.length > 0) {
+        await sendEmail({
+          to: emails.join(','),
+          subject: `Rappel : tâche "${task.title}" à rendre demain`,
+          html: `<p>La tâche <b>${task.title}</b> doit être rendue avant le <b>${task.due_date}</b>.</p><p>Description : ${task.description || ''}</p>`,
+          text: `La tâche ${task.title} doit être rendue avant le ${task.due_date}.`,
+        });
+      }
+    }
+  }
 
   async listComments(taskId, user) {
     const isClient = user.user_type === 'client';
