@@ -69,11 +69,11 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden shrink-0">
+              <div className="w-20 h-20 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden shrink-0">
                 {logoSrc ? (
                   <img src={logoSrc} alt="" className="w-full h-full object-contain" />
                 ) : (
-                  <span className="text-white font-bold text-lg">G</span>
+                  <span className="text-white font-bold text-2xl">G</span>
                 )}
               </div>
               <span className="text-xl font-bold tracking-tight">{orgName}</span>
@@ -102,11 +102,11 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-16 h-16 rounded-xl bg-primary-500 flex items-center justify-center overflow-hidden shrink-0">
               {logoSrc ? (
                 <img src={logoSrc} alt="" className="w-full h-full object-contain" />
               ) : (
-                <span className="text-white font-bold text-lg">G</span>
+                <span className="text-white font-bold text-xl">G</span>
               )}
             </div>
             <span className="text-xl font-bold text-ink-900 tracking-tight">{orgName}</span>
