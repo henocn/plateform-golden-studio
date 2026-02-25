@@ -1,6 +1,6 @@
 'use strict';
 
-const { Proposal, ProposalComment, Validation, User } = require('../../models');
+const { Proposal, ProposalComment, Validation, User, ProposalAttachment } = require('../../models');
 const { Op } = require('sequelize');
 
 class ProposalRepository {
@@ -38,12 +38,25 @@ class ProposalRepository {
         { association: 'author', attributes: ['id', 'first_name', 'last_name', 'email'] },
         { association: 'validatorUser', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'validations', include: [{ association: 'validator', attributes: ['id', 'first_name', 'last_name'] }] },
+        { association: 'attachments', order: [['sort_order', 'ASC']] },
       ],
     });
   }
 
   async create(data) {
     return Proposal.create(data);
+  }
+
+  async createAttachments(proposalId, filesMeta) {
+    if (!filesMeta || filesMeta.length === 0) return [];
+    const records = filesMeta.map((f, i) => ({
+      proposal_id: proposalId,
+      file_path: f.file_path,
+      file_name: f.file_name,
+      sort_order: i,
+    }));
+    await ProposalAttachment.bulkCreate(records);
+    return ProposalAttachment.findAll({ where: { proposal_id: proposalId }, order: [['sort_order', 'ASC']] });
   }
 
   async update(id, data) {

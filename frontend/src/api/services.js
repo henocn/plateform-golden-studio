@@ -85,6 +85,7 @@ export const proposalsAPI = {
   list: (projectId, params) => api.get(`/projects/${projectId}/proposals`, { params }),
   getById: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}`),
   download: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}/download`, { responseType: 'blob' }),
+  saveToMedia: (projectId, id, data) => api.post(`/projects/${projectId}/proposals/${id}/save-to-media`, data),
   create: (projectId, data) =>
     api.post(`/projects/${projectId}/proposals`, data, {
       headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},

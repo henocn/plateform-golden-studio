@@ -74,6 +74,7 @@ module.exports = (sequelize) => {
     Proposal.hasMany(models.ProposalComment, { as: 'comments', foreignKey: 'proposal_id' });
     Proposal.hasMany(models.Validation, { as: 'validations', foreignKey: 'proposal_id' });
     Proposal.hasMany(models.Publication, { as: 'publications', foreignKey: 'proposal_id' });
+    Proposal.hasMany(models.ProposalAttachment, { as: 'attachments', foreignKey: 'proposal_id' });
   };
 
   return Proposal;

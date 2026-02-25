@@ -1,8 +1,12 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
 const proposalRepository = require('./proposal.repository');
 const ApiError = require('../../utils/ApiError');
-const { Project } = require('../../models');
+const env = require('../../config/env');
+const { Project, Proposal, Media, Folder } = require('../../models');
 
 class ProposalService {
   /**
@@ -32,14 +36,14 @@ class ProposalService {
    * Create proposal — internal contributor+, versioning automatique par tâche ou par projet.
    * Si task_id est fourni : version par tâche (pas de doublon de version pour la même tâche).
    */
-  async create(projectId, data, user) {
+  async create(projectId, data, user, filesMeta = []) {
     const project = await Project.findByPk(projectId);
     if (!project) throw ApiError.notFound('Project');
 
     const taskId = data.task_id || null;
     const versionNumber = await proposalRepository.getNextVersion(projectId, taskId);
 
-    return proposalRepository.create({
+    const proposal = await proposalRepository.create({
       ...data,
       project_id: projectId,
       organization_id: project.organization_id,
@@ -48,6 +52,10 @@ class ProposalService {
       version_number: versionNumber,
       status: 'pending_client_validation',
     });
+    if (filesMeta.length > 0) {
+      await proposalRepository.createAttachments(proposal.id, filesMeta);
+    }
+    return proposalRepository.findById(proposal.id);
   }
 
   /**
@@ -128,6 +136,55 @@ class ProposalService {
 
   async listValidations(proposalId) {
     return proposalRepository.findValidations(proposalId);
+  }
+
+  /**
+   * Sauvegarder les fichiers de la proposition dans un dossier de la médiathèque.
+   */
+  async saveToMedia(proposalId, folderId, user) {
+    const proposal = await proposalRepository.findById(proposalId);
+    if (!proposal) throw ApiError.notFound('Proposition');
+    const folder = await Folder.findByPk(folderId);
+    if (!folder) throw ApiError.notFound('Dossier');
+    const orgId = proposal.organization_id || folder.organization_id;
+    if (!orgId) throw ApiError.badRequest('Organisation introuvable');
+    if (user.user_type === 'client' && folder.organization_id !== user.organization_id) {
+      throw ApiError.forbidden('Accès refusé à ce dossier');
+    }
+
+    const attachments = proposal.attachments || [];
+    const files = attachments.length > 0
+      ? attachments.map((a) => ({ file_path: a.file_path, file_name: a.file_name }))
+      : (proposal.file_path ? [{ file_path: proposal.file_path, file_name: proposal.file_name || path.basename(proposal.file_path) }] : []);
+
+    if (files.length === 0) throw ApiError.badRequest('Aucun fichier à enregistrer');
+
+    const mediaDir = path.join(env.UPLOAD_DIR, 'media', String(orgId));
+    if (!fs.existsSync(mediaDir)) fs.mkdirSync(mediaDir, { recursive: true });
+
+    const created = [];
+    for (const f of files) {
+      const srcPath = path.resolve(env.UPLOAD_DIR, f.file_path);
+      if (!fs.existsSync(srcPath)) continue;
+      const ext = path.extname(f.file_name) || '';
+      const base = path.basename(f.file_name, ext) || 'fichier';
+      const safeName = `${crypto.randomUUID()}${ext}`;
+      const destRelative = path.join('media', String(orgId), safeName).split(path.sep).join('/');
+      const destPath = path.join(env.UPLOAD_DIR, destRelative);
+      fs.copyFileSync(srcPath, destPath);
+      const media = await Media.create({
+        organization_id: orgId,
+        folder_id: folderId,
+        name: base,
+        type: 'document',
+        file_path: destRelative,
+        file_name: f.file_name,
+        uploaded_by: user.id,
+        is_global: false,
+      });
+      created.push(media);
+    }
+    return created;
   }
 }
 

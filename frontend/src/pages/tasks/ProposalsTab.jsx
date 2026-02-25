@@ -2,8 +2,8 @@ import {
   FileText, Download, Save, CheckCircle2, XCircle,
   RefreshCw, Hourglass, Paperclip, Clock, User,
 } from "lucide-react";
-import { Card, Badge, Avatar, Button, Textarea } from "../../components/ui";
-import { tasksAPI, proposalsAPI } from "../../api/services";
+import { Card, Badge, Avatar, Button, Textarea, Modal } from "../../components/ui";
+import { tasksAPI, proposalsAPI, foldersAPI } from "../../api/services";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { formatDate, formatDateTime, PROPOSAL_STATUS, formatErrorMessage } from "../../utils/helpers";
@@ -106,25 +106,26 @@ function ValidationActions({ proposal, onRefresh }) {
 /* Statuts pour lesquels la décision (approuver / révision / rejeter) est encore possible */
 const AWAITING_DECISION_STATUSES = ["pending_client_validation", "submitted", "draft"];
 
-/* ─── Téléchargement avec auth (bon nom de fichier) ──────────────────────── */
-async function downloadProposalFile(projectId, proposalId, fileName) {
+/* ─── Téléchargement (un fichier ou ZIP) avec nom depuis Content-Disposition ─ */
+async function downloadProposalFile(projectId, proposalId) {
   const res = await proposalsAPI.download(projectId, proposalId);
   const blob = res.data;
-  const name = fileName || "fichier";
+  const cd = res.headers?.["content-disposition"];
+  const name = (cd && (cd.match(/filename\*?=(?:UTF-8'')?"?([^";\n]+)"?/)?.[1] || cd.match(/filename="?([^"]+)"?/)?.[1])) || "fichier";
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = name;
+  a.download = decodeURIComponent(name.trim());
   a.click();
   URL.revokeObjectURL(url);
 }
 
-function FileDownloadButton({ projectId, proposalId, fileName, label = "Fichier" }) {
+function FileDownloadButton({ projectId, proposalId }) {
   const [loading, setLoading] = useState(false);
   const handleClick = async () => {
     setLoading(true);
     try {
-      await downloadProposalFile(projectId, proposalId, fileName);
+      await downloadProposalFile(projectId, proposalId);
     } catch {
       toast.error("Erreur lors du téléchargement");
     } finally {
@@ -139,8 +140,81 @@ function FileDownloadButton({ projectId, proposalId, fileName, label = "Fichier"
       className="inline-flex items-center gap-1.5 text-body-sm font-medium text-primary-600 hover:text-primary-700 hover:underline shrink-0 disabled:opacity-50"
     >
       <Download className="w-4 h-4" />
-      {label}
+      Télécharger
     </button>
+  );
+}
+
+/* ─── Modale Sauvegarder dans la médiathèque ─────────────────────────────── */
+function SaveToMediaModal({ proposal, onClose, onSaved }) {
+  const [folders, setFolders] = useState([]);
+  const [folderId, setFolderId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const orgId = proposal.organization_id || proposal.organization?.id;
+  const projectId = proposal.project_id || proposal.project?.id;
+
+  useEffect(() => {
+    if (!orgId) {
+      setLoading(false);
+      return;
+    }
+    foldersAPI.getRootFolders(orgId)
+      .then((res) => {
+        const d = res.data?.data ?? res.data;
+        setFolders(Array.isArray(d) ? d : []);
+      })
+      .catch(() => toast.error("Impossible de charger les dossiers"))
+      .finally(() => setLoading(false));
+  }, [orgId]);
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!folderId || !projectId) {
+      toast.error("Veuillez choisir un dossier");
+      return;
+    }
+    setSaving(true);
+    try {
+      await proposalsAPI.saveToMedia(projectId, proposal.id, { folder_id: folderId });
+      toast.success("Fichier(s) enregistré(s) dans la médiathèque");
+      onSaved();
+    } catch (err) {
+      formatErrorMessage(err).forEach((m) => toast.error(m.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal open onClose={onClose} title="Sauvegarder dans la médiathèque" size="md">
+      <form onSubmit={handleSave} className="space-y-4">
+        <p className="text-body-sm text-ink-500">
+          Choisissez un dossier de la médiathèque pour enregistrer le(s) fichier(s) de cette proposition.
+        </p>
+        {loading ? (
+          <p className="text-body-sm text-ink-400">Chargement des dossiers…</p>
+        ) : (
+          <div>
+            <label className="block text-label text-ink-700 mb-1">Dossier</label>
+            <select
+              value={folderId}
+              onChange={(e) => setFolderId(e.target.value)}
+              className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-body-md text-ink-900 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            >
+              <option value="">— Choisir un dossier —</option>
+              {folders.map((f) => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div className="flex justify-end gap-3 pt-2 border-t border-surface-200">
+          <Button type="button" variant="secondary" onClick={onClose}>Annuler</Button>
+          <Button type="submit" loading={saving} disabled={!folderId || loading}>Sauvegarder</Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -152,30 +226,20 @@ function LatestProposalCard({ proposal, canValidate, onRefresh }) {
   const canDecide =
     canValidate && AWAITING_DECISION_STATUSES.includes(proposal.status);
 
-  const hasFile = Boolean(proposal.file_path);
+  const hasFile = Boolean(proposal.file_path) || (proposal.attachments && proposal.attachments.length > 0);
   const projectId = proposal.project_id || proposal.project?.id;
   const handleDownload = async () => {
     if (!hasFile || !projectId) return;
     setDownloading(true);
     try {
-      await downloadProposalFile(projectId, proposal.id, proposal.file_name);
+      await downloadProposalFile(projectId, proposal.id);
     } catch {
       toast.error("Erreur lors du téléchargement");
     } finally {
       setDownloading(false);
     }
   };
-  const handleOpenInTab = async () => {
-    if (!hasFile || !projectId) return;
-    try {
-      const res = await proposalsAPI.download(projectId, proposal.id);
-      const url = URL.createObjectURL(res.data);
-      window.open(url, "_blank");
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } catch {
-      toast.error("Erreur lors de l'ouverture");
-    }
-  };
+  const [showSaveToMedia, setShowSaveToMedia] = useState(false);
 
   const comments = proposal.comments || [];
   const validations = proposal.validations || [];
@@ -238,15 +302,22 @@ function LatestProposalCard({ proposal, canValidate, onRefresh }) {
               disabled={!projectId}
               onClick={handleDownload}
             >
-              Télécharger{proposal.file_name ? ` (${proposal.file_name})` : ""}
+              Télécharger
             </Button>
           )}
-          {isApproved && hasFile && (
-            <Button size="sm" icon={Save} onClick={handleOpenInTab}>
-              Ouvrir
+          {hasFile && (
+            <Button size="sm" variant="outline" icon={Save} onClick={() => setShowSaveToMedia(true)}>
+              Sauvegarder
             </Button>
           )}
         </div>
+        {showSaveToMedia && (
+          <SaveToMediaModal
+            proposal={proposal}
+            onClose={() => setShowSaveToMedia(false)}
+            onSaved={() => { setShowSaveToMedia(false); onRefresh(); }}
+          />
+        )}
 
         {/* Commentaires de la proposition */}
         {comments.length > 0 && (
@@ -371,12 +442,10 @@ function TimelineEntry({ proposal, isLast }) {
             </div>
           </div>
 
-          {proposal.file_path && (proposal.project_id || proposal.project?.id) && (
+          {(proposal.file_path || (proposal.attachments && proposal.attachments.length > 0)) && (proposal.project_id || proposal.project?.id) && (
             <FileDownloadButton
               projectId={proposal.project_id || proposal.project?.id}
               proposalId={proposal.id}
-              fileName={proposal.file_name}
-              label="Fichier"
             />
           )}
         </div>

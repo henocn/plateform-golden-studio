@@ -5,13 +5,14 @@ const { authenticate } = require('../../middlewares/auth.middleware');
 const { authorize } = require('../../middlewares/role.middleware');
 const tenantMiddleware = require('../../middlewares/tenant.middleware');
 const validate = require('../../middlewares/validate.middleware');
-const { uploadSingle } = require('../../middlewares/upload.middleware');
+const { uploadMultiple } = require('../../middlewares/upload.middleware');
 const proposalController = require('./proposal.controller');
 const {
   createProposalSchema,
   updateProposalSchema,
   validateProposalSchema,
   createCommentSchema,
+  saveToMediaSchema,
 } = require('./proposal.validation');
 
 // mergeParams: true → inherit :projectId from parent
@@ -26,7 +27,7 @@ router.get('/',
 
 router.post('/',
   authorize('proposals.create'),
-  uploadSingle('file'),
+  uploadMultiple('files', 10),
   validate(createProposalSchema),
   proposalController.create);
 
@@ -37,6 +38,11 @@ router.get('/:id',
 router.get('/:id/download',
   authorize('projects.view_all_orgs', 'projects.view_own'),
   proposalController.download);
+
+router.post('/:id/save-to-media',
+  authorize('projects.view_all_orgs', 'projects.view_own'),
+  validate(saveToMediaSchema),
+  proposalController.saveToMedia);
 
 router.put('/:id',
   authorize('proposals.create'),

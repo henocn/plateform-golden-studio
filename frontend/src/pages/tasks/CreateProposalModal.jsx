@@ -12,7 +12,7 @@ export default function CreateProposalModal({ task, onClose, onCreated }) {
   const [form, setForm] = useState({
     title: "",
     description: "",
-    file: null,
+    files: [],
   });
   const [submitting, setSubmitting] = useState(false);
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
@@ -36,7 +36,7 @@ export default function CreateProposalModal({ task, onClose, onCreated }) {
       fd.append("title", form.title.trim());
       fd.append("description", form.description || "");
       if (taskId) fd.append("task_id", taskId);
-      if (form.file) fd.append("file", form.file);
+      (form.files || []).forEach((file) => fd.append("files", file));
       await proposalsAPI.create(projectId, fd);
       toast.success("Proposition créée");
       onCreated();
@@ -72,12 +72,16 @@ export default function CreateProposalModal({ task, onClose, onCreated }) {
           placeholder="Description optionnelle"
         />
         <div>
-          <label className="block text-label text-ink-700 mb-1">Fichier</label>
+          <label className="block text-label text-ink-700 mb-1">Fichiers (plusieurs possibles)</label>
           <input
             type="file"
-            onChange={(e) => set("file", e.target.files?.[0] ?? null)}
+            multiple
+            onChange={(e) => set("files", Array.from(e.target.files || []))}
             className="block w-full text-body-sm text-ink-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border file:border-surface-300 file:bg-white file:text-ink-700 hover:file:bg-surface-50"
           />
+          {form.files?.length > 0 && (
+            <p className="mt-1 text-body-sm text-ink-500">{form.files.length} fichier(s) sélectionné(s)</p>
+          )}
         </div>
         <div className="flex justify-end gap-3 pt-2 border-t border-surface-200">
           <Button type="button" variant="secondary" onClick={onClose}>

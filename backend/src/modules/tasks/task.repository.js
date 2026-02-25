@@ -115,6 +115,7 @@ class TaskRepository {
       include: [
         { association: 'author', attributes: ['id', 'first_name', 'last_name', 'email'] },
         { association: 'project', attributes: ['id', 'title'] },
+        { association: 'attachments', order: [['sort_order', 'ASC']] },
         {
           association: 'comments',
           order: [['created_at', 'ASC']],
