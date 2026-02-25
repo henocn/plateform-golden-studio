@@ -78,7 +78,7 @@ export default function LoginPage() {
               </div>
               <span className="text-xl font-bold tracking-tight">{orgName}</span>
             </div>
-            <p className="text-primary-200 text-body-md">Golden Studio Platform</p>
+            <p className="text-primary-200 text-body-md">Kidou Platform</p>
           </div>
 
           <div className="max-w-md">

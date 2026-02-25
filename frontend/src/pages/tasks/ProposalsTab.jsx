@@ -1,13 +1,17 @@
 import {
   FileText, Download, Save, CheckCircle2, XCircle,
   RefreshCw, Hourglass, Paperclip, Clock, User,
+  FolderOpen, FolderPlus, ChevronRight,
 } from "lucide-react";
 import { Card, Badge, Avatar, Button, Textarea, Modal } from "../../components/ui";
 import { tasksAPI, proposalsAPI, foldersAPI } from "../../api/services";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import { formatDate, formatDateTime, PROPOSAL_STATUS, formatErrorMessage } from "../../utils/helpers";
 import { usePermissions } from "../../hooks";
+import { useOrganizationStore } from "../../store/organizationStore";
+import { useAuthStore } from "../../store/authStore";
+import CreateFolderModal from "../media/CreateFolderModal";
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
@@ -145,38 +149,94 @@ function FileDownloadButton({ projectId, proposalId }) {
   );
 }
 
-/* ─── Modale Sauvegarder dans la médiathèque ─────────────────────────────── */
+/* ─── Modale Sauvegarder dans la médiathèque (explorateur de dossiers) ────── */
 function SaveToMediaModal({ proposal, onClose, onSaved }) {
-  const [folders, setFolders] = useState([]);
-  const [folderId, setFolderId] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const orgId = proposal.organization_id || proposal.organization?.id;
+  const { isSuperAdmin } = usePermissions();
+  const { current: currentOrg, fetchCurrent } = useOrganizationStore();
+  const { user } = useAuthStore();
+  const orgId =
+    proposal.organization_id ||
+    proposal.organization?.id ||
+    proposal.project?.organization_id ||
+    currentOrg?.id;
   const projectId = proposal.project_id || proposal.project?.id;
 
+  const [breadcrumb, setBreadcrumb] = useState([]);
+  const [subfolders, setSubfolders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+
+  const currentFolderId = breadcrumb.length > 0 ? breadcrumb[breadcrumb.length - 1]?.id ?? null : null;
+  const isAtRoot = breadcrumb.length <= 1;
+  const selectedFolderId = currentFolderId;
+  const orgName = currentOrg?.name || currentOrg?.short_name || user?.organization_name || "Racine";
+
   useEffect(() => {
+    if (!orgId && !currentOrg) fetchCurrent();
+  }, [orgId, currentOrg, fetchCurrent]);
+
+  const loadContent = useCallback(async () => {
     if (!orgId) {
       setLoading(false);
+      setSubfolders([]);
       return;
     }
-    foldersAPI.getRootFolders(orgId)
-      .then((res) => {
-        const d = res.data?.data ?? res.data;
-        setFolders(Array.isArray(d) ? d : []);
-      })
-      .catch(() => toast.error("Impossible de charger les dossiers"))
-      .finally(() => setLoading(false));
-  }, [orgId]);
+    setLoading(true);
+    try {
+      if (!currentFolderId) {
+        const rootsRes = await foldersAPI.getRootFolders(orgId);
+        const rootsData = rootsRes?.data?.data ?? rootsRes?.data;
+        const roots = Array.isArray(rootsData) ? rootsData : [];
+        setSubfolders(roots);
+      } else {
+        const { data } = await foldersAPI.explore(currentFolderId);
+        const result = data?.data ?? data;
+        setSubfolders(result?.subfolders ?? []);
+      }
+    } catch (err) {
+      toast.error("Impossible de charger les dossiers");
+      setSubfolders([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [orgId, currentFolderId]);
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    if (!folderId || !projectId) {
-      toast.error("Veuillez choisir un dossier");
+  useEffect(() => {
+    loadContent();
+  }, [loadContent]);
+
+  useEffect(() => {
+    if (orgId && isAtRoot) {
+      setBreadcrumb([{ id: null, name: orgName, isRoot: true }]);
+    }
+  }, [orgId, orgName, isAtRoot]);
+
+  const openFolder = (folder) => {
+    setBreadcrumb((prev) => {
+      const upToRoot = prev.findIndex((b) => b.isRoot);
+      const base = upToRoot >= 0 ? prev.slice(0, upToRoot + 1) : prev;
+      return [...base, { id: folder.id, name: folder.name, isRoot: false }];
+    });
+  };
+
+  const goToBreadcrumb = (index) => {
+    setBreadcrumb((prev) => prev.slice(0, index + 1));
+  };
+
+  const handleFolderCreated = () => {
+    setShowCreateFolder(false);
+    loadContent();
+  };
+
+  const handleSaveHere = async () => {
+    if (!selectedFolderId || !projectId) {
+      toast.error("Ouvrez un dossier ou créez-en un pour enregistrer les fichiers.");
       return;
     }
     setSaving(true);
     try {
-      await proposalsAPI.saveToMedia(projectId, proposal.id, { folder_id: folderId });
+      await proposalsAPI.saveToMedia(projectId, proposal.id, { folder_id: selectedFolderId });
       toast.success("Fichier(s) enregistré(s) dans la médiathèque");
       onSaved();
     } catch (err) {
@@ -186,40 +246,121 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
     }
   };
 
-  return (
-    <Modal open onClose={onClose} title="Sauvegarder dans la médiathèque" size="md">
-      <form onSubmit={handleSave} className="space-y-4">
-        <p className="text-body-sm text-ink-500">
-          Choisissez un dossier de la médiathèque pour enregistrer le(s) fichier(s) de cette proposition.
-        </p>
-        {loading ? (
-          <p className="text-body-sm text-ink-400">Chargement des dossiers…</p>
-        ) : (
-          <div>
-            <label className="block text-label text-ink-700 mb-1">Dossier</label>
-            <select
-              value={folderId}
-              onChange={(e) => setFolderId(e.target.value)}
-              className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-body-md text-ink-900 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-            >
-              <option value="">— Choisir un dossier —</option>
-              {folders.map((f) => (
-                <option key={f.id} value={f.id}>{f.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-        <div className="flex justify-end gap-3 pt-2 border-t border-surface-200">
-          <Button type="button" variant="secondary" onClick={onClose}>Annuler</Button>
-          <Button type="submit" loading={saving} disabled={!folderId || loading}>Sauvegarder</Button>
+  if (!orgId) {
+    return (
+      <Modal open onClose={onClose} title="Sauvegarder dans la médiathèque" size="md">
+        <p className="text-body-sm text-ink-500">Organisation inconnue.</p>
+        <div className="flex justify-end pt-4">
+          <Button variant="secondary" onClick={onClose}>Fermer</Button>
         </div>
-      </form>
+      </Modal>
+    );
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Sauvegarder dans la médiathèque" size="lg">
+      <div className="space-y-4">
+        <p className="text-body-sm text-ink-500">
+          Parcourez les dossiers, créez-en un si besoin, puis cliquez sur « Sauvegarder dans ce dossier ».
+        </p>
+
+        {/* Fil d'Ariane */}
+        <div className="flex items-center gap-2 flex-wrap rounded-lg bg-surface-50 border border-surface-200 px-3 py-2">
+          {breadcrumb.map((item, i) => (
+            <span key={i} className="flex items-center gap-2">
+              {i > 0 && <ChevronRight className="w-4 h-4 text-ink-300 shrink-0" />}
+              <button
+                type="button"
+                onClick={() => goToBreadcrumb(i)}
+                className={`text-body-sm font-medium transition-default ${
+                  i === breadcrumb.length - 1 ? "text-primary-600" : "text-ink-600 hover:text-primary-600"
+                }`}
+              >
+                {item.name}
+              </button>
+            </span>
+          ))}
+        </div>
+
+        {/* Actions + liste de dossiers */}
+        <div className="flex items-center justify-between gap-3 border-b border-surface-200 pb-3">
+          {(isAtRoot ? isSuperAdmin : true) && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              icon={FolderPlus}
+              onClick={() => setShowCreateFolder(true)}
+            >
+              Nouveau dossier
+            </Button>
+          )}
+        </div>
+
+        <div className="min-h-[200px] max-h-[320px] overflow-y-auto rounded-xl border border-surface-200 bg-surface-50/50 p-3 space-y-2">
+          {loading ? (
+            <p className="text-body-sm text-ink-400 py-4">Chargement…</p>
+          ) : subfolders.length === 0 ? (
+            <p className="text-body-sm text-ink-500 py-4">
+              {isAtRoot
+                ? (isSuperAdmin ? "Aucun dossier à la racine. Créez un dossier pour enregistrer les fichiers." : "Aucun dossier à la racine. Contactez un administrateur pour créer un dossier.")
+                : "Aucun sous-dossier. Vous pouvez sauvegarder ici ou créer un sous-dossier."}
+            </p>
+          ) : (
+            subfolders.map((folder) => (
+              <button
+                key={folder.id}
+                type="button"
+                onClick={() => openFolder(folder)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-surface-200 bg-white hover:bg-primary-50 hover:border-primary-200 transition-default text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center shrink-0">
+                  <FolderOpen className="w-5 h-5" />
+                </div>
+                <span className="text-body-md font-medium text-ink-700 flex-1 truncate">{folder.name}</span>
+                <ChevronRight className="w-4 h-4 text-ink-400 shrink-0" />
+              </button>
+            ))
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-surface-200">
+          <p className="text-body-sm text-ink-500">
+            {selectedFolderId
+              ? "Fichiers enregistrés dans le dossier affiché."
+              : "Ouvrez un dossier ou créez-en un pour choisir la destination."}
+          </p>
+          <div className="flex gap-2 shrink-0">
+            <Button variant="secondary" onClick={onClose}>Annuler</Button>
+            <Button
+              onClick={handleSaveHere}
+              loading={saving}
+              disabled={!selectedFolderId}
+              icon={Save}
+            >
+              Sauvegarder dans ce dossier
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {showCreateFolder && (
+        <CreateFolderModal
+          isRoot={isAtRoot}
+          parentId={currentFolderId}
+          organizationId={orgId}
+          organizationName={breadcrumb[breadcrumb.length - 1]?.name}
+          isSuperAdmin={isSuperAdmin}
+          onClose={() => setShowCreateFolder(false)}
+          onCreated={handleFolderCreated}
+        />
+      )}
     </Modal>
   );
 }
 
 /* ─── Carte "dernière version" ───────────────────────────────────────────── */
-function LatestProposalCard({ proposal, canValidate, onRefresh }) {
+export function LatestProposalCard({ proposal, canValidate, onRefresh }) {
   const [downloading, setDownloading] = useState(false);
   const status = PROPOSAL_STATUS[proposal.status] ?? { label: proposal.status, color: "neutral" };
   const isApproved = proposal.status === "approved";

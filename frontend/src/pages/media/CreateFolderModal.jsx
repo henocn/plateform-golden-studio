@@ -54,8 +54,8 @@ export default function CreateFolderModal({
         name: trimmed,
         parent_id: isRoot ? null : parentId,
       };
-      if (isRoot && isSuperAdmin && selectedOrgId) {
-        payload.organization_id = selectedOrgId;
+      if (isRoot) {
+        payload.organization_id = organizationId || (isSuperAdmin ? selectedOrgId : null) || null;
       }
       await foldersAPI.create(payload);
       toast.success("Dossier créé.");
@@ -68,7 +68,7 @@ export default function CreateFolderModal({
     }
   };
 
-  const showOrgSelect = isRoot && isSuperAdmin && organizations.length > 0;
+  const showOrgSelect = isRoot && isSuperAdmin && organizations.length > 0 && !organizationId;
 
   return (
     <Modal open onClose={onClose} title="Nouveau dossier" size="sm">

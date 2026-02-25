@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Send, Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { Send, ChevronDown, ChevronRight } from "lucide-react";
 import {
   Card,
   Button,
   Badge,
   Modal,
-  Input,
   Select,
   Textarea,
   Pagination,
@@ -24,18 +23,16 @@ import {
 } from "../../utils/helpers";
 import { usePermissions } from "../../hooks";
 import toast from "react-hot-toast";
-import { TimelineEntry } from "../tasks/ProposalsTab";
+import { TimelineEntry, LatestProposalCard } from "../tasks/ProposalsTab";
 
 export default function ProposalsPage() {
-  const { isInternal, isClient, canCreateProposal, canValidateProposal } =
-    usePermissions();
+  const { canValidateProposal } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const [proposals, setProposals] = useState([]);
   const [projects, setProjects] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState(null);
-  const [showCreate, setShowCreate] = useState(false);
   /** Clé de la tâche dont l'historique est déplié (task_id ou "no-task-{proposalId}") */
   const [expandedTaskKey, setExpandedTaskKey] = useState(null);
   /** Historique complet des propositions par task_id (après fetch au clic) */
@@ -150,8 +147,8 @@ export default function ProposalsPage() {
   const start = (page - 1) * 20;
   const paginatedRows = rows.slice(start, start + 20);
 
-  const loadHistoryForTask = async (taskId) => {
-    if (historyByTaskId[taskId]) return;
+  const loadHistoryForTask = async (taskId, force = false) => {
+    if (!force && historyByTaskId[taskId]) return;
     setLoadingHistory(true);
     try {
       const res = await tasksAPI.getProposals(taskId);
@@ -187,19 +184,12 @@ export default function ProposalsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-display-lg">Propositions</h1>
-          <p className="text-body-md text-ink-400 mt-1">
-            {total} tâche{total !== 1 ? "s" : ""} avec proposition
-            {total !== 1 ? "s" : ""}
-          </p>
-        </div>
-        {canCreateProposal && (
-          <Button onClick={() => setShowCreate(true)} icon={Plus}>
-            Nouvelle
-          </Button>
-        )}
+      <div>
+        <h1 className="text-display-lg">Propositions</h1>
+        <p className="text-body-md text-ink-400 mt-1">
+          {total} tâche{total !== 1 ? "s" : ""} avec proposition
+          {total !== 1 ? "s" : ""}
+        </p>
       </div>
 
       {/* Filters */}
@@ -331,38 +321,48 @@ export default function ProposalsPage() {
                   </div>
                 </Card>
 
-                {/* Historique déplié : autres propositions de la tâche */}
+                {/* Déplié : version actuelle (Télécharger, Sauvegarder) + historique */}
                 {hasTask && isExpanded && (
-                  <div className="mt-3 ml-4 pl-6 border-l-2 border-surface-200">
+                  <div className="mt-3 ml-4 pl-6 border-l-2 border-surface-200 space-y-4">
                     {loadingHistory && !historyByTaskId[row.taskId] ? (
-                      <Skeleton className="h-24 rounded-xl mb-3" />
-                    ) : (
-                      (() => {
-                        const fullList = historyByTaskId[row.taskId] || [];
-                        const previous = fullList.slice(1);
-                        if (previous.length === 0) {
-                          return (
-                            <p className="text-body-sm text-ink-500 py-2">
-                              Aucune autre version pour cette tâche.
-                            </p>
-                          );
-                        }
+                      <Skeleton className="h-40 rounded-xl" />
+                    ) : (() => {
+                      const fullList = historyByTaskId[row.taskId] || [];
+                      const latest = fullList[0];
+                      const previous = fullList.slice(1);
+                      if (fullList.length === 0) {
                         return (
-                          <div className="space-y-4">
-                            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider">
-                              Historique des versions
-                            </p>
-                            {previous.map((prop, idx) => (
-                              <TimelineEntry
-                                key={prop.id}
-                                proposal={prop}
-                                isLast={idx === previous.length - 1}
-                              />
-                            ))}
-                          </div>
+                          <p className="text-body-sm text-ink-500 py-2">
+                            Aucune proposition pour cette tâche.
+                          </p>
                         );
-                      })()
-                    )}
+                      }
+                      const refreshTaskHistory = () =>
+                        loadHistoryForTask(row.taskId, true);
+                      return (
+                        <>
+                          <LatestProposalCard
+                            proposal={latest}
+                            canValidate={canValidateProposal}
+                            onRefresh={refreshTaskHistory}
+                          />
+                          {previous.length > 0 && (
+                            <div className="space-y-4">
+                              <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider">
+                                Historique des versions
+                              </p>
+                              {previous.map((prop, idx) => (
+                                <TimelineEntry
+                                  key={prop.id}
+                                  proposal={prop}
+                                  isLast={idx === previous.length - 1}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -385,16 +385,6 @@ export default function ProposalsPage() {
           onClose={() => setDetail(null)}
           onRefresh={loadProposals}
           canValidate={canValidateProposal}
-        />
-      )}
-      {showCreate && (
-        <CreateProposalModal
-          projects={projects}
-          onClose={() => setShowCreate(false)}
-          onCreated={() => {
-            setShowCreate(false);
-            loadProposals();
-          }}
         />
       )}
     </div>
@@ -620,84 +610,6 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh, canValidate }) {
           )}
         </div>
       </div>
-    </Modal>
-  );
-}
-
-function CreateProposalModal({ projects, onClose, onCreated }) {
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    project_id: "",
-    file: null,
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.title || !form.project_id)
-      return toast.error("Titre et projet requis");
-    setSubmitting(true);
-    try {
-      const fd = new FormData();
-      fd.append("title", form.title);
-      fd.append("description", form.description);
-      fd.append("project_id", form.project_id);
-      if (form.file) fd.append("file", form.file);
-      await proposalsAPI.create(form.project_id, fd);
-      toast.success("Proposition créée");
-      onCreated();
-    } catch (err) {
-      const details = formatErrorMessage(err);
-      details.forEach((detail) => toast.error(detail.message));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <Modal open onClose={onClose} title="Nouvelle proposition" size="lg">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Titre *"
-          value={form.title}
-          onChange={(e) => set("title", e.target.value)}
-        />
-        <Textarea
-          label="Description"
-          value={form.description}
-          onChange={(e) => set("description", e.target.value)}
-          rows={3}
-        />
-        <Autocomplete
-          label={null}
-          value={form.project_id}
-          onChange={(v) => set("project_id", v)}
-          options={[
-            { value: "", label: "Tous les projets" },
-            ...projects.map((p) => ({ value: p.id, label: p.title })),
-          ]}
-          placeholder="Projet..."
-          className="w-52"
-        />
-        <div>
-          <label className="block text-label text-ink-600 mb-1">Fichier</label>
-          <input
-            type="file"
-            onChange={(e) => set("file", e.target.files[0])}
-            className="text-body-sm"
-          />
-        </div>
-        <div className="flex justify-end gap-3 pt-2">
-          <Button variant="secondary" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button type="submit" loading={submitting}>
-            Soumettre
-          </Button>
-        </div>
-      </form>
     </Modal>
   );
 }
