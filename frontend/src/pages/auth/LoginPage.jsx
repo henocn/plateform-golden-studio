@@ -92,7 +92,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-primary-300 text-body-sm">
-            © {new Date().getFullYear()} Golden Studio — Tous droits réservés
+            © {new Date().getFullYear()} Tous droits réservés
           </p>
         </div>
       </div>

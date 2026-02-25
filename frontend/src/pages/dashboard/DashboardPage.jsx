@@ -149,6 +149,15 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* ── Bannière page d'accueil ─────── */}
+      <div className="rounded-xl overflow-hidden border border-surface-200 bg-white shadow-card">
+        <img
+          src="/images/baniere totale.jpeg"
+          alt=""
+          className="w-full h-auto max-h-[200px] object-cover object-center"
+        />
+      </div>
+
       {/* ── Page Header ───────────────── */}
       <div>
         <h1 className="text-display-lg">

@@ -67,8 +67,8 @@ export default function SettingsPage() {
         <>
           <Card title="Plateforme" action={<Badge color="warning" size="sm"><Shield className="w-3 h-3 inline mr-1" />Admin</Badge>}>
             <div className="space-y-4">
-              <Input label="Nom de la plateforme" defaultValue="GovCom Platform" />
-              <Input label="Email de support" defaultValue="support@govcom.ga" />
+              <Input label="Nom de la plateforme" defaultValue="Plateforme" />
+              <Input label="Email de support" defaultValue="" placeholder="support@exemple.org" />
               <ToggleSetting
                 label="Mode maintenance"
                 description="Active la page de maintenance pour les utilisateurs non-admin"

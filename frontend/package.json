@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "GovCom Platform — Backoffice Golden Studio (React + Vite + TailwindCSS)",
+  "description": "Plateforme de pilotage (React + Vite + TailwindCSS)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

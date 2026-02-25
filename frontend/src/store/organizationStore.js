@@ -31,6 +31,6 @@ export const useOrganizationStore = create((set, get) => ({
   /** Nom affiché (short_name ou name). */
   displayName: () => {
     const { current } = get();
-    return current?.short_name || current?.name || 'GovCom';
+    return current?.short_name || current?.name || 'Plateforme';
   },
 }));

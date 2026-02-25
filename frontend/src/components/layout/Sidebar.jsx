@@ -96,19 +96,18 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}
     >
-      {/* ── Logo organisation ─────────── */}
+      {/* ── Logo / nom en haut ─────────── */}
       <div className={`flex items-center h-16 px-4 border-b border-surface-200 shrink-0 ${collapsed ? 'justify-center' : 'gap-3'}`}>
-        <div className="w-9 h-9 rounded-xl bg-primary-500 flex items-center justify-center shrink-0 overflow-hidden">
-          {logoSrc ? (
-            <img src={logoSrc} alt="" className="w-full h-full object-contain" />
-          ) : (
-            <span className="text-white font-bold text-base">G</span>
-          )}
+        <div className={`shrink-0 overflow-hidden ${collapsed ? 'w-9 h-9 rounded-xl' : 'flex items-center gap-2 min-w-0'}`}>
+          <img
+            src="/images/nom simple.png"
+            alt=""
+            className={collapsed ? 'w-full h-full object-contain' : 'h-8 w-auto max-w-[140px] object-contain object-left'}
+          />
         </div>
         {!collapsed && (
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="text-sm font-bold text-ink-900 tracking-tight truncate">{orgName}</h1>
-            <p className="text-[0.625rem] text-ink-400 truncate">Golden Studio</p>
           </div>
         )}
       </div>
