@@ -20,6 +20,7 @@ class ProposalRepository {
       include: [
         { association: 'author', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'project', attributes: ['id', 'title'] },
+        { association: 'task', attributes: ['id', 'title'] },
         { association: 'validatorUser', attributes: ['id', 'first_name', 'last_name'] },
       ],
       order: [['version_number', 'DESC']],

@@ -387,7 +387,7 @@ function LatestProposalCard({ proposal, canValidate, onRefresh }) {
 }
 
 /* ─── Entrée de la timeline (versions précédentes) ───────────────────────── */
-function TimelineEntry({ proposal, isLast }) {
+export function TimelineEntry({ proposal, isLast }) {
   const status = PROPOSAL_STATUS[proposal.status] ?? { label: proposal.status, color: "neutral" };
 
   const dotStyles = {

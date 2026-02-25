@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Send, Plus, Eye, MessageSquare, ArrowUpRight } from "lucide-react";
+import { Send, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import {
   Card,
   Button,
@@ -14,7 +14,7 @@ import {
   Skeleton,
   Autocomplete,
 } from "../../components/ui";
-import { proposalsAPI, projectsAPI } from "../../api/services";
+import { proposalsAPI, projectsAPI, tasksAPI } from "../../api/services";
 import {
   formatDate,
   formatRelative,
@@ -24,7 +24,7 @@ import {
 } from "../../utils/helpers";
 import { usePermissions } from "../../hooks";
 import toast from "react-hot-toast";
-import { ca } from "date-fns/locale";
+import { TimelineEntry } from "../tasks/ProposalsTab";
 
 export default function ProposalsPage() {
   const { isInternal, isClient, canCreateProposal, canValidateProposal } =
@@ -36,6 +36,11 @@ export default function ProposalsPage() {
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
+  /** Clé de la tâche dont l'historique est déplié (task_id ou "no-task-{proposalId}") */
+  const [expandedTaskKey, setExpandedTaskKey] = useState(null);
+  /** Historique complet des propositions par task_id (après fetch au clic) */
+  const [historyByTaskId, setHistoryByTaskId] = useState({});
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const page = parseInt(searchParams.get("page") || "1");
   const statusFilter = searchParams.get("status") || "";
@@ -77,14 +82,21 @@ export default function ProposalsPage() {
       if (statusFilter) {
         allProposals = allProposals.filter((p) => p.status === statusFilter);
       }
-      // Client-side sort by date desc
-      allProposals.sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at),
-      );
-      // Client-side pagination
-      const start = (page - 1) * 20;
-      setTotal(allProposals.length);
-      setProposals(allProposals.slice(start, start + 20));
+      // Grouper par tâche : une entrée par task_id (ou par proposition si pas de tâche)
+      const byTask = {};
+      allProposals.forEach((p) => {
+        const key = p.task_id || `no-task-${p.id}`;
+        if (!byTask[key]) byTask[key] = [];
+        byTask[key].push(p);
+      });
+      Object.keys(byTask).forEach((key) => {
+        byTask[key].sort(
+          (a, b) => (b.version_number || 0) - (a.version_number || 0),
+        );
+      });
+      const groupCount = Object.keys(byTask).length;
+      setTotal(groupCount);
+      setProposals(allProposals);
     } catch {
       toast.error("Erreur lors du chargement");
     } finally {
@@ -107,6 +119,61 @@ export default function ProposalsPage() {
     setSearchParams(p);
   };
 
+  // Une ligne par tâche : groupe de propositions (dernière = représentative)
+  const rows = (() => {
+    const byTask = {};
+    proposals.forEach((p) => {
+      const key = p.task_id || `no-task-${p.id}`;
+      if (!byTask[key]) byTask[key] = [];
+      byTask[key].push(p);
+    });
+    return Object.entries(byTask)
+      .map(([taskKey, list]) => {
+        list.sort((a, b) => (b.version_number || 0) - (a.version_number || 0));
+        const latest = list[0];
+        const taskTitle =
+          latest.task?.title || latest.title || "Sans tâche";
+        return {
+          taskKey,
+          taskId: latest.task_id || null,
+          taskTitle,
+          latestProposal: latest,
+          proposalCount: list.length,
+        };
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.latestProposal.created_at) -
+          new Date(a.latestProposal.created_at),
+      );
+  })();
+  const start = (page - 1) * 20;
+  const paginatedRows = rows.slice(start, start + 20);
+
+  const loadHistoryForTask = async (taskId) => {
+    if (historyByTaskId[taskId]) return;
+    setLoadingHistory(true);
+    try {
+      const res = await tasksAPI.getProposals(taskId);
+      const list = Array.isArray(res.data.data) ? res.data.data : [];
+      setHistoryByTaskId((prev) => ({ ...prev, [taskId]: list }));
+    } catch {
+      toast.error("Erreur lors du chargement de l'historique");
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const toggleExpand = (row) => {
+    const key = row.taskKey;
+    if (expandedTaskKey === key) {
+      setExpandedTaskKey(null);
+      return;
+    }
+    setExpandedTaskKey(key);
+    if (row.taskId) loadHistoryForTask(row.taskId);
+  };
+
   // Workflow steps
   const workflowSteps = [
     "draft",
@@ -124,7 +191,8 @@ export default function ProposalsPage() {
         <div>
           <h1 className="text-display-lg">Propositions</h1>
           <p className="text-body-md text-ink-400 mt-1">
-            {total} proposition{total !== 1 ? "s" : ""}
+            {total} tâche{total !== 1 ? "s" : ""} avec proposition
+            {total !== 1 ? "s" : ""}
           </p>
         </div>
         {canCreateProposal && (
@@ -174,70 +242,130 @@ export default function ProposalsPage() {
         />
       ) : (
         <div className="space-y-3">
-          {proposals.map((p) => {
+          {paginatedRows.map((row) => {
+            const p = row.latestProposal;
             const st = PROPOSAL_STATUS[p.status] || {
               label: p.status,
               color: "neutral",
             };
             const currentStep = getStepIndex(p.status);
+            const isExpanded = expandedTaskKey === row.taskKey;
+            const hasTask = Boolean(row.taskId);
+
             return (
-              <Card
-                key={p.id}
-                className="hover:shadow-card-hover transition-shadow cursor-pointer"
-                onClick={() => setDetail(p)}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center shrink-0 mt-0.5">
-                    <Send className="w-5 h-5 text-primary-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-body-lg font-medium text-ink-900">
-                          {p.title}
-                        </h3>
-                        <Badge color="neutral" size="xs">
-                          v{p.version_number}
+              <div key={row.taskKey}>
+                <Card
+                  className="hover:shadow-card-hover transition-shadow cursor-pointer"
+                  onClick={() =>
+                    hasTask ? toggleExpand(row) : setDetail(p)
+                  }
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <Send className="w-5 h-5 text-primary-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          {hasTask ? (
+                            <span className="flex items-center gap-1.5">
+                              {isExpanded ? (
+                                <ChevronDown className="w-4 h-4 text-ink-400" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-ink-400" />
+                              )}
+                              <h3 className="text-body-lg font-medium text-ink-900">
+                                Proposition pour la tâche : {row.taskTitle}
+                              </h3>
+                            </span>
+                          ) : (
+                            <h3 className="text-body-lg font-medium text-ink-900">
+                              {p.title}
+                            </h3>
+                          )}
+                          <Badge color="neutral" size="xs">
+                            v{p.version_number}
+                          </Badge>
+                        </div>
+                        <Badge color={st.color} dot>
+                          {st.label}
                         </Badge>
                       </div>
-                      <Badge color={st.color} dot>
-                        {st.label}
-                      </Badge>
-                    </div>
-                    <p className="text-body-sm text-ink-400 line-clamp-1 mb-2.5">
-                      {p.description || "Pas de description"}
-                    </p>
+                      <p className="text-body-sm text-ink-400 line-clamp-1 mb-2.5">
+                        {p.description || "Pas de description"}
+                      </p>
 
-                    {/* Workflow progress */}
-                    <div className="flex items-center gap-1">
-                      {workflowSteps.slice(0, -1).map((step, idx) => {
-                        const isActive = idx <= currentStep;
-                        const isRejected =
-                          p.status === "rejected" && idx === currentStep;
-                        return (
-                          <div
-                            key={step}
-                            className="flex items-center gap-1 flex-1"
-                          >
+                      <div className="flex items-center gap-1">
+                        {workflowSteps.slice(0, -1).map((step, idx) => {
+                          const isActive = idx <= currentStep;
+                          const isRejected =
+                            p.status === "rejected" && idx === currentStep;
+                          return (
                             <div
-                              className={`h-1.5 rounded-full flex-1 ${isRejected ? "bg-danger-400" : isActive ? "bg-primary-400" : "bg-surface-200"}`}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
+                              key={step}
+                              className="flex items-center gap-1 flex-1"
+                            >
+                              <div
+                                className={`h-1.5 rounded-full flex-1 ${isRejected ? "bg-danger-400" : isActive ? "bg-primary-400" : "bg-surface-200"}`}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
 
-                    <div className="flex items-center gap-4 mt-2 text-body-sm text-ink-400">
-                      <span>Projet: {p.project?.title || "—"}</span>
-                      <span>
-                        Par {p.author?.first_name || "—"}{" "}
-                        {p.author?.last_name || ""}
-                      </span>
-                      <span>{formatRelative(p.created_at)}</span>
+                      <div className="flex items-center gap-4 mt-2 text-body-sm text-ink-400">
+                        <span>Projet: {p.project?.title || "—"}</span>
+                        <span>
+                          Par {p.author?.first_name || "—"}{" "}
+                          {p.author?.last_name || ""}
+                        </span>
+                        <span>{formatRelative(p.created_at)}</span>
+                        {hasTask && row.proposalCount > 1 && (
+                          <span>
+                            {row.proposalCount} version
+                            {row.proposalCount > 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+
+                {/* Historique déplié : autres propositions de la tâche */}
+                {hasTask && isExpanded && (
+                  <div className="mt-3 ml-4 pl-6 border-l-2 border-surface-200">
+                    {loadingHistory && !historyByTaskId[row.taskId] ? (
+                      <Skeleton className="h-24 rounded-xl mb-3" />
+                    ) : (
+                      (() => {
+                        const fullList = historyByTaskId[row.taskId] || [];
+                        const previous = fullList.slice(1);
+                        if (previous.length === 0) {
+                          return (
+                            <p className="text-body-sm text-ink-500 py-2">
+                              Aucune autre version pour cette tâche.
+                            </p>
+                          );
+                        }
+                        return (
+                          <div className="space-y-4">
+                            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider">
+                              Historique des versions
+                            </p>
+                            {previous.map((prop, idx) => (
+                              <TimelineEntry
+                                key={prop.id}
+                                proposal={prop}
+                                isLast={idx === previous.length - 1}
+                              />
+                            ))}
+                          </div>
+                        );
+                      })()
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
