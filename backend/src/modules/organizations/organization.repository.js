@@ -41,6 +41,25 @@ class OrganizationRepository {
   }
 
   /**
+   * Find the single "current" organization (for single-org mode).
+   * Uses SINGLE_ORGANIZATION_ID if set, otherwise first active org.
+   */
+  async findCurrent(singleOrgId = null) {
+    if (singleOrgId) {
+      const org = await Organization.findOne({
+        where: { id: singleOrgId, is_active: true },
+        attributes: ['id', 'name', 'short_name', 'logo_path', 'contact_email', 'contact_phone', 'address', 'type'],
+      });
+      return org;
+    }
+    return Organization.findOne({
+      where: { is_active: true },
+      order: [['created_at', 'ASC']],
+      attributes: ['id', 'name', 'short_name', 'logo_path', 'contact_email', 'contact_phone', 'address', 'type'],
+    });
+  }
+
+  /**
    * Find one by ID
    */
   async findById(id) {

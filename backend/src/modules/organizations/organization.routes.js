@@ -4,6 +4,7 @@ const { Router } = require('express');
 const { authenticate } = require('../../middlewares/auth.middleware');
 const { authorize, internalOnly } = require('../../middlewares/role.middleware');
 const validate = require('../../middlewares/validate.middleware');
+const { uploadOrganizationLogo } = require('../../middlewares/upload.middleware');
 const orgController = require('./organization.controller');
 const {
   createOrganizationSchema,
@@ -14,8 +15,10 @@ const {
 
 const router = Router();
 
+// GET /organizations/current — public, for branding (logo, name) — single-organization mode
+router.get('/current', orgController.getCurrent);
 
-// All organization routes require authentication + internal user
+// All other routes require authentication + internal user
 router.use(authenticate, internalOnly);
 
 // GET /organizations — list all orgs
@@ -27,8 +30,8 @@ router.post('/', authorize('organizations.manage'), validate(createOrganizationS
 // GET /organizations/:id — detail
 router.get('/:id', orgController.getById);
 
-// PUT /organizations/:id — update
-router.put('/:id', authorize('organizations.manage'), validate(updateOrganizationSchema), orgController.update);
+// PUT /organizations/:id — update (optional logo upload)
+router.put('/:id', authorize('organizations.manage'), uploadOrganizationLogo(), validate(updateOrganizationSchema), orgController.update);
 
 // PATCH /organizations/:id/status — activate/deactivate
 router.patch('/:id/status', authorize('organizations.manage'), validate(patchStatusSchema), orgController.patchStatus);

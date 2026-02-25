@@ -8,6 +8,18 @@ const {
 } = require("../../utils/pagination");
 
 /**
+ * GET /api/v1/organizations/current — public, for branding (logo, name)
+ */
+const getCurrent = async (req, res, next) => {
+  try {
+    const organization = await organizationService.getCurrent();
+    return ApiResponse.success(res, organization, "Current organization");
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
  * GET /api/v1/organizations
  */
 const list = async (req, res, next) => {
@@ -170,6 +182,7 @@ const remove = async (req, res, next) => {
 };
 
 module.exports = {
+  getCurrent,
   list,
   create,
   getById,

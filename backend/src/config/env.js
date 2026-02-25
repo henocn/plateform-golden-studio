@@ -46,6 +46,9 @@ const env = cleanEnv(process.env, {
 
   // Swagger
   SWAGGER_ENABLED: bool({ default: true }),
+
+  // Single organization mode: ID of the unique org (branding, logo). If not set, first active org is used.
+  SINGLE_ORGANIZATION_ID: str({ default: '' }),
 });
 
 module.exports = env;

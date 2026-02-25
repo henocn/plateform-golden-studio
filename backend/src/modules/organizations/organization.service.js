@@ -1,12 +1,23 @@
 "use strict";
 
+const env = require("../../config/env");
 const organizationRepository = require("./organization.repository");
 const ApiError = require("../../utils/ApiError");
 
 /**
- * Organization Service — business logic
+ * Organization Service — business logic (single-organization mode supported)
  */
 class OrganizationService {
+  /**
+   * Get the current (single) organization for branding (logo, name).
+   */
+  async getCurrent() {
+    const singleId = env.SINGLE_ORGANIZATION_ID || null;
+    const organization = await organizationRepository.findCurrent(singleId);
+    if (!organization) throw ApiError.notFound("Organization");
+    return organization;
+  }
+
   /**
    * List all organizations (with filters + pagination)
    */
