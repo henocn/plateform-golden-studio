@@ -73,8 +73,24 @@ class CalendarEditorialService {
   }
 
   async create(data, user, tenantId) {
-    const resolvedTenantId = this.resolveTenantId(user, tenantId, data.organization_id);
-    if (!resolvedTenantId) throw ApiError.badRequest('organization_id is required for internal users');
+    let resolvedTenantId = this.resolveTenantId(user, tenantId, data.organization_id);
+
+    // Internal users without explicit org filter: infer org from task/project
+    if (!resolvedTenantId) {
+      if (data.task_id) {
+        const task = await Task.findByPk(data.task_id, { attributes: ['id', 'project_id', 'organization_id'] });
+        if (!task) throw ApiError.notFound('Task');
+        resolvedTenantId = task.organization_id;
+      } else if (data.project_id) {
+        const project = await Project.findByPk(data.project_id, { attributes: ['id', 'organization_id'] });
+        if (!project) throw ApiError.notFound('Project');
+        resolvedTenantId = project.organization_id;
+      }
+    }
+
+    if (!resolvedTenantId) {
+      throw ApiError.badRequest('Pour un utilisateur interne, fournissez une tâche publiée (ou un projet) pour déduire l’organisation');
+    }
 
     const payload = {
       ...data,
