@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Plus, Upload, Download } from "lucide-react";
 import { addMonths, subMonths, format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Card, Button, Modal, Input, Select, Textarea, Skeleton, Autocomplete } from "../../../components/ui";
+import { Card, Button, Modal, Input, Select, Textarea, Skeleton } from "../../../components/ui";
 import { calendarAPI, projectsAPI } from "../../../api/services";
 import { extractList, formatDate, formatErrorMessage, CALENDAR_EVENT_TYPES, downloadBlob } from "../../../utils/helpers";
 import { BigCalendar, localizer, calendarMessages, eventStyleGetter, EventBadge, toCalendarItems } from "./calendarShared";
@@ -34,7 +34,7 @@ export default function EventsCalendarTab({ canCreateEvent }) {
 
   const loadProjects = async () => {
     try {
-      const { data } = await projectsAPI.list({ page: 1, limit: 200 });
+      const { data } = await projectsAPI.list({page: 1, limit: 100 });
       setProjects(extractList(data.data).items);
     } catch {
       setProjects([]);
@@ -245,15 +245,14 @@ function CreateEventModal({ projects, onClose, onCreated }) {
           <Input label="Date de début *" type="date" value={form.start_date} onChange={(e) => setField("start_date", e.target.value)} />
           <Input label="Date de fin" type="date" value={form.end_date} onChange={(e) => setField("end_date", e.target.value)} />
         </div>
-        <Autocomplete
+        <Select
           label="Projet lié"
           value={form.project_id}
-          onChange={(v) => setField("project_id", v)}
+          onChange={(e) => setField("project_id", e.target.value)}
           options={[
             { value: "", label: "Aucun projet" },
             ...projects.map((p) => ({ value: p.id, label: p.title })),
           ]}
-          placeholder="Projet..."
         />
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" onClick={onClose}>Annuler</Button>

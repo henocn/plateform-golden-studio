@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Plus, Upload, Download } from "lucide-react";
 import { addMonths, subMonths, format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Card, Button, Modal, Input, Select, Textarea, Skeleton, Autocomplete, Checkbox } from "../../../components/ui";
+import { Card, Button, Modal, Input, Select, Textarea, Skeleton, Checkbox } from "../../../components/ui";
 import { calendarAPI, tasksAPI } from "../../../api/services";
 import { extractList, formatDate, formatErrorMessage, downloadBlob } from "../../../utils/helpers";
 import { BigCalendar, localizer, calendarMessages, eventStyleGetter, EventBadge, toCalendarItems } from "./calendarShared";
@@ -47,7 +47,7 @@ export default function EditorialCalendarTab({ canCreateEvent }) {
 
   const loadTasks = async () => {
     try {
-      const { data } = await tasksAPI.list({ page: 1, limit: 300 });
+      const { data } = await tasksAPI.list({ limit: 100 });
       setTasks(extractList(data.data).items);
     } catch {
       setTasks([]);
@@ -245,16 +245,16 @@ function EditorialDetailModal({ entry, tasks, onClose, onUpdated }) {
             )}
           </div>
         </div>
-        <Autocomplete
-          label="Assigner/modifier la tâche"
+        <Select
+          label="Tâche..."
           value={taskId}
-          onChange={setTaskId}
+          onChange={(e) => setTaskId(e.target.value)}
           options={[
-            { value: "", label: "Aucune tâche" },
+            { value: "", label: "Tâche..." },
             ...tasks.map((t) => ({ value: t.id, label: t.title })),
           ]}
-          placeholder="Choisir une tâche..."
         />
+
         <div className="flex justify-end">
           <Button onClick={handleAssign} loading={saving} disabled={!taskId}>
             Assigner tâche
@@ -311,15 +311,14 @@ function CreateEditorialModal({ tasks, onClose, onCreated }) {
           <Input label="Date de publication" type="date" value={form.publication_date} onChange={(e) => setField("publication_date", e.target.value)} />
           <Select label="Statut" value={form.status} onChange={(e) => setField("status", e.target.value)} options={PUBLICATION_STATUS} />
         </div>
-        <Autocomplete
+        <Select
           label="Tâche publiée *"
           value={form.task_id}
-          onChange={(v) => setField("task_id", v)}
+          onChange={(e) => setField("task_id", e.target.value)}
           options={[
             { value: "", label: "Aucune tâche liée" },
             ...tasks.map((t) => ({ value: t.id, label: t.title })),
           ]}
-          placeholder="Choisir une tâche..."
         />
         <div className="space-y-2">
           <p className="text-label text-ink-700">Réseaux</p>
