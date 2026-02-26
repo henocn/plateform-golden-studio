@@ -91,6 +91,9 @@ class CalendarEditorialService {
     if (!VALID_CHANNELS.has(payload.channel)) payload.channel = 'other';
 
     await this.normalizeTaskLink(payload, resolvedTenantId);
+    if (!payload.project_id) {
+      throw ApiError.badRequest('Veuillez sélectionner une tâche publiée (ou un projet)');
+    }
 
     if (payload.project_id) {
       const project = await Project.findByPk(payload.project_id, { attributes: ['id', 'organization_id'] });
@@ -191,6 +194,11 @@ class CalendarEditorialService {
         }
         payload.task_id = task.id;
         payload.project_id = payload.project_id || task.project_id || null;
+      }
+
+      if (!payload.project_id) {
+        skipped += 1;
+        continue;
       }
 
       toInsert.push(payload);

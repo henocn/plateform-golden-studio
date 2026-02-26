@@ -16,10 +16,11 @@ export default function Autocomplete({ label, value, onChange, options = [], pla
   const safeOptions = Array.isArray(options) ? options : [];
   const filtered = safeOptions.filter(opt => (getOptionLabel(opt) || '').toLowerCase().includes((inputValue || '').toLowerCase()));
   const selected = safeOptions.find(o => getOptionValue(o) === value);
+  const selectedLabel = selected ? getOptionLabel(selected) : '';
 
   useEffect(() => {
-    setInputValue(selected ? getOptionLabel(selected) : '');
-  }, [value, options]);
+    setInputValue(selectedLabel);
+  }, [value, selectedLabel]);
 
   return (
     <div className={`space-y-1 ${containerClassName}`} ref={ref}>

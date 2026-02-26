@@ -279,6 +279,10 @@ function CreateEditorialModal({ tasks, onClose, onCreated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.task_id) {
+      toast.error("Veuillez sélectionner la tâche publiée");
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
@@ -308,7 +312,7 @@ function CreateEditorialModal({ tasks, onClose, onCreated }) {
           <Select label="Statut" value={form.status} onChange={(e) => setField("status", e.target.value)} options={PUBLICATION_STATUS} />
         </div>
         <Autocomplete
-          label="Tâche publiée"
+          label="Tâche publiée *"
           value={form.task_id}
           onChange={(v) => setField("task_id", v)}
           options={[
@@ -354,7 +358,7 @@ function CreateEditorialModal({ tasks, onClose, onCreated }) {
         <Textarea label="Notes" value={form.notes} onChange={(e) => setField("notes", e.target.value)} rows={2} />
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" onClick={onClose}>Annuler</Button>
-          <Button type="submit" loading={submitting}>Créer</Button>
+          <Button type="submit" loading={submitting} disabled={!form.task_id}>Créer</Button>
         </div>
       </form>
     </Modal>

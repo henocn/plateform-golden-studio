@@ -24,11 +24,6 @@ module.exports = {
       allowNull: false,
       defaultValue: [],
     });
-    await queryInterface.addColumn('publications', 'network_links', {
-      type: Sequelize.JSONB,
-      allowNull: false,
-      defaultValue: {},
-    });
     await queryInterface.addColumn('publications', 'publication_lines', {
       type: Sequelize.JSONB,
       allowNull: false,
@@ -47,7 +42,6 @@ module.exports = {
   async down(queryInterface, Sequelize) {
     await queryInterface.removeColumn('publications', 'notes');
     await queryInterface.removeColumn('publications', 'publication_lines');
-    await queryInterface.removeColumn('publications', 'network_links');
     await queryInterface.removeColumn('publications', 'networks');
     await queryInterface.removeColumn('publications', 'publisher_name');
     await queryInterface.removeColumn('publications', 'publication_title');
