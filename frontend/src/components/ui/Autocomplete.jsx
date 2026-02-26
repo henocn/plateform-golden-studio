@@ -17,13 +17,17 @@ export default function Autocomplete({ label, value, onChange, options = [], pla
   const filtered = safeOptions.filter(opt => (getOptionLabel(opt) || '').toLowerCase().includes((inputValue || '').toLowerCase()));
   const selected = safeOptions.find(o => getOptionValue(o) === value);
 
+  useEffect(() => {
+    setInputValue(selected ? getOptionLabel(selected) : '');
+  }, [value, options]);
+
   return (
     <div className={`space-y-1 ${containerClassName}`} ref={ref}>
       {label && <label className="block text-label text-ink-700">{label}</label>}
       <div className="relative">
         <input
           type="text"
-          value={inputValue !== undefined ? inputValue : (selected ? getOptionLabel(selected) : '')}
+          value={inputValue}
           onChange={e => {
             setInputValue(e.target.value);
             setShow(true);

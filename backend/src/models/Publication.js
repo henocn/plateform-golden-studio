@@ -11,7 +11,7 @@ module.exports = (sequelize) => {
     },
     project_id: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
     },
     organization_id: {
       type: DataTypes.UUID,
@@ -29,6 +29,29 @@ module.exports = (sequelize) => {
       type: DataTypes.DATE,
       allowNull: true,
     },
+    publication_title: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    publisher_name: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    networks: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: [],
+    },
+    network_links: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: {},
+    },
+    publication_lines: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: [],
+    },
     channel: {
       type: DataTypes.ENUM('facebook', 'linkedin', 'official_release', 'website', 'tv', 'radio', 'other'),
       allowNull: false,
@@ -45,6 +68,10 @@ module.exports = (sequelize) => {
     },
     archive_path: {
       type: DataTypes.STRING,
+      allowNull: true,
+    },
+    notes: {
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     created_by: {

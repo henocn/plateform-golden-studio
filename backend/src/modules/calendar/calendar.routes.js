@@ -5,13 +5,21 @@ const { authenticate } = require('../../middlewares/auth.middleware');
 const { authorize } = require('../../middlewares/role.middleware');
 const tenantMiddleware = require('../../middlewares/tenant.middleware');
 const validate = require('../../middlewares/validate.middleware');
-const calendarController = require('./calendar.controller');
+const { uploadSingle } = require('../../middlewares/upload.middleware');
+const eventController = require('./calendar.controller');
+const editorialController = require('./calendar.editorial.controller');
 const {
   createEventSchema,
   updateEventSchema,
   patchEventStatusSchema,
   listEventQuery,
 } = require('./calendar.validation');
+const {
+  createEditorialSchema,
+  updateEditorialSchema,
+  assignEditorialTaskSchema,
+  listEditorialQuery,
+} = require('./calendar.editorial.validation');
 
 const router = Router();
 
@@ -20,29 +28,71 @@ router.use(authenticate, tenantMiddleware);
 router.get('/',
   authorize('calendar.manage', 'calendar.view'),
   validate(listEventQuery, 'query'),
-  calendarController.list);
+  eventController.list);
 
 router.post('/',
   authorize('calendar.manage'),
   validate(createEventSchema),
-  calendarController.create);
+  eventController.create);
+
+// Events calendar aliases + import/export
+router.get('/events',
+  authorize('calendar.manage', 'calendar.view'),
+  validate(listEventQuery, 'query'),
+  eventController.list);
+router.post('/events',
+  authorize('calendar.manage'),
+  validate(createEventSchema),
+  eventController.create);
+router.post('/events/import',
+  authorize('calendar.manage'),
+  uploadSingle('file', { maxFileSize: 8 * 1024 * 1024 }),
+  eventController.importExcel);
+router.get('/events/export',
+  authorize('calendar.manage', 'calendar.view'),
+  eventController.exportExcel);
+
+// Editorial calendar endpoints
+router.get('/editorial',
+  authorize('calendar.manage', 'calendar.view'),
+  validate(listEditorialQuery, 'query'),
+  editorialController.list);
+router.post('/editorial',
+  authorize('calendar.manage'),
+  validate(createEditorialSchema),
+  editorialController.create);
+router.put('/editorial/:id',
+  authorize('calendar.manage'),
+  validate(updateEditorialSchema),
+  editorialController.update);
+router.patch('/editorial/:id/assign-task',
+  authorize('calendar.manage'),
+  validate(assignEditorialTaskSchema),
+  editorialController.assignTask);
+router.post('/editorial/import',
+  authorize('calendar.manage'),
+  uploadSingle('file', { maxFileSize: 8 * 1024 * 1024 }),
+  editorialController.importExcel);
+router.get('/editorial/export',
+  authorize('calendar.manage', 'calendar.view'),
+  editorialController.exportExcel);
 
 router.get('/:id',
   authorize('calendar.manage', 'calendar.view'),
-  calendarController.getById);
+  eventController.getById);
 
 router.put('/:id',
   authorize('calendar.manage'),
   validate(updateEventSchema),
-  calendarController.update);
+  eventController.update);
 
 router.patch('/:id/status',
   authorize('calendar.manage'),
   validate(patchEventStatusSchema),
-  calendarController.patchStatus);
+  eventController.patchStatus);
 
 router.delete('/:id',
   authorize('projects.delete'),
-  calendarController.deleteEvent);
+  eventController.deleteEvent);
 
 module.exports = router;

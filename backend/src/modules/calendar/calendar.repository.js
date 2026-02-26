@@ -59,6 +59,10 @@ class CalendarRepository {
     return CalendarEvent.create(data);
   }
 
+  async bulkCreate(items) {
+    return CalendarEvent.bulkCreate(items);
+  }
+
   async update(id, data) {
     const event = await CalendarEvent.findByPk(id);
     if (!event) return null;

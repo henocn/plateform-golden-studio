@@ -1,26 +1,29 @@
 'use strict';
 
-const calendarService = require('./calendar.service');
 const ApiResponse = require('../../utils/ApiResponse');
 const { parsePagination, buildPaginationMeta } = require('../../utils/pagination');
+const editorialService = require('./calendar.editorial.service');
 const ApiError = require('../../utils/ApiError');
 const fs = require('fs');
 
 const list = async (req, res, next) => {
   try {
     const { page, limit, offset } = parsePagination(req.query);
-    const { data, total } = await calendarService.list({
+    const { data, total } = await editorialService.list({
       tenantId: req.tenantId,
-      type: req.query.type,
+      organizationId: req.query.organizationId,
       projectId: req.query.projectId,
+      taskId: req.query.taskId,
       status: req.query.status,
       startDate: req.query.startDate,
       endDate: req.query.endDate,
       search: req.query.search,
-      page, limit, offset,
+      page,
+      limit,
+      offset,
     }, req.user);
     const meta = buildPaginationMeta(page, limit, total);
-    return ApiResponse.success(res, { data, meta }, 'Events retrieved');
+    return ApiResponse.success(res, { data, meta }, 'Editorial entries retrieved');
   } catch (error) {
     return next(error);
   }
@@ -28,17 +31,8 @@ const list = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    const event = await calendarService.create(req.body, req.user);
-    return ApiResponse.created(res, event, 'Event created');
-  } catch (error) {
-    return next(error);
-  }
-};
-
-const getById = async (req, res, next) => {
-  try {
-    const event = await calendarService.getById(req.params.id, req.user);
-    return ApiResponse.success(res, event, 'Event retrieved');
+    const publication = await editorialService.create(req.body, req.user, req.tenantId);
+    return ApiResponse.created(res, publication, 'Editorial entry created');
   } catch (error) {
     return next(error);
   }
@@ -46,26 +40,17 @@ const getById = async (req, res, next) => {
 
 const update = async (req, res, next) => {
   try {
-    const event = await calendarService.update(req.params.id, req.body);
-    return ApiResponse.success(res, event, 'Event updated');
+    const publication = await editorialService.update(req.params.id, req.body, req.user, req.tenantId);
+    return ApiResponse.success(res, publication, 'Editorial entry updated');
   } catch (error) {
     return next(error);
   }
 };
 
-const patchStatus = async (req, res, next) => {
+const assignTask = async (req, res, next) => {
   try {
-    const event = await calendarService.updateStatus(req.params.id, req.body.status);
-    return ApiResponse.success(res, event, 'Event status updated');
-  } catch (error) {
-    return next(error);
-  }
-};
-
-const deleteEvent = async (req, res, next) => {
-  try {
-    await calendarService.delete(req.params.id);
-    return ApiResponse.success(res, null, 'Event deleted');
+    const publication = await editorialService.assignTask(req.params.id, req.body.task_id, req.user, req.tenantId);
+    return ApiResponse.success(res, publication, 'Task assigned to editorial entry');
   } catch (error) {
     return next(error);
   }
@@ -77,13 +62,13 @@ const importExcel = async (req, res, next) => {
     if (!req.file) throw ApiError.badRequest('Excel file is required');
     filePath = req.file.path || null;
     const fileBuffer = req.file.buffer || fs.readFileSync(req.file.path);
-    const result = await calendarService.importExcel(
+    const result = await editorialService.importExcel(
       fileBuffer,
       req.user,
       req.tenantId,
       req.body.organization_id || null
     );
-    return ApiResponse.success(res, result, 'Events calendar imported');
+    return ApiResponse.success(res, result, 'Editorial calendar imported');
   } catch (error) {
     return next(error);
   } finally {
@@ -93,10 +78,11 @@ const importExcel = async (req, res, next) => {
 
 const exportExcel = async (req, res, next) => {
   try {
-    const buffer = await calendarService.exportExcel({
+    const buffer = await editorialService.exportExcel({
       tenantId: req.tenantId,
-      type: req.query.type,
+      organizationId: req.query.organizationId,
       projectId: req.query.projectId,
+      taskId: req.query.taskId,
       status: req.query.status,
       startDate: req.query.startDate,
       endDate: req.query.endDate,
@@ -104,7 +90,7 @@ const exportExcel = async (req, res, next) => {
     }, req.user);
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename="calendrier-evenements.xlsx"');
+    res.setHeader('Content-Disposition', 'attachment; filename="calendrier-editorial.xlsx"');
     return res.status(200).send(buffer);
   } catch (error) {
     return next(error);
@@ -114,10 +100,9 @@ const exportExcel = async (req, res, next) => {
 module.exports = {
   list,
   create,
-  getById,
   update,
-  patchStatus,
-  deleteEvent,
+  assignTask,
   importExcel,
   exportExcel,
 };
+

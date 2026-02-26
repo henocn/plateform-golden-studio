@@ -116,6 +116,12 @@ export const CALENDAR_EVENT_TYPES = {
     text: "text-white",
     border: "border-l-danger-700", // #B91C1C (plus proche dispo)
   },
+  other: {
+    label: "Autre",
+    bg: "bg-surface-400",
+    text: "text-ink-700",
+    border: "border-l-surface-500",
+  },
 };
 
 // ── Helpers ──────────────────────────────────────────────

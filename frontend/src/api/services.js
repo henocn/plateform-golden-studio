@@ -107,6 +107,24 @@ export const publicationsAPI = {
 };
 
 export const calendarAPI = {
+  // Events calendar
+  listEvents: (params) => api.get('/calendar/events', { params }),
+  getEventById: (id) => api.get(`/calendar/${id}`),
+  createEvent: (data) => api.post('/calendar/events', data),
+  updateEvent: (id, data) => api.put(`/calendar/${id}`, data),
+  removeEvent: (id) => api.delete(`/calendar/${id}`),
+  importEventsExcel: (formData) => api.post('/calendar/events/import', formData),
+  exportEventsExcel: (params) => api.get('/calendar/events/export', { params, responseType: 'blob' }),
+
+  // Editorial calendar
+  listEditorial: (params) => api.get('/calendar/editorial', { params }),
+  createEditorial: (data) => api.post('/calendar/editorial', data),
+  updateEditorial: (id, data) => api.put(`/calendar/editorial/${id}`, data),
+  assignEditorialTask: (id, task_id) => api.patch(`/calendar/editorial/${id}/assign-task`, { task_id }),
+  importEditorialExcel: (formData) => api.post('/calendar/editorial/import', formData),
+  exportEditorialExcel: (params) => api.get('/calendar/editorial/export', { params, responseType: 'blob' }),
+
+  // Backward compatibility
   list: (params) => api.get('/calendar', { params }),
   getById: (id) => api.get(`/calendar/${id}`),
   create: (data) => api.post('/calendar', data),

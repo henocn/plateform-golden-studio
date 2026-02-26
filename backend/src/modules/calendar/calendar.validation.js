@@ -3,10 +3,10 @@
 const Joi = require('joi');
 
 const createEventSchema = Joi.object({
-  organization_id: Joi.string().uuid().required(),
+  organization_id: Joi.string().uuid().optional().allow(null),
   project_id: Joi.string().uuid().optional().allow(null),
   title: Joi.string().min(2).max(255).required(),
-  type: Joi.string().valid('publication', 'event_coverage', 'filming', 'deliverable_deadline', 'meeting').required(),
+  type: Joi.string().valid('event_coverage', 'meeting', 'other').required(),
   start_date: Joi.date().iso().required(),
   end_date: Joi.date().iso().optional().allow(null),
   status: Joi.string().valid('pending', 'validated', 'scheduled', 'published', 'cancelled').default('pending'),
@@ -16,7 +16,7 @@ const createEventSchema = Joi.object({
 
 const updateEventSchema = Joi.object({
   title: Joi.string().min(2).max(255).optional(),
-  type: Joi.string().valid('publication', 'event_coverage', 'filming', 'deliverable_deadline', 'meeting').optional(),
+  type: Joi.string().valid('event_coverage', 'meeting', 'other').optional(),
   start_date: Joi.date().iso().optional(),
   end_date: Joi.date().iso().optional().allow(null),
   description: Joi.string().max(5000).optional().allow(null, ''),
@@ -28,7 +28,7 @@ const patchEventStatusSchema = Joi.object({
 });
 
 const listEventQuery = Joi.object({
-  type: Joi.string().valid('publication', 'event_coverage', 'filming', 'deliverable_deadline', 'meeting').optional(),
+  type: Joi.string().valid('event_coverage', 'meeting', 'other').optional(),
   projectId: Joi.string().uuid().optional(),
   organizationId: Joi.string().uuid().optional(),
   status: Joi.string().valid('pending', 'validated', 'scheduled', 'published', 'cancelled').optional(),

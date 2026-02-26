@@ -23,7 +23,7 @@ module.exports = (sequelize) => {
       validate: { notEmpty: true },
     },
     type: {
-      type: DataTypes.ENUM('publication', 'event_coverage', 'filming', 'deliverable_deadline', 'meeting'),
+      type: DataTypes.ENUM('publication', 'event_coverage', 'filming', 'deliverable_deadline', 'meeting', 'other'),
       allowNull: false,
     },
     start_date: {
