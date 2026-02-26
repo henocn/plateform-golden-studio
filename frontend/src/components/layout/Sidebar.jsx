@@ -96,20 +96,20 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}
     >
-      {/* ── Logo / nom en haut ─────────── */}
-      <div className={`flex items-center h-16 px-4 border-b border-surface-200 shrink-0 ${collapsed ? 'justify-center' : 'gap-3'}`}>
-        <div className={`shrink-0 overflow-hidden ${collapsed ? 'w-9 h-9 rounded-xl' : 'flex items-center gap-2 min-w-0'}`}>
-          <img
-            src="/images/nom simple.png"
-            alt=""
-            className={collapsed ? 'w-full h-full object-contain' : 'h-8 w-auto max-w-[140px] object-contain object-left'}
-          />
+      {/* ── Logo Kidou (gauche) + Logo organisation backend (droite), justify-between ─────────── */}
+      <div className={`flex items-center justify-between border-b border-surface-200 shrink-0 gap-2 ${collapsed ? 'h-14 px-2' : 'h-20 px-4'}`}>
+        <img
+          src="/images/nom simple.png"
+          alt=""
+          className={`object-contain shrink-0 ${collapsed ? 'h-9 w-auto max-w-11' : 'h-10 w-auto max-w-[140px]'}`}
+        />
+        <div className={`rounded-lg bg-surface-100 flex items-center justify-center overflow-hidden shrink-0 ${collapsed ? 'w-9 h-9' : 'w-11 h-11'}`}>
+          {logoSrc ? (
+            <img src={logoSrc} alt="" className="w-full h-full object-contain" />
+          ) : (
+            <span className="text-ink-400 font-bold text-sm">O</span>
+          )}
         </div>
-        {!collapsed && (
-          <div className="min-w-0 flex-1">
-            <h1 className="text-sm font-bold text-ink-900 tracking-tight truncate">{orgName}</h1>
-          </div>
-        )}
       </div>
 
       {/* ── Navigation ────────────────── */}

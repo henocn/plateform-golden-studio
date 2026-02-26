@@ -58,7 +58,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* ── Left: Branding Panel ───────────── */}
-      <div className="hidden lg:flex lg:w-[45%] bg-primary-500 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[45%] lg:h-screen lg:max-h-screen bg-primary-500 relative overflow-hidden flex-col">
         {/* Abstract geometric pattern */}
         <div className="absolute inset-0">
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary-400/20 rounded-full -translate-y-1/2 translate-x-1/3" />
@@ -66,32 +66,42 @@ export default function LoginPage() {
           <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-primary-400/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
         </div>
 
-        <div className="relative z-10 flex flex-col justify-between p-12 text-white">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-20 h-20 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden shrink-0">
-                {logoSrc ? (
-                  <img src={logoSrc} alt="" className="w-full h-full object-contain" />
-                ) : (
-                  <span className="text-white font-bold text-2xl">G</span>
-                )}
-              </div>
-              <span className="text-xl font-bold tracking-tight">{orgName}</span>
+        <div className="relative z-10 flex flex-col min-h-0 flex-1 p-8 md:p-10 text-white">
+          {/* Kidou (gauche) + Logo organisation (droite), même ligne, justify-between — tailles augmentées */}
+          <div className="flex items-center justify-between gap-4 shrink-0 mb-6">
+            <img
+              src="/images/nom simple.png"
+              alt=""
+              className="h-16 md:h-20 w-auto max-w-[220px] md:max-w-[280px] object-contain object-left"
+            />
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden shrink-0">
+              {logoSrc ? (
+                <img src={logoSrc} alt="" className="w-full h-full object-contain" />
+              ) : (
+                <span className="text-white font-bold text-xl md:text-2xl">O</span>
+              )}
             </div>
-            <p className="text-primary-200 text-body-md">Kidou Platform</p>
           </div>
 
-          <div className="max-w-md">
-            <h1 className="text-3xl font-bold leading-tight mb-4">
-              Pilotez la communication institutionnelle avec excellence.
-            </h1>
-            <p className="text-primary-200 text-body-lg leading-relaxed">
-              Plateforme centralisée de gestion de projets, validation de contenus
-              et suivi de publications pour les institutions gouvernementales.
-            </p>
+          {/* Bannière totale (PNG) */}
+          <div className="flex-1 min-h-0 flex flex-col justify-center items-center">
+            <img
+              src="/images/baniere totale.png"
+              alt=""
+              className="max-w-full w-full max-h-[260px] object-contain object-center mb-4"
+            />
+            <div className="max-w-md">
+              <h1 className="text-xl md:text-2xl font-bold leading-tight mb-3">
+                Pilotez la communication institutionnelle avec excellence.
+              </h1>
+              <p className="text-primary-200 text-body-sm md:text-body-md leading-relaxed">
+                Plateforme centralisée de gestion de projets, validation de contenus
+                et suivi de publications pour les institutions gouvernementales.
+              </p>
+            </div>
           </div>
 
-          <p className="text-primary-300 text-body-sm">
+          <p className="text-primary-300 text-body-sm shrink-0 pt-4">
             © {new Date().getFullYear()} Tous droits réservés
           </p>
         </div>
