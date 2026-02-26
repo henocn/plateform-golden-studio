@@ -67,14 +67,16 @@ export default function LoginPage() {
         </div>
 
         <div className="relative z-10 flex flex-col min-h-0 flex-1 p-8 md:p-10 text-white">
-          {/* Kidou (gauche) + Logo organisation (droite), même ligne, justify-between — tailles augmentées */}
+          {/* Kidou (gauche) + Logo organisation (droite), même taille et même style */}
           <div className="flex items-center justify-between gap-4 shrink-0 mb-6">
-            <img
-              src="/images/nom simple.png"
-              alt=""
-              className="h-16 md:h-20 w-auto max-w-[220px] md:max-w-[280px] object-contain object-left"
-            />
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-28 h-28 md:w-32 md:h-32 rounded-xl border border-white/30 bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden shrink-0">
+              <img
+                src="/images/Qidoo white.jpeg"
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="w-28 h-28 md:w-32 md:h-32 rounded-xl border border-white/30 bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden shrink-0">
               {logoSrc ? (
                 <img src={logoSrc} alt="" className="w-full h-full object-contain" />
               ) : (
@@ -91,10 +93,10 @@ export default function LoginPage() {
               className="max-w-full w-full max-h-[260px] object-contain object-center mb-4"
             />
             <div className="max-w-md">
-              <h1 className="text-xl md:text-2xl font-bold leading-tight mb-3">
+              <h1 className="text-xl md:text-2xl font-bold text-white mb-5">
                 Pilotez la communication institutionnelle avec excellence.
               </h1>
-              <p className="text-primary-200 text-body-sm md:text-body-md leading-relaxed">
+              <p className="text-primary-200 text-body-sm md:text-body-md leading-relaxed mt-2">
                 Plateforme centralisée de gestion de projets, validation de contenus
                 et suivi de publications pour les institutions gouvernementales.
               </p>

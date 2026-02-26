@@ -99,7 +99,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       {/* ── Logo Kidou (gauche) + Logo organisation backend (droite), justify-between ─────────── */}
       <div className={`flex items-center justify-between border-b border-surface-200 shrink-0 gap-2 ${collapsed ? 'h-14 px-2' : 'h-20 px-4'}`}>
         <img
-          src="/images/nom simple.png"
+          src="/images/Qidoo white.jpeg"
           alt=""
           className={`object-contain shrink-0 ${collapsed ? 'h-9 w-auto max-w-11' : 'h-10 w-auto max-w-[140px]'}`}
         />

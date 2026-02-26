@@ -1,5 +1,20 @@
 import { useMemo, useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight, Plus, Upload, Download } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Upload,
+  Download,
+  Facebook,
+  Linkedin,
+  Instagram,
+  Youtube,
+  MessageCircle,
+  MessageSquare,
+  Music2,
+  Globe,
+  ExternalLink,
+} from "lucide-react";
 import { addMonths, subMonths, format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Card, Button, Modal, Input, Select, Textarea, Skeleton, Checkbox } from "../../../components/ui";
@@ -26,6 +41,18 @@ const NETWORK_OPTIONS = [
   { value: "messenger", label: "Messenger" },
   { value: "other", label: "Autre" },
 ];
+
+const NETWORK_ICON_MAP = {
+  facebook: Facebook,
+  linkedin: Linkedin,
+  instagram: Instagram,
+  youtube: Youtube,
+  x: MessageSquare,
+  tiktok: Music2,
+  whatsapp: MessageCircle,
+  messenger: MessageSquare,
+  other: Globe,
+};
 
 export default function EditorialCalendarTab({ canCreateEvent }) {
   const [date, setDate] = useState(new Date());
@@ -233,15 +260,31 @@ function EditorialDetailModal({ entry, tasks, onClose, onUpdated }) {
         <p><span className="text-ink-400">Réseaux:</span> <span className="text-ink-700">{(entry.networks || []).join(", ") || "—"}</span></p>
         <div>
           <span className="text-ink-400">Liens réseaux:</span>
-          <div className="text-ink-700 mt-1 space-y-1">
+          <div className="mt-2 space-y-2">
             {Object.entries(entry.network_links || {}).length ? (
               Object.entries(entry.network_links || {}).map(([network, link]) => (
-                <p key={network} className="text-body-sm">
-                  <span className="font-medium">{network}</span>: {link}
-                </p>
+                <a
+                  key={network}
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 hover:border-primary-300 hover:bg-primary-50 transition-default"
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    {(() => {
+                      const Icon = NETWORK_ICON_MAP[String(network || "").toLowerCase()] || Globe;
+                      return <Icon className="w-4 h-4 text-primary-500 shrink-0" />;
+                    })()}
+                    <span className="text-body-sm font-medium text-ink-700 capitalize">{network}</span>
+                  </span>
+                  <span className="flex items-center gap-1 text-primary-600 text-body-sm truncate">
+                    <span className="truncate max-w-[220px]">{link}</span>
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                  </span>
+                </a>
               ))
             ) : (
-              <p>—</p>
+              <p className="text-ink-700">—</p>
             )}
           </div>
         </div>
