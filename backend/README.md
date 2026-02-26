@@ -67,6 +67,10 @@ npm start
 Le serveur démarre sur `http://localhost:3000`.  
 Documentation Swagger : `http://localhost:3000/api/v1/api-docs`
 
+### Production — Erreur 413 (upload logo / fichiers)
+
+En production, si l’upload du logo d’organisation renvoie **413 Request Entity Too Large**, la limite de taille du **reverse proxy** (nginx, Caddy, etc.) est en cause. Voir **[docs/production-413-body-size.md](docs/production-413-body-size.md)** pour la configuration à appliquer (`client_max_body_size 10M` avec nginx, etc.).
+
 ---
 
 ## Architecture
