@@ -286,12 +286,6 @@ export default function MediaPage() {
                       <Skeleton key={i} className="h-14 rounded-lg" />
                     ))}
               </div>
-            ) : !currentOrgId ? (
-              <EmptyState
-                icon={FolderOpen}
-                title="Chargement…"
-                description="Préparation de la médiathèque."
-              />
             ) : filteredFolders.length === 0 && filteredMedia.length === 0 ? (
               <EmptyState
                 icon={FolderOpen}
@@ -526,7 +520,7 @@ export default function MediaPage() {
       <ConfirmDialog
         open={!!deleteFolderTarget}
         title="Supprimer le dossier"
-        message={`Supprimer le dossier « ${deleteFolderTarget?.name} » ? Cette action est irréversible.`}
+        message={`Supprimer le dossier « ${deleteFolderTarget?.name} » ? La suppression entraîne également celle de tous les sous-dossiers et fichiers qu'il contient. Cette action est irréversible.`}
         onConfirm={handleDeleteFolder}
         onCancel={() => setDeleteFolderTarget(null)}
       />

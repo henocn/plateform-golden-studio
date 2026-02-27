@@ -151,7 +151,7 @@ function FileDownloadButton({ projectId, proposalId }) {
 
 /* ─── Modale Sauvegarder dans la médiathèque (explorateur de dossiers) ────── */
 function SaveToMediaModal({ proposal, onClose, onSaved }) {
-  const { isSuperAdmin } = usePermissions();
+  const { canCreateFolder } = usePermissions();
   const { current: currentOrg, fetchCurrent } = useOrganizationStore();
   const { user } = useAuthStore();
   const projectId = proposal.project_id || proposal.project?.id;
@@ -280,7 +280,7 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
 
         {/* Actions + liste de dossiers */}
         <div className="flex items-center justify-between gap-3 border-b border-surface-200 pb-3">
-          {(isAtRoot ? isSuperAdmin : true) && (
+          {canCreateFolder && (
             <Button
               type="button"
               variant="secondary"
@@ -299,7 +299,7 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
           ) : subfolders.length === 0 ? (
             <p className="text-body-sm text-ink-500 py-4">
               {isAtRoot
-                ? (isSuperAdmin ? "Aucun dossier à la racine. Créez un dossier pour enregistrer les fichiers." : "Aucun dossier à la racine. Contactez un administrateur pour créer un dossier.")
+                ? (canCreateFolder ? "Aucun dossier à la racine. Créez un dossier pour enregistrer les fichiers." : "Aucun dossier à la racine. Contactez un administrateur pour créer un dossier.")
                 : "Aucun sous-dossier. Vous pouvez sauvegarder ici ou créer un sous-dossier."}
             </p>
           ) : (
@@ -346,7 +346,6 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
           parentId={currentFolderId}
           organizationId={orgId}
           organizationName={breadcrumb[breadcrumb.length - 1]?.name}
-          isSuperAdmin={isSuperAdmin}
           onClose={() => setShowCreateFolder(false)}
           onCreated={handleFolderCreated}
         />

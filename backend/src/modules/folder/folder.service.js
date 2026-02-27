@@ -1,12 +1,5 @@
 'use strict';
 
-/**
- * TODO: réactiver les contrôles d'accès par organisation (forbidden) pour
- * getRootFolders, explore, getById, update, delete — actuellement désactivés
- * pour permettre à tout utilisateur connecté (ex: admin client) de charger
- * et gérer les dossiers.
- */
-
 const folderRepository = require('./folder.repository');
 const ApiError = require('../../utils/ApiError');
 const { Media, Folder } = require('../../models');
@@ -77,12 +70,39 @@ class FolderService {
     const folder = await folderRepository.findById(id);
     if (!folder) throw ApiError.notFound('Dossier');
 
-    // Déplacer les médias du dossier vers la racine (folder_id = null)
-    await Media.update({ folder_id: null }, { where: { folder_id: id } });
-    // Remonter les sous-dossiers au niveau du parent (ou racine si parent_id = null)
-    await Folder.update({ parent_id: folder.parent_id }, { where: { parent_id: id } });
+    // Suppression récursive : récupérer tous les sous-dossiers (arborescence complète)
+    const idsToDelete = [id];
+    const queue = [id];
 
-    return folderRepository.delete(id);
+    // Parcours en largeur pour collecter tous les descendants
+    // On reste en JS ici pour éviter d'introduire une requête SQL récursive spécifique à Postgres.
+    // Pour un nombre raisonnable de dossiers, c'est suffisant.
+    // Si l'arborescence devenait très profonde, on pourrait basculer vers une CTE récursive.
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      // On ne récupère que les identifiants pour limiter la charge
+      // eslint-disable-next-line no-await-in-loop
+      const children = await Folder.findAll({
+        where: { parent_id: currentId },
+        attributes: ['id'],
+      });
+      for (const child of children) {
+        idsToDelete.push(child.id);
+        queue.push(child.id);
+      }
+    }
+
+    // Supprimer tous les médias contenus dans ces dossiers
+    await Media.destroy({
+      where: { folder_id: idsToDelete },
+    });
+
+    // Supprimer tous les dossiers (le dossier courant + ses descendants)
+    await Folder.destroy({
+      where: { id: idsToDelete },
+    });
+
+    return folder;
   }
 }
 

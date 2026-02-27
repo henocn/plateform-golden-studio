@@ -52,7 +52,7 @@ export default function CreateFolderModal({
           </div>
           <p className="text-body-sm text-ink-700">
             {isRoot
-              ? "Créer un dossier racine pour une organisation (réservé au super admin)."
+              ? "Créer un dossier à la racine de la médiathèque."
               : `Créer un sous-dossier dans "${organizationName || "ce dossier"}".`}
           </p>
         </div>
