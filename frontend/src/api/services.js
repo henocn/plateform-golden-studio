@@ -41,6 +41,7 @@ export const usersAPI = {
   createInternal: (data) => api.post('/users/internal', data),
   createClient: (data) => api.post('/users/clients', data),
   update: (id, data) => api.put(`/users/${id}`, data),
+  uploadAvatar: (id, formData) => api.put(`/users/${id}/avatar`, formData),
   patchRole: (type, id, data) => api.patch(`/users/${type}/${id}/role`, data),
   patchStatus: (id, data) => api.patch(`/users/${id}/status`, data),
   remove: (id) => api.delete(`/users/${id}`),

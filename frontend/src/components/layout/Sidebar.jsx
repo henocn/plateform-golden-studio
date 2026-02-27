@@ -19,17 +19,16 @@ import { useAuthStore } from '../../store/authStore';
 import { useOrganizationStore } from '../../store/organizationStore';
 
 const navItems = [
-  { label: 'Dashboard',      to: '/dashboard',      icon: LayoutDashboard },
-  { label: 'Organisation',   to: '/organization',   icon: Building2, roles: ['super_admin', 'admin'], internal: true },
-  { label: 'Projets',              to: '/projects',            icon: FolderKanban },
-  { label: 'Tâches',               to: '/tasks',               icon: CheckSquare },
-  { label: 'Propositions',         to: '/proposals',           icon: FolderKanban },
-  { label: 'Calendrier éditorial', to: '/calendar/editorial',  icon: Megaphone },
-  { label: 'Calendrier événements', to: '/calendar/events',    icon: Calendar },
-  { label: 'Médiathèque',    to: '/media',          icon: Image },
-  { label: 'Reporting',      to: '/reporting',       icon: BarChart3, roles: ['super_admin', 'admin', 'validator'], internal: true },
-  { label: 'Utilisateurs',   to: '/users',          icon: Users, roles: ['super_admin', 'admin', 'client_admin'] },
-  { label: 'Audit',          to: '/audit',          icon: Shield, roles: ['super_admin', 'admin'], internal: true },
+  { label: 'Dashboard',            to: '/dashboard',          icon: LayoutDashboard },
+  { label: 'Projets',              to: '/projects',           icon: FolderKanban },
+  { label: 'Tâches',               to: '/tasks',              icon: CheckSquare },
+  { label: 'Propositions',         to: '/proposals',          icon: FolderKanban },
+  { label: 'Calendrier éditorial', to: '/calendar/editorial', icon: Megaphone },
+  { label: 'Calendrier événements', to: '/calendar/events',   icon: Calendar },
+  { label: 'Médiathèque',          to: '/media',              icon: Image },
+  { label: 'Reporting',            to: '/reporting',          icon: BarChart3, roles: ['super_admin', 'admin', 'validator'], internal: true },
+  { label: 'Utilisateurs',         to: '/users',              icon: Users, roles: ['super_admin', 'admin', 'client_admin'] },
+  { label: 'Audit',                to: '/audit',              icon: Shield, roles: ['super_admin', 'admin'], internal: true },
 ];
 
 const bottomItems = [

@@ -1,9 +1,14 @@
 'use strict';
 
+'use strict';
+
+const path = require('path');
 const userService = require('./user.service');
 const { User } = require('../../models');
 const ApiResponse = require('../../utils/ApiResponse');
+const ApiError = require('../../utils/ApiError');
 const { parsePagination, buildPaginationMeta } = require('../../utils/pagination');
+const env = require('../../config/env');
 
 /**
  * GET /api/v1/users/members
@@ -141,6 +146,33 @@ const update = async (req, res, next) => {
 };
 
 /**
+ * PUT /api/v1/users/:id/avatar
+ * Update user avatar (current user or managed by admins)
+ */
+const updateAvatar = async (req, res, next) => {
+  try {
+    if (!req.file || !req.file.path) {
+      return next(ApiError.badRequest('No file uploaded'));
+    }
+
+    const relative = path
+      .relative(env.UPLOAD_DIR, req.file.path)
+      .split(path.sep)
+      .join('/');
+
+    const user = await userService.update(
+      req.params.id,
+      { avatar_path: relative },
+      req.user,
+    );
+
+    return ApiResponse.success(res, user, 'User avatar updated successfully');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
  * PATCH /api/v1/users/:id/status
  */
 const patchStatus = async (req, res, next) => {
@@ -176,4 +208,5 @@ module.exports = {
   update,
   patchStatus,
   deleteUser,
+  updateAvatar,
 };
