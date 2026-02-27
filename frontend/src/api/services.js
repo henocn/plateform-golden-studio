@@ -146,8 +146,7 @@ export const mediaAPI = {
 
 export const foldersAPI = {
   list: (params) => api.get('/folders', { params }),
-  getRootFolders: (organizationId) =>
-    organizationId ? api.get(`/folders/roots/${organizationId}`) : api.get('/folders/roots'),
+  getRootFolders: () => api.get('/folders/roots'),
   explore: (id, params) => api.get(`/folders/${id}/explore`, { params: params || {} }),
   getById: (id) => api.get(`/folders/${id}`),
   create: (data) => api.post('/folders', data),

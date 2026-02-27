@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FolderPlus } from "lucide-react";
 import { Modal, Input, Button, Select } from "../../components/ui";
-import { foldersAPI, organizationsAPI } from "../../api/services";
+import { foldersAPI } from "../../api/services";
 import toast from "react-hot-toast";
 
 export default function CreateFolderModal({
@@ -15,36 +15,13 @@ export default function CreateFolderModal({
 }) {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [selectedOrgId, setSelectedOrgId] = useState(organizationId || "");
-  const [organizations, setOrganizations] = useState([]);
-
-  useEffect(() => {
-    if (isSuperAdmin && isRoot) {
-      organizationsAPI
-        .list({ limit: 200 })
-        .then(({ data }) => {
-          const raw = data?.data?.data ?? data?.data;
-          const list = Array.isArray(raw) ? raw : raw?.rows ?? [];
-          setOrganizations(list);
-          if (organizationId && !selectedOrgId) setSelectedOrgId(organizationId);
-        })
-        .catch(() => setOrganizations([]));
-    }
-  }, [isSuperAdmin, isRoot, organizationId]);
-
-  useEffect(() => {
-    if (organizationId) setSelectedOrgId(organizationId);
-  }, [organizationId]);
+  const [selectedOrgId] = useState(organizationId || "");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) {
       toast.error("Le nom du dossier est requis.");
-      return;
-    }
-    if (isRoot && isSuperAdmin && !selectedOrgId) {
-      toast.error("Sélectionnez une organisation.");
       return;
     }
 
@@ -54,9 +31,7 @@ export default function CreateFolderModal({
         name: trimmed,
         parent_id: isRoot ? null : parentId,
       };
-      if (isRoot) {
-        payload.organization_id = organizationId || (isSuperAdmin ? selectedOrgId : null) || null;
-      }
+      // En mode mono-organisation, le backend positionne organization_id automatiquement
       await foldersAPI.create(payload);
       toast.success("Dossier créé.");
       onCreated();
@@ -67,8 +42,6 @@ export default function CreateFolderModal({
       setLoading(false);
     }
   };
-
-  const showOrgSelect = isRoot && isSuperAdmin && organizations.length > 0 && !organizationId;
 
   return (
     <Modal open onClose={onClose} title="Nouveau dossier" size="sm">
@@ -92,19 +65,6 @@ export default function CreateFolderModal({
           required
           autoFocus
         />
-
-        {showOrgSelect && (
-          <Select
-            label="Organisation"
-            value={selectedOrgId}
-            onChange={(e) => setSelectedOrgId(e.target.value)}
-            options={[
-              { value: "", label: "Sélectionner une organisation" },
-              ...organizations.map((o) => ({ value: o.id, label: o.name })),
-            ]}
-            required
-          />
-        )}
 
         <div className="flex justify-end gap-3 pt-2 border-t border-surface-200">
           <Button type="button" variant="secondary" onClick={onClose}>

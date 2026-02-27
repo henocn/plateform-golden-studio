@@ -99,14 +99,13 @@ export default function MediaPage() {
     setLoading(true);
     try {
       if (!currentFolderId) {
-        const [rootsRes, mediaRes] = await Promise.all([
-          foldersAPI.getRootFolders(currentOrgId),
-          mediaAPI.list({
-            limit: 100,
-            folder_id: '', // racine : uniquement médias sans dossier
-            ...(isInternal && currentOrgId ? { organizationId: currentOrgId } : {}),
-          }),
-        ]);
+          const [rootsRes, mediaRes] = await Promise.all([
+            foldersAPI.getRootFolders(),
+            mediaAPI.list({
+              limit: 100,
+              folder_id: '', // racine : uniquement médias sans dossier
+            }),
+          ]);
         const rootsData = rootsRes?.data?.data ?? rootsRes?.data;
         const roots = Array.isArray(rootsData) ? rootsData : [];
         const payload = mediaRes?.data?.data ?? mediaRes?.data;
@@ -114,7 +113,7 @@ export default function MediaPage() {
         setSubfolders(roots);
         setMedia(mediaList ?? []);
       } else {
-        const res = await foldersAPI.explore(currentFolderId, currentOrgId ? { organizationId: currentOrgId } : undefined);
+        const res = await foldersAPI.explore(currentFolderId);
         const data = res?.data?.data ?? res?.data;
         const result = data && typeof data === 'object' ? data : {};
         setSubfolders(Array.isArray(result?.subfolders) ? result.subfolders : []);

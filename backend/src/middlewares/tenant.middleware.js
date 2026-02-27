@@ -4,11 +4,11 @@ const { Organization } = require('../models');
 const ApiError = require('../utils/ApiError');
 
 /**
- * Tenant isolation middleware.
+ * Tenant middleware en mode mono-organisation.
  * Runs AFTER auth.middleware (req.user must exist).
  *
- * - client users → req.tenantId = their own organization_id (forced, immutable)
- * - internal users → req.tenantId = req.query.organizationId || null (voluntary filter)
+ * - utilisateurs client → req.tenantId = leur organization_id (obligatoire)
+ * - utilisateurs internes → req.tenantId = null (vue globale backoffice)
  */
 const tenantMiddleware = async (req, _res, next) => {
   try {
@@ -24,22 +24,8 @@ const tenantMiddleware = async (req, _res, next) => {
         return next(ApiError.unauthorized('Client user must belong to an organization'));
       }
     } else if (req.user.user_type === 'internal') {
-      // Internal users can optionally scope to a specific organization
-      const { organizationId } = req.query;
-
-      if (organizationId) {
-        // Validate that the organization exists
-        const org = await Organization.findByPk(organizationId, {
-          attributes: ['id'],
-        });
-        if (!org) {
-          return next(ApiError.notFound('Organization'));
-        }
-        req.tenantId = organizationId;
-      } else {
-        // No filter — global access (backoffice view)
-        req.tenantId = null;
-      }
+      // Internal users: vue globale unique (une seule organisation)
+      req.tenantId = null;
     }
 
     return next();

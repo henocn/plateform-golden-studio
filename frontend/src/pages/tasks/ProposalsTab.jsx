@@ -180,12 +180,12 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
     setLoading(true);
     try {
       if (!currentFolderId) {
-        const rootsRes = await foldersAPI.getRootFolders(orgId);
+        const rootsRes = await foldersAPI.getRootFolders();
         const rootsData = rootsRes?.data?.data ?? rootsRes?.data;
         const roots = Array.isArray(rootsData) ? rootsData : [];
         setSubfolders(roots);
       } else {
-        const res = await foldersAPI.explore(currentFolderId, orgId ? { organizationId: orgId } : undefined);
+        const res = await foldersAPI.explore(currentFolderId);
         const data = res?.data?.data ?? res?.data;
         const result = data && typeof data === 'object' ? data : {};
         setSubfolders(Array.isArray(result?.subfolders) ? result.subfolders : []);
