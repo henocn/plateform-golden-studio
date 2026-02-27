@@ -71,7 +71,7 @@ export default function ProjectDetailPage() {
         <ArrowLeft className="w-4 h-4" /> Projets
       </button>
 
-      {/* Project Header */}
+      {/* Project Header (titre + statuts uniquement) */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 rounded-2xl bg-primary-50 flex items-center justify-center shrink-0">
@@ -82,30 +82,12 @@ export default function ProjectDetailPage() {
             <div className="flex flex-wrap items-center gap-2 mt-1.5">
               <Badge color={status.color} dot>{status.label}</Badge>
               <Badge color={priority.color}>{priority.label}</Badge>
-              <span className="text-body-sm text-ink-400">
-                {project.Organization?.name || '—'} • {project.agency_direction || ''}
-              </span>
             </div>
-            {project.description && (
-              <p className="text-body-md text-ink-500 mt-3 max-w-2xl">{project.description}</p>
-            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
           {can('projects.update') && <StatusDropdown project={project} onUpdate={loadProject} />}
         </div>
-      </div>
-
-      {/* Info bar */}
-      <div className="flex items-center gap-6 text-body-sm text-ink-500">
-        {project.target_date && (
-          <span className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-ink-400" /> Cible: {formatDate(project.target_date)}
-          </span>
-        )}
-        <span className="flex items-center gap-1.5">
-          <Calendar className="w-4 h-4 text-ink-400" /> Créé le {formatDate(project.createdAt)}
-        </span>
       </div>
 
       {/* Tabs */}
@@ -161,7 +143,7 @@ function DetailsTab({ project }) {
           <div>
             <h4 className="text-label text-ink-500 mb-1">Organisation</h4>
             <p className="text-body-md text-ink-700">
-              {project.Organization?.name || '—'}
+              {project.organization?.name || '—'}
             </p>
           </div>
           <div>
