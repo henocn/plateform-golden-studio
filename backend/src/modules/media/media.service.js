@@ -4,24 +4,13 @@ const mediaRepository = require('./media.repository');
 const ApiError = require('../../utils/ApiError');
 
 class MediaService {
-  async list(filters, user) {
-    const isClient = user.user_type === 'client';
-    if (isClient) {
-      filters.tenantId = user.organization_id;
-    }
-    // folder_id can be passed in filters
+  async list(filters) {
     return mediaRepository.findAll(filters);
   }
 
-  async getById(id, user) {
+  async getById(id) {
     const media = await mediaRepository.findById(id);
     if (!media) throw ApiError.notFound('Média');
-    // Client can only see global or own org media
-    if (user.user_type === 'client') {
-      if (!media.is_global && media.organization_id !== user.organization_id) {
-        throw ApiError.notFound('Média');
-      }
-    }
     return media;
   }
 
@@ -49,17 +38,9 @@ class MediaService {
     return media;
   }
 
-  /**
-   * Download — ensure access control
-   */
-  async getDownload(id, user) {
+  async getDownload(id) {
     const media = await mediaRepository.findById(id);
     if (!media) throw ApiError.notFound('Média');
-    if (user.user_type === 'client') {
-      if (!media.is_global && media.organization_id !== user.organization_id) {
-        throw ApiError.forbidden('Access denied to this media');
-      }
-    }
     return media;
   }
 }

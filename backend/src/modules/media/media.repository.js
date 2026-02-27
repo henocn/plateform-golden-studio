@@ -4,17 +4,9 @@ const { Media } = require('../../models');
 const { Op } = require('sequelize');
 
 class MediaRepository {
-  async findAll({ tenantId, type, isGlobal, search, tags, folder_id, page, limit, offset } = {}) {
+  async findAll({ type, isGlobal, search, tags, folder_id, page, limit, offset } = {}) {
     const where = {};
-
-    // Client sees: global media + their org media
-    // Internal sees: all
-    if (tenantId) {
-      where[Op.or] = [
-        { is_global: true },
-        { organization_id: tenantId },
-      ];
-    }
+    // Mono-organisation : tous les médias visibles par toute personne ayant le droit
     if (type) where.type = type;
     if (isGlobal !== undefined) where.is_global = isGlobal === 'true' || isGlobal === true;
     if (search) {

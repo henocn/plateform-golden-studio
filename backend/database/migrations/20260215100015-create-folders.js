@@ -33,11 +33,6 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL',
       },
-      is_global: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false,
-        allowNull: false,
-      },
       created_by: {
         type: Sequelize.UUID,
         allowNull: false,

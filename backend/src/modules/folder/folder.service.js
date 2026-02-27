@@ -13,121 +13,69 @@ const { Media, Folder } = require('../../models');
 
 class FolderService {
   /**
-   * Liste les dossiers avec filtrage tenant
+   * Liste les dossiers. Mono-organisation : tous les dossiers visibles.
    */
-  async list(filters, user, tenantId) {
-    if (user.user_type === 'client') {
-      filters.tenantId = user.organization_id;
-    } else {
-      filters.tenantId = tenantId || null;
-    }
+  async list(filters) {
     return folderRepository.findAll(filters);
   }
 
   /**
-   * Récupère les dossiers racine d'une organisation
-   * TODO: réactiver le contrôle d'accès (forbidden si client et organizationId !== user.organization_id)
+   * Récupère tous les dossiers racine. Mono-organisation : visibles par tous.
    */
-  async getRootFolders(organizationId, user, tenantId) {
-    // Accès temporairement ouvert à tous les utilisateurs connectés
-    const targetOrgId = user.user_type === 'internal' && tenantId ? tenantId : organizationId;
-    return folderRepository.findRootFolders(targetOrgId);
+  async getRootFolders() {
+    return folderRepository.findRootFolders();
   }
 
   /**
-   * Explore un dossier : retourne sous-dossiers + fichiers
-   * TODO: réactiver le contrôle d'accès (forbidden si client et folder.organization_id !== user.organization_id)
+   * Explore un dossier : retourne sous-dossiers + fichiers.
    */
-  async explore(folderId, user, tenantId) {
-    // Temporairement: trouver le dossier sans filtrer par org pour éviter 403
-    const folder = await folderRepository.findById(folderId, null);
+  async explore(folderId) {
+    const folder = await folderRepository.findById(folderId);
     if (!folder) throw ApiError.notFound('Dossier');
-
-    const targetTenantId = user.user_type === 'client' ? user.organization_id : tenantId;
-    return folderRepository.explore(folderId, targetTenantId);
+    return folderRepository.explore(folderId);
   }
 
-  /**
-   * TODO: réactiver le contrôle d'accès (forbidden si client et folder.organization_id !== user.organization_id)
-   */
-  async getById(id, user, tenantId) {
-    const folder = await folderRepository.findById(id, null);
+  async getById(id) {
+    const folder = await folderRepository.findById(id);
     if (!folder) throw ApiError.notFound('Dossier');
     return folder;
   }
 
   /**
-   * Crée un dossier (racine ou sous-dossier)
-   * Les droits sont gérés via les permissions :
-   * - folders.create_root  → rôles autorisés à créer un dossier racine
-   * - folders.create_subfolder → rôles autorisés à créer un sous-dossier
+   * Crée un dossier (racine ou sous-dossier). Une seule permission : folders.create.
+   * Toute personne ayant le droit peut créer partout (racine ou sous-dossier).
    */
   async create(data, user, tenantId) {
-    const isRootFolder = !data.parent_id;
-
-    // Le contrôle fin par rôle est géré par les permissions sur la route (folders.create_root / folders.create_subfolder)
-
-    // Déterminer l'organization_id
-    let organizationId;
-    if (isRootFolder) {
-      // Super_admin peut spécifier l'organisation pour un dossier racine
-      organizationId = data.organization_id || (user.user_type === 'client' ? user.organization_id : tenantId || user.organization_id);
-    } else {
-      // Pour un sous-dossier, vérifier que le parent existe et appartient à la bonne org
+    let organizationId = data.organization_id;
+    if (data.parent_id) {
       const parentFolder = await folderRepository.findById(data.parent_id);
-      if (!parentFolder) {
-        throw ApiError.notFound('Dossier parent');
-      }
-
-      // Vérifier l'accès au parent
-      if (user.user_type === 'client' && parentFolder.organization_id !== user.organization_id) {
-        throw ApiError.forbidden('Cannot create subfolder in another organization');
-      }
-
-      // Si super_admin crée un sous-dossier, il peut spécifier l'org, sinon utiliser celle du parent
-        organizationId = parentFolder.organization_id;
+      if (!parentFolder) throw ApiError.notFound('Dossier parent');
+      organizationId = parentFolder.organization_id;
+    } else {
+      organizationId = organizationId || (user.user_type === 'client' ? user.organization_id : tenantId || user.organization_id);
     }
 
     return folderRepository.create({
       name: data.name,
       parent_id: data.parent_id || null,
       organization_id: organizationId,
-      is_global: data.is_global || false,
       created_by: user.id,
     });
   }
 
-  /**
-   * TODO: réactiver le contrôle d'accès (forbidden si client et folder.organization_id !== user.organization_id)
-   */
-  async update(id, data, user, tenantId) {
-    const folder = await folderRepository.findById(id, null);
+  async update(id, data) {
+    const folder = await folderRepository.findById(id);
     if (!folder) throw ApiError.notFound('Dossier');
-
-    // Si on change le parent_id, vérifier que le nouveau parent existe et appartient à la même org
-    if (data.parent_id !== undefined && data.parent_id !== folder.parent_id) {
-        if (data.parent_id === null) {
-        // Tenter de passer en racine : le contrôle de permission est fait au niveau route
-      } else {
-        const newParent = await folderRepository.findById(data.parent_id);
-        if (!newParent) {
-          throw ApiError.notFound('Dossier parent');
-        }
-        if (newParent.organization_id !== folder.organization_id) {
-          throw ApiError.forbidden('Cannot move folder to another organization');
-        }
-      }
+    if (data.parent_id !== undefined && data.parent_id !== folder.parent_id && data.parent_id != null) {
+      const newParent = await folderRepository.findById(data.parent_id);
+      if (!newParent) throw ApiError.notFound('Dossier parent');
     }
-
     return folderRepository.update(id, data);
   }
 
-  /**
-   * TODO: réactiver le contrôle d'accès (forbidden si client et folder.organization_id !== user.organization_id)
-   */
-  async delete(id, user, tenantId) {
-    const folder = await folderRepository.findById(id, null);
-    if (!folder) throw ApiError.notFound('Folder');
+  async delete(id) {
+    const folder = await folderRepository.findById(id);
+    if (!folder) throw ApiError.notFound('Dossier');
 
     // Déplacer les médias du dossier vers la racine (folder_id = null)
     await Media.update({ folder_id: null }, { where: { folder_id: id } });

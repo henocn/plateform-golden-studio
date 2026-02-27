@@ -90,22 +90,16 @@ export default function MediaPage() {
   }, [currentOrgId, currentOrg, fetchCurrent]);
 
   const loadContent = useCallback(async () => {
-    if (!currentOrgId) {
-      setLoading(false);
-      setSubfolders([]);
-      setMedia([]);
-      return;
-    }
     setLoading(true);
     try {
       if (!currentFolderId) {
-          const [rootsRes, mediaRes] = await Promise.all([
-            foldersAPI.getRootFolders(),
-            mediaAPI.list({
-              limit: 100,
-              folder_id: '', // racine : uniquement médias sans dossier
-            }),
-          ]);
+        const [rootsRes, mediaRes] = await Promise.all([
+          foldersAPI.getRootFolders(),
+          mediaAPI.list({
+            limit: 100,
+            folder_id: '', // racine : médias sans dossier
+          }),
+        ]);
         const rootsData = rootsRes?.data?.data ?? rootsRes?.data;
         const roots = Array.isArray(rootsData) ? rootsData : [];
         const payload = mediaRes?.data?.data ?? mediaRes?.data;
@@ -126,17 +120,17 @@ export default function MediaPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentOrgId, currentFolderId, isInternal]);
+  }, [currentFolderId]);
 
   useEffect(() => {
     loadContent();
   }, [loadContent]);
 
   useEffect(() => {
-    if (currentOrgId && isAtRoot) {
+    if (isAtRoot) {
       setBreadcrumb([{ id: null, name: "Racine", isRoot: true }]);
     }
-  }, [currentOrgId, isAtRoot]);
+  }, [isAtRoot]);
 
   const openFolder = (folder) => {
     setBreadcrumb((prev) => {

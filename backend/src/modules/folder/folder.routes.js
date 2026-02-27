@@ -37,9 +37,9 @@ router.get('/:id',
   authorize('folders.view'),
   folderController.getById);
 
-// Créer un dossier (racine ou sous-dossier)
+// Créer un dossier (racine ou sous-dossier) — une seule permission pour tout
 router.post('/',
-  authorize('folders.create_root', 'folders.create_subfolder'),
+  authorize('folders.create'),
   validate(createFolderSchema),
   folderController.create);
 

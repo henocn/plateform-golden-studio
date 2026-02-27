@@ -21,11 +21,6 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       allowNull: true,
     },
-    is_global: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-      allowNull: false,
-    },
     created_by: {
       type: DataTypes.UUID,
       allowNull: false,

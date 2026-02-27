@@ -4,11 +4,9 @@ const { Folder, Media } = require('../../models');
 const { Op } = require('sequelize');
 
 class FolderRepository {
-  async findAll({ tenantId, search, parent_id, page, limit, offset } = {}) {
+  async findAll({ search, parent_id, page, limit, offset } = {}) {
     const where = {};
-    if (tenantId) {
-      where.organization_id = tenantId;
-    }
+    // Mono-organisation : tous les dossiers visibles par toute personne ayant folders.view
     if (search) {
       where.name = { [Op.iLike]: `%${search}%` };
     }
@@ -29,14 +27,12 @@ class FolderRepository {
   }
 
   /**
-   * Récupère les dossiers racine d'une organisation (parent_id = null)
+   * Récupère tous les dossiers racine (parent_id = null).
+   * Mono-organisation : visibles par tous ceux qui ont le droit.
    */
-  async findRootFolders(organizationId) {
+  async findRootFolders() {
     return Folder.findAll({
-      where: {
-        organization_id: organizationId,
-        parent_id: null,
-      },
+      where: { parent_id: null },
       include: [
         { association: 'organization', attributes: ['id', 'name', 'short_name'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
@@ -48,14 +44,8 @@ class FolderRepository {
   /**
    * Explore un dossier : retourne les sous-dossiers et fichiers
    */
-  async explore(folderId, tenantId = null) {
+  async explore(folderId) {
     const where = { folder_id: folderId };
-    if (tenantId) {
-      where[Op.or] = [
-        { is_global: true },
-        { organization_id: tenantId },
-      ];
-    }
 
     const [subfolders, media] = await Promise.all([
       Folder.findAll({
@@ -79,13 +69,9 @@ class FolderRepository {
     return { subfolders, media };
   }
 
-  async findById(id, tenantId = null) {
-    const where = { id };
-    if (tenantId) {
-      where.organization_id = tenantId;
-    }
+  async findById(id) {
     return Folder.findOne({
-      where,
+      where: { id },
       include: [
         { association: 'organization', attributes: ['id', 'name', 'short_name'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
