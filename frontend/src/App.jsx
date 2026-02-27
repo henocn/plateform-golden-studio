@@ -16,7 +16,8 @@ const ProjectDetailPage = lazy(() => import('./pages/projects/ProjectDetailPage'
 const TasksPage = lazy(() => import('./pages/tasks/TasksPage'));
 const TaskDetailPage = lazy(() => import('./pages/tasks/TaskDetailPage'));
 const ProposalsPage = lazy(() => import('./pages/proposals/ProposalsPage'));
-const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage'));
+const EditorialCalendarPage = lazy(() => import('./pages/calendar/EditorialCalendarPage'));
+const EventsCalendarPage = lazy(() => import('./pages/calendar/EventsCalendarPage'));
 const MediaPage = lazy(() => import('./pages/media/MediaPage'));
 const ReportingPage = lazy(() => import('./pages/reporting/ReportingPage'));
 const AuditPage = lazy(() => import('./pages/audit/AuditPage'));
@@ -45,7 +46,9 @@ export default function App() {
             <Route path="tasks" element={<TasksPage />} />
             <Route path="tasks/:id" element={<TaskDetailPage />} />
             <Route path="proposals" element={<ProposalsPage />} />
-            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="calendar/editorial" element={<EditorialCalendarPage />} />
+            <Route path="calendar/events" element={<EventsCalendarPage />} />
+            <Route path="calendar" element={<Navigate to="/calendar/editorial" replace />} />
             <Route path="media" element={<MediaPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
