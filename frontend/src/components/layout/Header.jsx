@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useClickOutside } from '../../hooks';
 import Avatar from '../ui/Avatar';
 import { ROLE_LABELS } from '../../utils/helpers';
+import { uploadsUrl } from '../../api/services';
 
 export default function Header({ sidebarCollapsed, onMenuClick }) {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function Header({ sidebarCollapsed, onMenuClick }) {
   const menuRef = useClickOutside(() => setMenuOpen(false));
 
   const roleInfo = ROLE_LABELS[user?.role] || { label: user?.role, color: '#6B7280' };
+  const avatarSrc = user?.avatar_path ? uploadsUrl(user.avatar_path) : null;
 
   // Build breadcrumb from path
   const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -82,6 +84,7 @@ export default function Header({ sidebarCollapsed, onMenuClick }) {
               className="flex items-center gap-2.5 p-1.5 pr-3 rounded-xl hover:bg-surface-100 transition-default"
             >
               <Avatar
+                src={avatarSrc}
                 firstName={user?.first_name}
                 lastName={user?.last_name}
                 size="sm"
