@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FolderKanban, FileText, CheckSquare,
-  Calendar, Paperclip, Clock,
+  Calendar, Clock,
 } from 'lucide-react';
 import { Card, Badge, Tabs, Skeleton, EmptyState } from '../../components/ui';
-import { projectsAPI, briefsAPI, tasksAPI, publicationsAPI } from '../../api/services';
+import { projectsAPI, tasksAPI, publicationsAPI } from '../../api/services';
 import { formatDate, PROJECT_STATUS, PRIORITY, extractList, formatErrorMessage } from '../../utils/helpers';
 import { usePermissions } from '../../hooks';
 import toast from 'react-hot-toast';
@@ -15,10 +15,9 @@ export default function ProjectDetailPage() {
   const navigate = useNavigate();
   const { isInternal, can } = usePermissions();
   const [project, setProject] = useState(null);
-  const [briefs, setBriefs] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [publications, setPublications] = useState([]);
-  const [activeTab, setActiveTab] = useState('brief');
+  const [activeTab, setActiveTab] = useState('details');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadProject(); }, [id]);
@@ -26,14 +25,12 @@ export default function ProjectDetailPage() {
   const loadProject = async () => {
     setLoading(true);
     try {
-      const [projRes, briefRes, taskRes, pubRes] = await Promise.allSettled([
+      const [projRes, taskRes, pubRes] = await Promise.allSettled([
         projectsAPI.getById(id),
-        briefsAPI.list(id),
         tasksAPI.list({ project_id: id, limit: 50 }),
         publicationsAPI.list(id),
       ]);
       if (projRes.status === 'fulfilled') setProject(projRes.value.data.data);
-      if (briefRes.status === 'fulfilled') setBriefs(extractList(briefRes.value.data.data).items);
       if (taskRes.status === 'fulfilled') {
         const allTasks = extractList(taskRes.value.data.data).items;
         setTasks(allTasks.filter(t => String(t.project_id) === String(id)));
@@ -63,7 +60,7 @@ export default function ProjectDetailPage() {
   const priority = PRIORITY[project.priority] || { label: project.priority, color: 'neutral' };
 
   const tabs = [
-    { id: 'brief', label: 'Brief', icon: FileText },
+    { id: 'details', label: 'Détails', icon: FileText },
     { id: 'tasks', label: 'Tâches', icon: CheckSquare, count: tasks.length },
     { id: 'publications', label: 'Publications', icon: Calendar, count: publications.length },
   ];
@@ -116,7 +113,7 @@ export default function ProjectDetailPage() {
 
       {/* Tab Content */}
       <div className="animate-fade-in">
-        {activeTab === 'brief' && <BriefTab briefs={briefs} projectId={id} onRefresh={loadProject} />}
+        {activeTab === 'details' && <DetailsTab project={project} />}
         {activeTab === 'tasks' && <TasksTab tasks={tasks} onRefresh={loadProject} />}
         {activeTab === 'publications' && <PublicationsTab publications={publications} />}
       </div>
@@ -156,33 +153,83 @@ function StatusDropdown({ project, onUpdate }) {
   );
 }
 
-function BriefTab({ briefs }) {
-  if (briefs.length === 0) {
-    return <EmptyState icon={FileText} title="Aucun brief" description="Le brief initial n'a pas encore été soumis" />;
-  }
-
-  const brief = briefs[0];
+function DetailsTab({ project }) {
   return (
     <Card>
       <div className="space-y-4">
-        {brief.description && <div><h4 className="text-label text-ink-500 mb-1">Description</h4><p className="text-body-md text-ink-700">{brief.description}</p></div>}
-        {brief.objective && <div><h4 className="text-label text-ink-500 mb-1">Objectif</h4><p className="text-body-md text-ink-700">{brief.objective}</p></div>}
-        {brief.target_audience && <div><h4 className="text-label text-ink-500 mb-1">Cible</h4><p className="text-body-md text-ink-700">{brief.target_audience}</p></div>}
-        {brief.key_message && <div><h4 className="text-label text-ink-500 mb-1">Message clé</h4><p className="text-body-md text-ink-700">{brief.key_message}</p></div>}
-        {brief.deadline && <div><h4 className="text-label text-ink-500 mb-1">Deadline</h4><p className="text-body-md text-ink-700">{formatDate(brief.deadline)}</p></div>}
-        {brief.Attachments?.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <h4 className="text-label text-ink-500 mb-2">Pièces jointes</h4>
-            <div className="space-y-1">
-              {brief.Attachments.map((a) => (
-                <div key={a.id} className="flex items-center gap-2 px-3 py-2 bg-surface-100 rounded-lg text-body-sm">
-                  <Paperclip className="w-4 h-4 text-ink-400" />
-                  <span className="text-ink-700">{a.file_name}</span>
-                </div>
-              ))}
-            </div>
+            <h4 className="text-label text-ink-500 mb-1">Organisation</h4>
+            <p className="text-body-md text-ink-700">
+              {project.Organization?.name || '—'}
+            </p>
+          </div>
+          <div>
+            <h4 className="text-label text-ink-500 mb-1">Direction / Agence</h4>
+            <p className="text-body-md text-ink-700">
+              {project.agency_direction || '—'}
+            </p>
+          </div>
+        </div>
+
+        {project.description && (
+          <div>
+            <h4 className="text-label text-ink-500 mb-1">Description</h4>
+            <p className="text-body-md text-ink-700 whitespace-pre-line">
+              {project.description}
+            </p>
           </div>
         )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <h4 className="text-label text-ink-500 mb-1">Créé le</h4>
+            <p className="text-body-md text-ink-700">
+              {formatDate(project.createdAt)}
+            </p>
+          </div>
+          <div>
+            <h4 className="text-label text-ink-500 mb-1">Date cible</h4>
+            <p className="text-body-md text-ink-700">
+              {project.target_date ? formatDate(project.target_date) : '—'}
+            </p>
+          </div>
+          <div>
+            <h4 className="text-label text-ink-500 mb-1">Créé par</h4>
+            <p className="text-body-md text-ink-700">
+              {project.creator
+                ? `${project.creator.first_name || ''} ${project.creator.last_name || ''}`.trim()
+                : '—'}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <h4 className="text-label text-ink-500 mb-1">Responsable interne</h4>
+            <p className="text-body-md text-ink-700">
+              {project.internalManager
+                ? `${project.internalManager.first_name || ''} ${project.internalManager.last_name || ''}`.trim()
+                : '—'}
+            </p>
+          </div>
+          <div>
+            <h4 className="text-label text-ink-500 mb-1">Responsable studio</h4>
+            <p className="text-body-md text-ink-700">
+              {project.studioManager
+                ? `${project.studioManager.first_name || ''} ${project.studioManager.last_name || ''}`.trim()
+                : '—'}
+            </p>
+          </div>
+          <div>
+            <h4 className="text-label text-ink-500 mb-1">Responsable client</h4>
+            <p className="text-body-md text-ink-700">
+              {project.clientContact
+                ? `${project.clientContact.first_name || ''} ${project.clientContact.last_name || ''}`.trim()
+                : '—'}
+            </p>
+          </div>
+        </div>
       </div>
     </Card>
   );

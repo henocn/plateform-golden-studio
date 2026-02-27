@@ -56,18 +56,6 @@ export const projectsAPI = {
   dashboardStats: (params) => api.get('/projects/dashboard/stats', { params }),
 };
 
-export const briefsAPI = {
-  list: (projectId, params) => api.get(`/projects/${projectId}/briefs`, { params }),
-  getById: (projectId, id) => api.get(`/projects/${projectId}/briefs/${id}`),
-  create: (projectId, data) => api.post(`/projects/${projectId}/briefs`, data),
-  update: (projectId, id, data) => api.put(`/projects/${projectId}/briefs/${id}`, data),
-  addAttachment: (projectId, id, formData) =>
-    api.post(`/projects/${projectId}/briefs/${id}/attachments`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  removeAttachment: (projectId, id, attachId) => api.delete(`/projects/${projectId}/briefs/${id}/attachments/${attachId}`),
-};
-
 export const tasksAPI = {
   list: (params) => api.get('/tasks', { params }),
   getById: (id) => api.get(`/tasks/${id}`),

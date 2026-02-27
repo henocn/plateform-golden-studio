@@ -42,7 +42,6 @@ const swaggerDefinition = {
     { name: 'Users — Internal', description: 'Utilisateurs Golden Studio' },
     { name: 'Users — Clients', description: 'Utilisateurs des institutions' },
     { name: 'Projects', description: 'Projets (backoffice + portail)' },
-    { name: 'Briefs', description: 'Briefs et pièces jointes' },
     { name: 'Tasks', description: 'Tâches et commentaires' },
     { name: 'Proposals', description: 'Propositions & workflow de validation' },
     { name: 'Publications', description: 'Publications' },

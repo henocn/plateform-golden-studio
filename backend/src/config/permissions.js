@@ -33,11 +33,6 @@ const PERMISSIONS = {
   'proposals.validate':         ['super_admin', 'admin', 'client_validator', 'client_admin'],
   'proposals.validate_client':  ['client_admin', 'client_validator'],
 
-  // ─── Briefs ──────────────────────────────────────────────
-  'briefs.create':              ['super_admin', 'admin', 'contributor', 'client_admin'],
-  'briefs.edit':                ['super_admin', 'admin', 'contributor', 'client_admin'],
-  'briefs.submit':              ['client_admin', 'client_contributor'],
-
   // ─── Validations internes ────────────────────────────────
   'validations.internal':       ['super_admin', 'admin', 'validator'],
 

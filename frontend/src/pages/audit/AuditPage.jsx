@@ -65,7 +65,7 @@ export default function AuditPage() {
     setSearchParams(p);
   };
 
-  const entities = ['User', 'Organization', 'Project', 'Brief', 'Task', 'Proposal', 'Validation', 'Publication', 'CalendarEvent', 'Media'];
+  const entities = ['User', 'Organization', 'Project', 'Task', 'Proposal', 'Validation', 'Publication', 'CalendarEvent', 'Media'];
 
   return (
     <div className="space-y-6">
