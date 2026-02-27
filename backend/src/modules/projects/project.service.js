@@ -1,9 +1,25 @@
 'use strict';
 
 const projectRepository = require('./project.repository');
+const { Organization } = require('../../models');
 const ApiError = require('../../utils/ApiError');
 
 class ProjectService {
+  async resolveOrganizationId(data, user) {
+    if (data.organization_id) return data.organization_id;
+    // Clients : toujours leur organisation
+    if (user?.user_type === 'client' && user.organization_id) {
+      return user.organization_id;
+    }
+    // Internes : on prend l'organisation courante (mode mono-org)
+    const org = await Organization.findOne({
+      where: { is_active: true },
+      order: [['created_at', 'ASC']],
+      attributes: ['id'],
+    });
+    if (!org) throw ApiError.badRequest('Aucune organisation active configurée');
+    return org.id;
+  }
   async list(filters) {
     return projectRepository.findAll(filters);
   }
@@ -14,9 +30,11 @@ class ProjectService {
     return project;
   }
 
-  async create(data, createdBy) {
+  async create(data, createdBy, user) {
+    const organization_id = await this.resolveOrganizationId(data, user);
     return projectRepository.create({
       ...data,
+      organization_id,
       created_by: createdBy,
     });
   }

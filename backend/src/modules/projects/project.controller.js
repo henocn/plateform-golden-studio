@@ -23,7 +23,7 @@ const list = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    const project = await projectService.create(req.body, req.user.id);
+    const project = await projectService.create(req.body, req.user.id, req.user);
     return ApiResponse.created(res, project, 'Projet créé avec succès');
   } catch (error) {
     return next(error);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Modal, Button, Input, Textarea, Select } from "../../components/ui";
-import { projectsAPI, organizationsAPI, usersAPI } from "../../api/services";
+import { projectsAPI, usersAPI } from "../../api/services";
 import { usePermissions } from "../../hooks";
 import { PRIORITY, extractList, formatErrorMessage } from "../../utils/helpers";
 import toast from "react-hot-toast";
@@ -8,7 +8,6 @@ import toast from "react-hot-toast";
 const DEFAULT_FORM = {
   title: "",
   description: "",
-  organization_id: "",
   agency_direction: "",
   priority: "normal",
   target_date: "",
@@ -22,7 +21,6 @@ function buildInitialForm(project, userType, user) {
     ? {
         title: project.title || "",
         description: project.description || "",
-        organization_id: project.organization_id || "",
         agency_direction: project.agency_direction || "",
         priority: project.priority || "normal",
         target_date: project.target_date || "",
@@ -31,10 +29,6 @@ function buildInitialForm(project, userType, user) {
         client_contact_id: project.client_contact_id || "",
       }
     : { ...DEFAULT_FORM };
-
-  if (!base.organization_id && userType === "client" && user?.organization_id) {
-    base.organization_id = user.organization_id;
-  }
 
   return base;
 }
@@ -48,7 +42,6 @@ export default function CreateProjectModal({
   const { userType, user } = usePermissions();
   const [loading, setLoading] = useState(false);
 
-  const [orgs, setOrgs] = useState([]);
   const [allClients, setAllClients] = useState([]);
   const [internalUsers, setInternalUsers] = useState([]);
 
@@ -57,9 +50,8 @@ export default function CreateProjectModal({
   );
 
   const filteredClients = useMemo(() => {
-    if (!form.organization_id) return allClients;
-    return allClients.filter((c) => c.organization_id === form.organization_id);
-  }, [allClients, form.organization_id]);
+    return allClients;
+  }, [allClients]);
   useEffect(() => {
     if (!form.client_contact_id) return;
     const stillValid = filteredClients.some(
@@ -72,9 +64,6 @@ export default function CreateProjectModal({
     if (!open) return;
     setForm(buildInitialForm(project, userType, user));
     if (userType === "internal") {
-      organizationsAPI
-        .list({ limit: 100 })
-        .then(({ data }) => setOrgs(extractList(data.data).items));
       usersAPI
         .listMembers({ type: "internal" })
         .then(({ data }) => setInternalUsers(extractList(data.data).items));
@@ -82,12 +71,6 @@ export default function CreateProjectModal({
         .listClients()
         .then(({ data }) => setAllClients(extractList(data.data).items));
     } else if (userType === "client" && user?.organization_id) {
-      setOrgs([
-        {
-          id: user.organization_id,
-          name: user.organization?.name || "Mon organisation",
-        },
-      ]);
       usersAPI
         .listClients({ organization_id: user.organization_id })
         .then(({ data }) => setAllClients(extractList(data.data).items));
@@ -96,14 +79,6 @@ export default function CreateProjectModal({
 
   const set = (key) => (e) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
-
-  const handleOrgChange = (e) => {
-    setForm((prev) => ({
-      ...prev,
-      organization_id: e.target.value,
-      client_contact_id: "",
-    }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -173,39 +148,19 @@ export default function CreateProjectModal({
           rows={3}
         />
 
-        {/* Organisation + Direction */}
-        <div className="grid grid-cols-2 gap-4">
-          {userType === "internal" ? (
-            <Select
-              label="Organisation"
-              required
-              value={form.organization_id}
-              onChange={handleOrgChange} // ← handler dédié qui reset le contact
-              options={orgs.map((o) => ({ value: o.id, label: o.name }))}
-              placeholder="Sélectionner"
-            />
-          ) : (
-            // Client : org fixe, on affiche juste un champ lecture
-            <Input label="Organisation" value={orgs[0]?.name || ""} disabled />
-          )}
-          <Input
-            label="Direction / Agence"
-            value={form.agency_direction}
-            onChange={set("agency_direction")}
-          />
-        </div>
+        {/* Direction / agence */}
+        <Input
+          label="Direction / Agence"
+          value={form.agency_direction}
+          onChange={set("agency_direction")}
+        />
 
-        {/* Responsable client — filtré dynamiquement par org */}
+        {/* Responsable client */}
         <Select
           label="Responsable client"
           value={form.client_contact_id}
           onChange={set("client_contact_id")}
-          disabled={!form.organization_id && userType === "internal"}
-          placeholder={
-            !form.organization_id && userType === "internal"
-              ? "Sélectionnez d'abord une organisation"
-              : "Sélectionner"
-          }
+          placeholder="Sélectionner"
           options={filteredClients.map((u) => ({
             value: u.id,
             label: `${u.first_name} ${u.last_name}`,

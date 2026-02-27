@@ -3,7 +3,7 @@
 const Joi = require('joi');
 
 const createProjectSchema = Joi.object({
-  organization_id: Joi.string().uuid().required(),
+  organization_id: Joi.string().uuid().optional().allow(null),
   title: Joi.string().min(2).max(255).required(),
   description: Joi.string().max(5000).optional().allow(null, ''),
   agency_direction: Joi.string().max(255).optional().allow(null, ''),
