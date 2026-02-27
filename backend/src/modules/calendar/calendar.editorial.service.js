@@ -47,7 +47,7 @@ class CalendarEditorialService {
   async normalizeTaskLink(payload, tenantId) {
     if (!payload.task_id) return payload;
     const task = await Task.findByPk(payload.task_id, { attributes: ['id', 'project_id', 'organization_id', 'title'] });
-    if (!task) throw ApiError.notFound('Task');
+    if (!task) throw ApiError.notFound('Tâche');
     if (tenantId && task.organization_id !== tenantId) {
       throw ApiError.forbidden('Task does not belong to selected organization');
     }
@@ -79,11 +79,11 @@ class CalendarEditorialService {
     if (!resolvedTenantId) {
       if (data.task_id) {
         const task = await Task.findByPk(data.task_id, { attributes: ['id', 'project_id', 'organization_id'] });
-        if (!task) throw ApiError.notFound('Task');
+        if (!task) throw ApiError.notFound('Tâche');
         resolvedTenantId = task.organization_id;
       } else if (data.project_id) {
         const project = await Project.findByPk(data.project_id, { attributes: ['id', 'organization_id'] });
-        if (!project) throw ApiError.notFound('Project');
+        if (!project) throw ApiError.notFound('Projet');
         resolvedTenantId = project.organization_id;
       }
     }
@@ -113,7 +113,7 @@ class CalendarEditorialService {
 
     if (payload.project_id) {
       const project = await Project.findByPk(payload.project_id, { attributes: ['id', 'organization_id'] });
-      if (!project) throw ApiError.notFound('Project');
+      if (!project) throw ApiError.notFound('Projet');
       if (project.organization_id !== resolvedTenantId) {
         throw ApiError.forbidden('Project does not belong to selected organization');
       }
@@ -146,7 +146,7 @@ class CalendarEditorialService {
 
     if (payload.project_id) {
       const project = await Project.findByPk(payload.project_id, { attributes: ['id', 'organization_id'] });
-      if (!project) throw ApiError.notFound('Project');
+      if (!project) throw ApiError.notFound('Projet');
       if (project.organization_id !== existing.organization_id) {
         throw ApiError.forbidden('Project does not belong to selected organization');
       }
@@ -161,7 +161,7 @@ class CalendarEditorialService {
     if (!existing) throw ApiError.notFound('Editorial publication');
 
     const task = await Task.findByPk(taskId, { attributes: ['id', 'title', 'project_id', 'organization_id'] });
-    if (!task) throw ApiError.notFound('Task');
+    if (!task) throw ApiError.notFound('Tâche');
     if (task.organization_id !== existing.organization_id) {
       throw ApiError.forbidden('Task does not belong to same organization');
     }
@@ -177,7 +177,9 @@ class CalendarEditorialService {
     if (!rows.length) return { imported: 0, skipped: 0 };
 
     const resolvedTenantId = this.resolveTenantId(user, tenantId, organizationId);
-    if (!resolvedTenantId) throw ApiError.badRequest('organization_id is required for internal users');
+    if (!resolvedTenantId) {
+      throw ApiError.badRequest('organization_id est requis pour les utilisateurs internes');
+    }
 
     const toInsert = [];
     let skipped = 0;

@@ -20,7 +20,7 @@ class TaskService {
   async getById(id, user) {
     const isClient = user.user_type === 'client';
     const task = await taskRepository.findById(id, isClient ? user.organization_id : null);
-    if (!task) throw ApiError.notFound('Task');
+    if (!task) throw ApiError.notFound('Tâche');
     // Client cannot see internal_only tasks
     if (isClient && task.visibility === 'internal_only') {
       throw ApiError.notFound('Task');
@@ -39,7 +39,7 @@ class TaskService {
    */
   async create(data, user) {
     const project = await Project.findByPk(data.project_id);
-    if (!project) throw ApiError.notFound('Project');
+    if (!project) throw ApiError.notFound('Projet');
 
     return taskRepository.create({
       ...data,
@@ -50,19 +50,19 @@ class TaskService {
 
   async update(id, data) {
     const task = await taskRepository.update(id, data);
-    if (!task) throw ApiError.notFound('Task');
+    if (!task) throw ApiError.notFound('Tâche');
     return task;
   }
 
   async updateStatus(id, status) {
     const task = await taskRepository.updateStatus(id, status);
-    if (!task) throw ApiError.notFound('Task');
+    if (!task) throw ApiError.notFound('Tâche');
     return task;
   }
 
   async delete(id) {
     const task = await taskRepository.delete(id);
-    if (!task) throw ApiError.notFound('Task');
+    if (!task) throw ApiError.notFound('Tâche');
     return task;
   }
 
@@ -116,7 +116,7 @@ class TaskService {
    */
   async addComment(taskId, content, user, is_internal) {
     const task = await taskRepository.findById(taskId);
-    if (!task) throw ApiError.notFound('Task');
+    if (!task) throw ApiError.notFound('Tâche');
 
     // Client cannot comment on internal_only tasks
     if (user.user_type === 'client' && task.visibility === 'internal_only') {
@@ -137,9 +137,9 @@ class TaskService {
 
   async deleteComment(commentId, userId) {
     const comment = await taskRepository.findCommentById(commentId);
-    if (!comment) throw ApiError.notFound('Comment');
+    if (!comment) throw ApiError.notFound('Commentaire');
     if (comment.user_id !== userId) {
-      throw ApiError.forbidden('You can only delete your own comments');
+      throw ApiError.forbidden('Vous ne pouvez supprimer que vos propres commentaires');
     }
     return taskRepository.deleteComment(commentId);
   }

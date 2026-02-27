@@ -61,7 +61,7 @@ const login = async ({ email, password, totp_code }) => {
   }
 
   if (!user.is_active) {
-    throw ApiError.unauthorized('Your account has been deactivated. Please contact an administrator.');
+    throw ApiError.unauthorized('Votre compte a été désactivé. Veuillez contacter un administrateur.');
   }
 
   // Verify password
@@ -94,7 +94,7 @@ const login = async ({ email, password, totp_code }) => {
     });
 
     if (!isValid) {
-      throw ApiError.unauthorized('Invalid 2FA code');
+      throw ApiError.unauthorized('Code 2FA invalide');
     }
   }
 
@@ -150,7 +150,7 @@ const verify2FALogin = async (tempToken, totpCode) => {
   }
 
   const user = await User.scope('withTwoFactor').findByPk(decoded.id);
-  if (!user) throw ApiError.notFound('User');
+  if (!user) throw ApiError.notFound('Utilisateur');
 
   const isValid = speakeasy.totp.verify({
     secret: user.two_factor_secret,
@@ -160,7 +160,7 @@ const verify2FALogin = async (tempToken, totpCode) => {
   });
 
   if (!isValid) {
-    throw ApiError.unauthorized('Invalid 2FA code');
+    throw ApiError.unauthorized('Code 2FA invalide');
   }
 
   // Generate tokens
@@ -256,7 +256,7 @@ const logout = async (rawRefreshToken) => {
  */
 const changePassword = async (userId, { current_password, new_password }) => {
   const user = await User.scope('withPassword').findByPk(userId);
-  if (!user) throw ApiError.notFound('User');
+  if (!user) throw ApiError.notFound('Utilisateur');
 
   const isCurrentValid = await bcrypt.compare(current_password, user.password_hash);
   if (!isCurrentValid) {
@@ -277,7 +277,7 @@ const changePassword = async (userId, { current_password, new_password }) => {
  */
 const enable2FA = async (userId) => {
   const user = await User.findByPk(userId);
-  if (!user) throw ApiError.notFound('User');
+  if (!user) throw ApiError.notFound('Utilisateur');
 
   if (user.two_factor_enabled) {
     throw ApiError.conflict('2FA is already enabled');
@@ -307,7 +307,7 @@ const enable2FA = async (userId) => {
  */
 const verify2FA = async (userId, totpCode) => {
   const user = await User.scope('withTwoFactor').findByPk(userId);
-  if (!user) throw ApiError.notFound('User');
+  if (!user) throw ApiError.notFound('Utilisateur');
 
   if (!user.two_factor_secret) {
     throw ApiError.badRequest('2FA has not been initialized. Call enable first.');
@@ -321,7 +321,7 @@ const verify2FA = async (userId, totpCode) => {
   });
 
   if (!isValid) {
-    throw ApiError.unauthorized('Invalid 2FA code');
+    throw ApiError.unauthorized('Code 2FA invalide');
   }
 
   await user.update({ two_factor_enabled: true }, { hooks: false });
@@ -335,7 +335,7 @@ const verify2FA = async (userId, totpCode) => {
  */
 const disable2FA = async (userId, totpCode) => {
   const user = await User.scope('withTwoFactor').findByPk(userId);
-  if (!user) throw ApiError.notFound('User');
+  if (!user) throw ApiError.notFound('Utilisateur');
 
   if (!user.two_factor_enabled) {
     throw ApiError.badRequest('2FA is not enabled');
@@ -349,7 +349,7 @@ const disable2FA = async (userId, totpCode) => {
   });
 
   if (!isValid) {
-    throw ApiError.unauthorized('Invalid 2FA code');
+    throw ApiError.unauthorized('Code 2FA invalide');
   }
 
   await user.update({ two_factor_secret: null, two_factor_enabled: false }, { hooks: false });
@@ -368,7 +368,7 @@ const getMe = async (userId) => {
     ],
   });
 
-  if (!user) throw ApiError.notFound('User');
+  if (!user) throw ApiError.notFound('Utilisateur');
 
   return user;
 };

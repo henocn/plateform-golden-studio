@@ -41,7 +41,7 @@ class FolderService {
   async explore(folderId, user, tenantId) {
     // Temporairement: trouver le dossier sans filtrer par org pour éviter 403
     const folder = await folderRepository.findById(folderId, null);
-    if (!folder) throw ApiError.notFound('Folder');
+    if (!folder) throw ApiError.notFound('Dossier');
 
     const targetTenantId = user.user_type === 'client' ? user.organization_id : tenantId;
     return folderRepository.explore(folderId, targetTenantId);
@@ -52,23 +52,20 @@ class FolderService {
    */
   async getById(id, user, tenantId) {
     const folder = await folderRepository.findById(id, null);
-    if (!folder) throw ApiError.notFound('Folder');
+    if (!folder) throw ApiError.notFound('Dossier');
     return folder;
   }
 
   /**
    * Crée un dossier (racine ou sous-dossier)
-   * - Seul super_admin peut créer un dossier racine (parent_id = null)
-   * - Super_admin peut créer un dossier racine pour n'importe quelle organisation
-   * - Les autres peuvent créer des sous-dossiers dans leur organisation
+   * Les droits sont gérés via les permissions :
+   * - folders.create_root  → rôles autorisés à créer un dossier racine
+   * - folders.create_subfolder → rôles autorisés à créer un sous-dossier
    */
   async create(data, user, tenantId) {
     const isRootFolder = !data.parent_id;
 
-    // Vérifier les droits pour créer un dossier racine
-    if (isRootFolder && user.role !== 'super_admin') {
-      throw ApiError.forbidden('Only super_admin can create root folders');
-    }
+    // Le contrôle fin par rôle est géré par les permissions sur la route (folders.create_root / folders.create_subfolder)
 
     // Déterminer l'organization_id
     let organizationId;
@@ -79,7 +76,7 @@ class FolderService {
       // Pour un sous-dossier, vérifier que le parent existe et appartient à la bonne org
       const parentFolder = await folderRepository.findById(data.parent_id);
       if (!parentFolder) {
-        throw ApiError.notFound('Parent folder');
+        throw ApiError.notFound('Dossier parent');
       }
 
       // Vérifier l'accès au parent
@@ -88,11 +85,7 @@ class FolderService {
       }
 
       // Si super_admin crée un sous-dossier, il peut spécifier l'org, sinon utiliser celle du parent
-      if (user.role === 'super_admin' && data.organization_id) {
-        organizationId = data.organization_id;
-      } else {
         organizationId = parentFolder.organization_id;
-      }
     }
 
     return folderRepository.create({
@@ -109,19 +102,16 @@ class FolderService {
    */
   async update(id, data, user, tenantId) {
     const folder = await folderRepository.findById(id, null);
-    if (!folder) throw ApiError.notFound('Folder');
+    if (!folder) throw ApiError.notFound('Dossier');
 
     // Si on change le parent_id, vérifier que le nouveau parent existe et appartient à la même org
     if (data.parent_id !== undefined && data.parent_id !== folder.parent_id) {
-      if (data.parent_id === null) {
-        // Tenter de créer un dossier racine - seul super_admin peut
-        if (user.role !== 'super_admin') {
-          throw ApiError.forbidden('Only super_admin can convert folder to root');
-        }
+        if (data.parent_id === null) {
+        // Tenter de passer en racine : le contrôle de permission est fait au niveau route
       } else {
         const newParent = await folderRepository.findById(data.parent_id);
         if (!newParent) {
-          throw ApiError.notFound('Parent folder');
+          throw ApiError.notFound('Dossier parent');
         }
         if (newParent.organization_id !== folder.organization_id) {
           throw ApiError.forbidden('Cannot move folder to another organization');

@@ -58,7 +58,7 @@ const listInternal = async (req, res, next) => {
 const createInternal = async (req, res, next) => {
   try {
     const user = await userService.createInternal(req.body, req.user.id);
-    return ApiResponse.created(res, user, 'Internal user created successfully');
+    return ApiResponse.created(res, user, 'Utilisateur interne créé avec succès');
   } catch (error) {
     return next(error);
   }
@@ -70,7 +70,7 @@ const createInternal = async (req, res, next) => {
 const changeInternalRole = async (req, res, next) => {
   try {
     const user = await userService.changeInternalRole(req.params.id, req.body.role);
-    return ApiResponse.success(res, user, 'Internal user role updated');
+    return ApiResponse.success(res, user, "Rôle de l'utilisateur interne mis à jour");
   } catch (error) {
     return next(error);
   }
@@ -103,7 +103,7 @@ const listClients = async (req, res, next) => {
 const createClient = async (req, res, next) => {
   try {
     const user = await userService.createClient(req.body, req.user);
-    return ApiResponse.created(res, user, 'Client user created successfully');
+    return ApiResponse.created(res, user, 'Utilisateur client créé avec succès');
   } catch (error) {
     return next(error);
   }
@@ -115,7 +115,7 @@ const createClient = async (req, res, next) => {
 const changeClientRole = async (req, res, next) => {
   try {
     const user = await userService.changeClientRole(req.params.id, req.body.role, req.user);
-    return ApiResponse.success(res, user, 'Client user role updated');
+    return ApiResponse.success(res, user, "Rôle de l'utilisateur client mis à jour");
   } catch (error) {
     return next(error);
   }
@@ -127,7 +127,7 @@ const changeClientRole = async (req, res, next) => {
 const getById = async (req, res, next) => {
   try {
     const user = await userService.getById(req.params.id);
-    return ApiResponse.success(res, user, 'User retrieved');
+    return ApiResponse.success(res, user, 'Utilisateur récupéré');
   } catch (error) {
     return next(error);
   }
@@ -139,7 +139,7 @@ const getById = async (req, res, next) => {
 const update = async (req, res, next) => {
   try {
     const user = await userService.update(req.params.id, req.body, req.user);
-    return ApiResponse.success(res, user, 'User updated successfully');
+    return ApiResponse.success(res, user, 'Utilisateur mis à jour avec succès');
   } catch (error) {
     return next(error);
   }
@@ -152,7 +152,7 @@ const update = async (req, res, next) => {
 const updateAvatar = async (req, res, next) => {
   try {
     if (!req.file || !req.file.path) {
-      return next(ApiError.badRequest('No file uploaded'));
+      return next(ApiError.badRequest('Aucun fichier téléchargé'));
     }
 
     const relative = path
@@ -166,7 +166,7 @@ const updateAvatar = async (req, res, next) => {
       req.user,
     );
 
-    return ApiResponse.success(res, user, 'User avatar updated successfully');
+    return ApiResponse.success(res, user, 'Photo de profil mise à jour avec succès');
   } catch (error) {
     return next(error);
   }
@@ -178,7 +178,11 @@ const updateAvatar = async (req, res, next) => {
 const patchStatus = async (req, res, next) => {
   try {
     const user = await userService.updateStatus(req.params.id, req.body.is_active, req.user);
-    return ApiResponse.success(res, user, `User ${req.body.is_active ? 'activated' : 'deactivated'}`);
+    return ApiResponse.success(
+      res,
+      user,
+      `Utilisateur ${req.body.is_active ? 'activé' : 'désactivé'}`,
+    );
   } catch (error) {
     return next(error);
   }
@@ -190,7 +194,7 @@ const patchStatus = async (req, res, next) => {
 const deleteUser = async (req, res, next) => {
   try {
     await userService.delete(req.params.id, req.user);
-    return ApiResponse.success(res, null, 'User deactivated');
+    return ApiResponse.success(res, null, 'Utilisateur désactivé');
   } catch (error) {
     return next(error);
   }

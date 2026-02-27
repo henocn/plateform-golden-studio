@@ -46,7 +46,7 @@ const PERMISSIONS = {
   'mediatheque.upload_client':  ['client_admin', 'client_contributor'],
 
   // ─── Dossiers (Folders) ──────────────────────────────────
-  'folders.create_root':        ['super_admin'],
+  'folders.create_root':        ['super_admin', 'admin', 'client_admin'],
   'folders.create_subfolder':   ['super_admin', 'admin', 'contributor', 'client_admin', 'client_contributor'],
   'folders.edit':               ['super_admin', 'admin', 'contributor', 'client_admin', 'client_contributor'],
   'folders.delete':             ['super_admin', 'admin', 'client_admin'],

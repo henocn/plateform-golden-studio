@@ -43,16 +43,22 @@ class CalendarService {
   async getById(id, user) {
     const isClient = user.user_type === 'client';
     const event = await calendarRepository.findById(id, isClient ? user.organization_id : null);
-    if (!event) throw ApiError.notFound('Calendar event');
+    if (!event) throw ApiError.notFound('Événement de calendrier');
     if (isClient && event.visibility === 'internal_only') {
-      throw ApiError.notFound('Calendar event');
+      throw ApiError.notFound('Événement de calendrier');
     }
     return event;
   }
 
   async create(data, user) {
-    const resolvedOrgId = this.resolveTenantId(user, user.user_type === 'client' ? user.organization_id : null, data.organization_id);
-    if (!resolvedOrgId) throw ApiError.badRequest('organization_id is required for internal users');
+    const resolvedOrgId = this.resolveTenantId(
+      user,
+      user.user_type === 'client' ? user.organization_id : null,
+      data.organization_id,
+    );
+    if (!resolvedOrgId) {
+      throw ApiError.badRequest('organization_id est requis pour les utilisateurs internes');
+    }
     return calendarRepository.create({
       ...data,
       organization_id: resolvedOrgId,
@@ -62,19 +68,19 @@ class CalendarService {
 
   async update(id, data) {
     const event = await calendarRepository.update(id, data);
-    if (!event) throw ApiError.notFound('Calendar event');
+    if (!event) throw ApiError.notFound('Événement de calendrier');
     return event;
   }
 
   async updateStatus(id, status) {
     const event = await calendarRepository.updateStatus(id, status);
-    if (!event) throw ApiError.notFound('Calendar event');
+    if (!event) throw ApiError.notFound('Événement de calendrier');
     return event;
   }
 
   async delete(id) {
     const event = await calendarRepository.delete(id);
-    if (!event) throw ApiError.notFound('Calendar event');
+    if (!event) throw ApiError.notFound('Événement de calendrier');
     return event;
   }
 
@@ -83,7 +89,9 @@ class CalendarService {
     if (!rows.length) return { imported: 0, skipped: 0 };
 
     const resolvedTenantId = this.resolveTenantId(user, tenantId, organizationId);
-    if (!resolvedTenantId) throw ApiError.badRequest('organization_id is required for internal users');
+    if (!resolvedTenantId) {
+      throw ApiError.badRequest('organization_id est requis pour les utilisateurs internes');
+    }
 
     const toInsert = [];
     let skipped = 0;

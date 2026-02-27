@@ -15,11 +15,11 @@ class MediaService {
 
   async getById(id, user) {
     const media = await mediaRepository.findById(id);
-    if (!media) throw ApiError.notFound('Media');
+    if (!media) throw ApiError.notFound('Média');
     // Client can only see global or own org media
     if (user.user_type === 'client') {
       if (!media.is_global && media.organization_id !== user.organization_id) {
-        throw ApiError.notFound('Media');
+        throw ApiError.notFound('Média');
       }
     }
     return media;
@@ -39,13 +39,13 @@ class MediaService {
 
   async update(id, data) {
     const media = await mediaRepository.update(id, data);
-    if (!media) throw ApiError.notFound('Media');
+    if (!media) throw ApiError.notFound('Média');
     return media;
   }
 
   async delete(id) {
     const media = await mediaRepository.delete(id);
-    if (!media) throw ApiError.notFound('Media');
+    if (!media) throw ApiError.notFound('Média');
     return media;
   }
 
@@ -54,7 +54,7 @@ class MediaService {
    */
   async getDownload(id, user) {
     const media = await mediaRepository.findById(id);
-    if (!media) throw ApiError.notFound('Media');
+    if (!media) throw ApiError.notFound('Média');
     if (user.user_type === 'client') {
       if (!media.is_global && media.organization_id !== user.organization_id) {
         throw ApiError.forbidden('Access denied to this media');

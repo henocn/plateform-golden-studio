@@ -59,7 +59,7 @@ const assignTask = async (req, res, next) => {
 const importExcel = async (req, res, next) => {
   let filePath = null;
   try {
-    if (!req.file) throw ApiError.badRequest('Excel file is required');
+    if (!req.file) throw ApiError.badRequest('Le fichier Excel est requis');
     filePath = req.file.path || null;
     const fileBuffer = req.file.buffer || fs.readFileSync(req.file.path);
     const result = await editorialService.importExcel(

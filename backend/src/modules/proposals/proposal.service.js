@@ -24,10 +24,10 @@ class ProposalService {
   async getById(id, user) {
     const isClient = user.user_type === 'client';
     const proposal = await proposalRepository.findById(id, isClient ? user.organization_id : null);
-    if (!proposal) throw ApiError.notFound('Proposal');
+    if (!proposal) throw ApiError.notFound('Proposition');
     // Client cannot see draft/submitted proposals
     if (isClient && ['draft', 'submitted'].includes(proposal.status)) {
-      throw ApiError.notFound('Proposal');
+      throw ApiError.notFound('Proposition');
     }
     return proposal;
   }

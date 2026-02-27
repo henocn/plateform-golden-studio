@@ -13,7 +13,7 @@ const ApiError = require('../utils/ApiError');
 const tenantMiddleware = async (req, _res, next) => {
   try {
     if (!req.user) {
-      return next(ApiError.unauthorized('Authentication required'));
+      return next(ApiError.unauthorized('Authentification requise'));
     }
 
     if (req.user.user_type === 'client') {
@@ -21,7 +21,7 @@ const tenantMiddleware = async (req, _res, next) => {
       req.tenantId = req.user.organization_id;
 
       if (!req.tenantId) {
-        return next(ApiError.unauthorized('Client user must belong to an organization'));
+        return next(ApiError.unauthorized('L’utilisateur client doit appartenir à une organisation'));
       }
     } else if (req.user.user_type === 'internal') {
       // Internal users: vue globale unique (une seule organisation)

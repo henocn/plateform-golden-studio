@@ -14,7 +14,7 @@ class OrganizationService {
   async getCurrent() {
     const singleId = env.SINGLE_ORGANIZATION_ID || null;
     const organization = await organizationRepository.findCurrent(singleId);
-    if (!organization) throw ApiError.notFound("Organization");
+    if (!organization) throw ApiError.notFound('Organisation');
     return organization;
   }
 
@@ -30,7 +30,7 @@ class OrganizationService {
    */
   async getById(id) {
     const organization = await organizationRepository.findById(id);
-    if (!organization) throw ApiError.notFound("Organization");
+    if (!organization) throw ApiError.notFound('Organisation');
     return organization;
   }
 
@@ -49,7 +49,7 @@ class OrganizationService {
    */
   async update(id, data) {
     const organization = await organizationRepository.update(id, data);
-    if (!organization) throw ApiError.notFound("Organization");
+    if (!organization) throw ApiError.notFound('Organisation');
     return organization;
   }
 
@@ -61,7 +61,7 @@ class OrganizationService {
       id,
       isActive,
     );
-    if (!organization) throw ApiError.notFound("Organization");
+    if (!organization) throw ApiError.notFound('Organisation');
     return organization;
   }
 
@@ -71,7 +71,7 @@ class OrganizationService {
   async getUsers(organizationId, pagination) {
     // Verify org exists first
     const org = await organizationRepository.findById(organizationId);
-    if (!org) throw ApiError.notFound("Organization");
+    if (!org) throw ApiError.notFound('Organisation');
 
     return organizationRepository.findUsers(organizationId, pagination);
   }
@@ -81,7 +81,7 @@ class OrganizationService {
    */
   async getProjects(organizationId, pagination) {
     const org = await organizationRepository.findById(organizationId);
-    if (!org) throw ApiError.notFound("Organization");
+    if (!org) throw ApiError.notFound('Organisation');
 
     return organizationRepository.findProjects(organizationId, pagination);
   }
@@ -91,7 +91,7 @@ class OrganizationService {
    */
   async getStats(organizationId) {
     const org = await organizationRepository.findById(organizationId);
-    if (!org) throw ApiError.notFound("Organization");
+    if (!org) throw ApiError.notFound('Organisation');
 
     return organizationRepository.getStats(organizationId);
   }
@@ -101,7 +101,7 @@ class OrganizationService {
    */
   async remove(id) {
     const organization = await organizationRepository.remove(id);
-    if (!organization) throw ApiError.notFound("Organization");
+    if (!organization) throw ApiError.notFound('Organisation');
     return organization;
   }
 }
