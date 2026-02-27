@@ -1,10 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, FolderKanban, FileText, CheckSquare,
-  Calendar, Clock,
+  ArrowLeft,
+  FolderKanban,
+  FileText,
+  CheckSquare,
+  Calendar,
+  Clock,
+  Facebook,
+  Linkedin,
+  Instagram,
+  Youtube,
+  MessageCircle,
+  MessageSquare,
+  Music2,
+  Globe,
+  ExternalLink,
 } from 'lucide-react';
-import { Card, Badge, Tabs, Skeleton, EmptyState } from '../../components/ui';
+import { Card, Badge, Tabs, Skeleton, EmptyState, Modal } from '../../components/ui';
 import { projectsAPI, tasksAPI, publicationsAPI } from '../../api/services';
 import { formatDate, PROJECT_STATUS, PRIORITY, extractList, formatErrorMessage } from '../../utils/helpers';
 import { usePermissions } from '../../hooks';
@@ -138,46 +151,51 @@ function StatusDropdown({ project, onUpdate }) {
 function DetailsTab({ project }) {
   return (
     <Card>
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="text-label text-ink-500 mb-1">Organisation</h4>
-            <p className="text-body-md text-ink-700">
+      <div className="space-y-6">
+        {/* Identité projet */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-surface-200 pb-4">
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Organisation</h4>
+            <p className="text-body-md text-ink-900 font-medium">
               {project.organization?.name || '—'}
             </p>
           </div>
-          <div>
-            <h4 className="text-label text-ink-500 mb-1">Direction / Agence</h4>
-            <p className="text-body-md text-ink-700">
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Direction / Agence</h4>
+            <p className="text-body-md text-ink-900 font-medium">
               {project.agency_direction || '—'}
             </p>
           </div>
         </div>
 
+        {/* Description */}
         {project.description && (
-          <div>
-            <h4 className="text-label text-ink-500 mb-1">Description</h4>
+          <div className="bg-surface-50 border border-surface-200 rounded-xl p-4 space-y-2">
+            <h4 className="text-label text-ink-500">Description du projet</h4>
             <p className="text-body-md text-ink-700 whitespace-pre-line">
               {project.description}
             </p>
           </div>
         )}
 
+        {/* Dates & métadonnées */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <h4 className="text-label text-ink-500 mb-1">Créé le</h4>
-            <p className="text-body-md text-ink-700">
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Créé le</h4>
+            <p className="text-body-md text-ink-700 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-ink-400" />
               {formatDate(project.createdAt)}
             </p>
           </div>
-          <div>
-            <h4 className="text-label text-ink-500 mb-1">Date cible</h4>
-            <p className="text-body-md text-ink-700">
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Date cible</h4>
+            <p className="text-body-md text-ink-700 flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-ink-400" />
               {project.target_date ? formatDate(project.target_date) : '—'}
             </p>
           </div>
-          <div>
-            <h4 className="text-label text-ink-500 mb-1">Créé par</h4>
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Créé par</h4>
             <p className="text-body-md text-ink-700">
               {project.creator
                 ? `${project.creator.first_name || ''} ${project.creator.last_name || ''}`.trim()
@@ -186,25 +204,26 @@ function DetailsTab({ project }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <h4 className="text-label text-ink-500 mb-1">Responsable interne</h4>
+        {/* Responsables */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-surface-50 border border-surface-200 rounded-xl p-4">
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Responsable interne</h4>
             <p className="text-body-md text-ink-700">
               {project.internalManager
                 ? `${project.internalManager.first_name || ''} ${project.internalManager.last_name || ''}`.trim()
                 : '—'}
             </p>
           </div>
-          <div>
-            <h4 className="text-label text-ink-500 mb-1">Responsable studio</h4>
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Responsable studio</h4>
             <p className="text-body-md text-ink-700">
               {project.studioManager
                 ? `${project.studioManager.first_name || ''} ${project.studioManager.last_name || ''}`.trim()
                 : '—'}
             </p>
           </div>
-          <div>
-            <h4 className="text-label text-ink-500 mb-1">Responsable client</h4>
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Responsable client</h4>
             <p className="text-body-md text-ink-700">
               {project.clientContact
                 ? `${project.clientContact.first_name || ''} ${project.clientContact.last_name || ''}`.trim()
@@ -217,7 +236,17 @@ function DetailsTab({ project }) {
   );
 }
 
-
+const NETWORK_ICON_MAP = {
+  facebook: Facebook,
+  linkedin: Linkedin,
+  instagram: Instagram,
+  youtube: Youtube,
+  x: MessageSquare,
+  tiktok: Music2,
+  whatsapp: MessageCircle,
+  messenger: MessageSquare,
+  other: Globe,
+};
 
 function TasksTab({ tasks, onRefresh }) {
   const navigate = useNavigate();
@@ -307,26 +336,153 @@ function TasksTab({ tasks, onRefresh }) {
 }
 
 function PublicationsTab({ publications }) {
+  const [selected, setSelected] = useState(null);
+
   if (publications.length === 0) {
     return <EmptyState icon={Calendar} title="Aucune publication" description="Aucune publication n'a été enregistrée" />;
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {publications.map((pub) => (
-        <Card key={pub.id}>
-          <div className="flex items-center gap-2 mb-2">
-            <Badge color="info" size="sm">{pub.channel}</Badge>
-            <span className="text-body-sm text-ink-400">{formatDate(pub.publication_date)}</span>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {publications.map((pub) => (
+          <Card
+            key={pub.id}
+            className="cursor-pointer hover:border-primary-300 hover:shadow-card-hover transition-default"
+            onClick={() => setSelected(pub)}
+          >
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Badge color="info" size="sm">
+                  {pub.channel || 'Publication'}
+                </Badge>
+                {pub.status && (
+                  <span className="text-body-xs text-ink-400 uppercase tracking-wide">
+                    {pub.status}
+                  </span>
+                )}
+              </div>
+              {pub.publication_date && (
+                <span className="text-body-sm text-ink-400 whitespace-nowrap">
+                  {formatDate(pub.publication_date)}
+                </span>
+              )}
+            </div>
+
+            <p className="text-body-md font-medium text-ink-900 mb-1 line-clamp-1">
+              {pub.task?.title || pub.notes || 'Publication éditoriale'}
+            </p>
+
+            <p className="text-body-sm text-ink-500 mb-2 line-clamp-2">
+              {(pub.networks || []).length
+                ? `Réseaux : ${(pub.networks || []).join(', ')}`
+                : 'Réseaux : —'}
+            </p>
+
+            {!!pub.link && (
+              <a
+                href={pub.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-body-sm text-primary-600 hover:text-primary-700 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span className="truncate max-w-[220px]">{pub.link}</span>
+              </a>
+            )}
+          </Card>
+        ))}
+      </div>
+
+      {selected && (
+        <Modal
+          open
+          onClose={() => setSelected(null)}
+          title="Détail publication éditoriale"
+          size="md"
+        >
+          <div className="space-y-3">
+            <p>
+              <span className="text-ink-400">Publicateur:</span>{' '}
+              <span className="text-ink-700">
+                {selected.publisher_name || '—'}
+              </span>
+            </p>
+            <p>
+              <span className="text-ink-400">Date de publication:</span>{' '}
+              <span className="text-ink-700">
+                {selected.publication_date
+                  ? formatDate(selected.publication_date)
+                  : '—'}
+              </span>
+            </p>
+            <p>
+              <span className="text-ink-400">Tâche publiée:</span>{' '}
+              <span className="text-ink-700">
+                {selected.task?.title || '—'}
+              </span>
+            </p>
+            <p>
+              <span className="text-ink-400">Réseaux:</span>{' '}
+              <span className="text-ink-700">
+                {(selected.networks || []).join(', ') || '—'}
+              </span>
+            </p>
+
+            <div>
+              <span className="text-ink-400">Liens réseaux:</span>
+              <div className="mt-2 space-y-2">
+                {Object.entries(selected.network_links || {}).length ? (
+                  Object.entries(selected.network_links || {}).map(
+                    ([network, link]) => (
+                      <a
+                        key={network}
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between gap-3 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 hover:border-primary-300 hover:bg-primary-50 transition-default"
+                      >
+                        <span className="flex items-center gap-2 min-w-0">
+                          {(() => {
+                            const Icon =
+                              NETWORK_ICON_MAP[
+                                String(network || '').toLowerCase()
+                              ] || Globe;
+                            return (
+                              <Icon className="w-4 h-4 text-primary-500 shrink-0" />
+                            );
+                          })()}
+                          <span className="text-body-sm font-medium text-ink-700 capitalize">
+                            {network}
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-1 text-primary-600 text-body-sm truncate">
+                          <span className="truncate max-w-[220px]">
+                            {link}
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                        </span>
+                      </a>
+                    ),
+                  )
+                ) : (
+                  <p className="text-ink-700">—</p>
+                )}
+              </div>
+            </div>
+
+            {selected.notes && (
+              <div className="pt-1">
+                <span className="text-ink-400 block mb-1">Notes:</span>
+                <p className="text-body-sm text-ink-700 whitespace-pre-line">
+                  {selected.notes}
+                </p>
+              </div>
+            )}
           </div>
-          {pub.link && (
-            <a href={pub.link} target="_blank" rel="noopener noreferrer"
-              className="text-body-sm text-primary-500 hover:underline truncate block">
-              {pub.link}
-            </a>
-          )}
-        </Card>
-      ))}
-    </div>
+        </Modal>
+      )}
+    </>
   );
 }
