@@ -35,6 +35,7 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("kanban");
   const [showCreate, setShowCreate] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const page = parseInt(searchParams.get("page") || "1");
   const status = searchParams.get("status") || "";
@@ -93,17 +94,19 @@ export default function TasksPage() {
     setSearchParams(p);
   };
 
-  const columns = ["todo", "in_production", "done", "blocked"];
+  const baseColumns = ["todo", "in_production", "done"];
+  const columns = showArchived ? [...baseColumns, "cancelled"] : baseColumns;
   const columnConfig = {
     todo: { label: "À faire", accent: "bg-surface-400" },
     in_production: { label: "En cours", accent: "bg-info-500" },
     done: { label: "Terminé", accent: "bg-success-500" },
-    blocked: { label: "Bloqué", accent: "bg-danger-500" },
+    cancelled: { label: "Archivé", accent: "bg-warning-500" },
   };
 
   const grouped = useMemo(() => {
+    const allCols = ["todo", "in_production", "done", "cancelled"];
     const map = {};
-    columns.forEach((c) => (map[c] = []));
+    allCols.forEach((c) => (map[c] = []));
     (Array.isArray(tasks) ? tasks : []).forEach((t) => {
       if (map[t.status]) map[t.status].push(t);
     });
@@ -220,17 +223,31 @@ export default function TasksPage() {
           ]}
           placeholder="Statut"
         />
+        <label className="flex items-center gap-2 ml-auto cursor-pointer select-none">
+          <span className="text-body-sm text-ink-500">Archivés</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showArchived}
+            onClick={() => setShowArchived((v) => !v)}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${showArchived ? "bg-primary-500" : "bg-surface-300"}`}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${showArchived ? "translate-x-[18px]" : "translate-x-[3px]"}`}
+            />
+          </button>
+        </label>
       </div>
 
       {/* Content */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${showArchived ? "xl:grid-cols-4" : "xl:grid-cols-3"} gap-4`}>
+          {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-48 rounded-xl" />
           ))}
         </div>
       ) : view === "kanban" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${showArchived ? "xl:grid-cols-4" : "xl:grid-cols-3"} gap-5`}>
           {columns.map((col) => {
             const cfg = columnConfig[col];
             const items = grouped[col] || [];

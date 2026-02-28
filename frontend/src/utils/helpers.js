@@ -43,7 +43,7 @@ export const TASK_STATUS = {
   todo: { label: "À faire", color: "neutral" },
   in_production: { label: "En cours", color: "info" },
   done: { label: "Terminé", color: "success" },
-  blocked: { label: "Bloqué", color: "danger" },
+  cancelled: { label: "Archivé", color: "warning" },
 };
 
 export const PROPOSAL_STATUS = {

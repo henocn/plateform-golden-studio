@@ -160,10 +160,41 @@ class ProposalService {
       validated_at: new Date(),
     });
 
-    // Update proposal status accordingly
     await proposalRepository.update(proposalId, { status });
 
+    this._notifyValidationResult(proposal, status, user).catch((err) => {
+      logger.error('[NOTIF] onValidationResult error:', err);
+    });
+
     return validation;
+  }
+
+  /* Notifie le chargé de la tâche après une décision sur la proposition */
+  async _notifyValidationResult(proposal, status, validator) {
+    if (!proposal.task_id) return;
+
+    const task = await Task.findByPk(proposal.task_id, {
+      attributes: ['id', 'title', 'assigned_to'],
+    });
+    if (!task || !task.assigned_to) return;
+    if (task.assigned_to === validator.id) return;
+
+    const statusLabels = {
+      approved: 'approuvée',
+      needs_revision: 'en demande de révision',
+      rejected: 'refusée',
+    };
+    const label = statusLabels[status] || status;
+
+    await notificationService.notify({
+      userId: task.assigned_to,
+      type: 'task_pending_validation',
+      title: `Proposition ${label} — "${task.title}"`,
+      message: `La proposition (v${proposal.version_number}) pour la tâche "${task.title}" a été ${label}.`,
+      referenceId: task.id,
+      referenceType: 'task',
+      link: `/tasks/${task.id}`,
+    });
   }
 
   async listValidations(proposalId) {
