@@ -20,11 +20,6 @@
  *           type: string
  *           format: uuid
  *       - in: query
- *         name: organizationId
- *         schema:
- *           type: string
- *           format: uuid
- *       - in: query
  *         name: status
  *         schema:
  *           type: string
@@ -62,11 +57,8 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required: [organization_id, title, type, start_date]
+ *             required: [title, type, start_date]
  *             properties:
- *               organization_id:
- *                 type: string
- *                 format: uuid
  *               project_id:
  *                 type: string
  *                 format: uuid

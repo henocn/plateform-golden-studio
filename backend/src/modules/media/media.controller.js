@@ -41,7 +41,6 @@ const create = async (req, res, next) => {
     const metadata = {
       name: req.body.name,
       type: req.body.type,
-      organization_id: req.body.organization_id || null,
       tags: req.body.tags ? (Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags)) : [],
       is_global: req.body.is_global === 'true' || req.body.is_global === true,
       folder_id: req.body.folder_id || null,

@@ -6,26 +6,24 @@ const crypto = require('crypto');
 const proposalRepository = require('./proposal.repository');
 const ApiError = require('../../utils/ApiError');
 const env = require('../../config/env');
-const { Project, Proposal, Media, Folder } = require('../../models');
+const { Project, Media, Folder } = require('../../models');
 
 class ProposalService {
   /**
-   * List proposals for a project
-   * Internal: sees all statuses. Client: no drafts/submitted.
+   * Liste les propositions d'un projet
    */
   async listByProject(projectId, user) {
     const isClient = user.user_type === 'client';
-    return proposalRepository.findByProject(projectId, {
-      isClient,
-      tenantId: isClient ? user.organization_id : null,
-    });
+    return proposalRepository.findByProject(projectId, { isClient });
   }
 
+  /**
+   * Récupère une proposition par ID
+   */
   async getById(id, user) {
     const isClient = user.user_type === 'client';
-    const proposal = await proposalRepository.findById(id, isClient ? user.organization_id : null);
+    const proposal = await proposalRepository.findById(id);
     if (!proposal) throw ApiError.notFound('Proposition');
-    // Client cannot see draft/submitted proposals
     if (isClient && ['draft', 'submitted'].includes(proposal.status)) {
       throw ApiError.notFound('Proposition');
     }
@@ -46,7 +44,6 @@ class ProposalService {
     const proposal = await proposalRepository.create({
       ...data,
       project_id: projectId,
-      organization_id: project.organization_id,
       task_id: taskId,
       author_id: user.id,
       version_number: versionNumber,
@@ -100,7 +97,6 @@ class ProposalService {
 
     return proposalRepository.createComment({
       proposal_id: proposalId,
-      organization_id: proposal.organization_id,
       user_id: user.id,
       content,
       is_internal: user.user_type === 'internal',
@@ -121,7 +117,6 @@ class ProposalService {
     // Create validation record
     const validation = await proposalRepository.createValidation({
       proposal_id: proposalId,
-      organization_id: proposal.organization_id,
       validator_id: user.id,
       status,
       comments,
@@ -139,18 +134,13 @@ class ProposalService {
   }
 
   /**
-   * Sauvegarder les fichiers de la proposition dans un dossier de la médiathèque.
+   * Sauvegarder les fichiers de la proposition dans un dossier de la médiathèque
    */
   async saveToMedia(proposalId, folderId, user) {
     const proposal = await proposalRepository.findById(proposalId);
     if (!proposal) throw ApiError.notFound('Proposition');
     const folder = await Folder.findByPk(folderId);
     if (!folder) throw ApiError.notFound('Dossier');
-    const orgId = proposal.organization_id || folder.organization_id;
-    if (!orgId) throw ApiError.badRequest('Organisation introuvable');
-    if (user.user_type === 'client' && folder.organization_id !== user.organization_id) {
-      throw ApiError.forbidden('Accès refusé à ce dossier');
-    }
 
     const attachments = proposal.attachments || [];
     const files = attachments.length > 0
@@ -159,7 +149,7 @@ class ProposalService {
 
     if (files.length === 0) throw ApiError.badRequest('Aucun fichier à enregistrer');
 
-    const mediaDir = path.join(env.UPLOAD_DIR, 'media', String(orgId));
+    const mediaDir = path.join(env.UPLOAD_DIR, 'media');
     if (!fs.existsSync(mediaDir)) fs.mkdirSync(mediaDir, { recursive: true });
 
     const created = [];
@@ -169,11 +159,10 @@ class ProposalService {
       const ext = path.extname(f.file_name) || '';
       const base = path.basename(f.file_name, ext) || 'fichier';
       const safeName = `${crypto.randomUUID()}${ext}`;
-      const destRelative = path.join('media', String(orgId), safeName).split(path.sep).join('/');
+      const destRelative = path.join('media', safeName).split(path.sep).join('/');
       const destPath = path.join(env.UPLOAD_DIR, destRelative);
       fs.copyFileSync(srcPath, destPath);
       const media = await Media.create({
-        organization_id: orgId,
         folder_id: folderId,
         name: base,
         type: 'document',

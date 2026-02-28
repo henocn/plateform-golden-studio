@@ -20,7 +20,6 @@ const generateAccessToken = (user) => jwt.sign(
     email: user.email,
     user_type: user.user_type,
     role: user.role,
-    organization_id: user.organization_id || null,
   },
   env.JWT_ACCESS_SECRET,
   { expiresIn: env.JWT_ACCESS_EXPIRES_IN },
@@ -105,14 +104,6 @@ const login = async ({ email, password, totp_code }) => {
   // Update last_login_at
   await user.update({ last_login_at: new Date() }, { hooks: false });
 
-  // Fetch organization name if applicable
-  let organizationName = null;
-  if (user.organization_id) {
-    const { Organization } = require('../../models');
-    const org = await Organization.findByPk(user.organization_id, { attributes: ['name'] });
-    organizationName = org?.name || null;
-  }
-
   logger.info(`User logged in: ${user.email} (${user.user_type}/${user.role})`);
 
   return {
@@ -126,8 +117,6 @@ const login = async ({ email, password, totp_code }) => {
       last_name: user.last_name,
       user_type: user.user_type,
       role: user.role,
-      organization_id: user.organization_id,
-      organization_name: organizationName,
       avatar_path: user.avatar_path,
       two_factor_enabled: user.two_factor_enabled,
     },
@@ -168,14 +157,6 @@ const verify2FALogin = async (tempToken, totpCode) => {
   const refreshToken = await generateRefreshToken(user.id);
   await user.update({ last_login_at: new Date() }, { hooks: false });
 
-  // Fetch organization name if applicable
-  let organizationName = null;
-  if (user.organization_id) {
-    const { Organization } = require('../../models');
-    const org = await Organization.findByPk(user.organization_id, { attributes: ['name'] });
-    organizationName = org?.name || null;
-  }
-
   logger.info(`User completed 2FA login: ${user.email}`);
 
   return {
@@ -188,8 +169,6 @@ const verify2FALogin = async (tempToken, totpCode) => {
       last_name: user.last_name,
       user_type: user.user_type,
       role: user.role,
-      organization_id: user.organization_id,
-      organization_name: organizationName,
       avatar_path: user.avatar_path,
       two_factor_enabled: user.two_factor_enabled,
     },
@@ -361,13 +340,11 @@ const disable2FA = async (userId, totpCode) => {
 /**
  * Get current user profile
  */
+/**
+ * Récupère le profil de l'utilisateur connecté
+ */
 const getMe = async (userId) => {
-  const user = await User.findByPk(userId, {
-    include: [
-      { association: 'organization', attributes: ['id', 'name', 'short_name', 'type'] },
-    ],
-  });
-
+  const user = await User.findByPk(userId);
   if (!user) throw ApiError.notFound('Utilisateur');
 
   return user;

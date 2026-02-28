@@ -38,20 +38,18 @@ class FolderService {
    * Crée un dossier (racine ou sous-dossier). Une seule permission : folders.create.
    * Toute personne ayant le droit peut créer partout (racine ou sous-dossier).
    */
-  async create(data, user, tenantId) {
-    let organizationId = data.organization_id;
+  /**
+   * Crée un dossier (racine ou sous-dossier)
+   */
+  async create(data, user) {
     if (data.parent_id) {
       const parentFolder = await folderRepository.findById(data.parent_id);
       if (!parentFolder) throw ApiError.notFound('Dossier parent');
-      organizationId = parentFolder.organization_id;
-    } else {
-      organizationId = organizationId || (user.user_type === 'client' ? user.organization_id : tenantId || user.organization_id);
     }
 
     return folderRepository.create({
       name: data.name,
       parent_id: data.parent_id || null,
-      organization_id: organizationId,
       created_by: user.id,
     });
   }

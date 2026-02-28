@@ -9,10 +9,6 @@ module.exports = (sequelize) => {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    organization_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
     title: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -63,7 +59,6 @@ module.exports = (sequelize) => {
   });
 
   Project.associate = (models) => {
-    Project.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
     Project.belongsTo(models.User, { as: 'internalManager', foreignKey: 'internal_manager_id' });
     Project.belongsTo(models.User, { as: 'studioManager', foreignKey: 'studio_manager_id' });
     Project.belongsTo(models.User, { as: 'clientContact', foreignKey: 'client_contact_id' });

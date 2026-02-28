@@ -23,26 +23,23 @@ const EVENT_TYPE_ALIASES = {
 };
 
 class CalendarService {
-  resolveTenantId(user, tenantId, bodyOrgId = null) {
-    if (user.user_type === 'client') return user.organization_id;
-    return tenantId || bodyOrgId || null;
-  }
-
   /**
-   * List events — client only sees client_visible for their org
+   * Liste les événements — client ne voit que client_visible
    */
   async list(filters, user) {
     const isClient = user.user_type === 'client';
     if (isClient) {
       filters.visibility = 'client_visible';
-      filters.tenantId = user.organization_id;
     }
     return calendarRepository.findAll(filters);
   }
 
+  /**
+   * Récupère un événement par ID
+   */
   async getById(id, user) {
     const isClient = user.user_type === 'client';
-    const event = await calendarRepository.findById(id, isClient ? user.organization_id : null);
+    const event = await calendarRepository.findById(id);
     if (!event) throw ApiError.notFound('Événement de calendrier');
     if (isClient && event.visibility === 'internal_only') {
       throw ApiError.notFound('Événement de calendrier');
@@ -50,18 +47,12 @@ class CalendarService {
     return event;
   }
 
+  /**
+   * Crée un événement
+   */
   async create(data, user) {
-    const resolvedOrgId = this.resolveTenantId(
-      user,
-      user.user_type === 'client' ? user.organization_id : null,
-      data.organization_id,
-    );
-    if (!resolvedOrgId) {
-      throw ApiError.badRequest('organization_id est requis pour les utilisateurs internes');
-    }
     return calendarRepository.create({
       ...data,
-      organization_id: resolvedOrgId,
       created_by: user.id,
     });
   }
@@ -84,14 +75,12 @@ class CalendarService {
     return event;
   }
 
-  async importExcel(fileBuffer, user, tenantId, organizationId = null) {
+  /**
+   * Import en masse depuis un fichier Excel
+   */
+  async importExcel(fileBuffer, user) {
     const rows = await parseEventsImport(fileBuffer);
     if (!rows.length) return { imported: 0, skipped: 0 };
-
-    const resolvedTenantId = this.resolveTenantId(user, tenantId, organizationId);
-    if (!resolvedTenantId) {
-      throw ApiError.badRequest('organization_id est requis pour les utilisateurs internes');
-    }
 
     const toInsert = [];
     let skipped = 0;
@@ -101,7 +90,6 @@ class CalendarService {
         continue;
       }
       toInsert.push({
-        organization_id: resolvedTenantId,
         project_id: row.project_id || null,
         title: row.title,
         type: VALID_EVENT_TYPES.has(EVENT_TYPE_ALIASES[String(row.type || '').toLowerCase()])

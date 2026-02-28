@@ -9,10 +9,6 @@ module.exports = (sequelize) => {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    organization_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
     project_id: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -59,7 +55,6 @@ module.exports = (sequelize) => {
   });
 
   CalendarEvent.associate = (models) => {
-    CalendarEvent.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
     CalendarEvent.belongsTo(models.Project, { as: 'project', foreignKey: 'project_id' });
     CalendarEvent.belongsTo(models.User, { as: 'creator', foreignKey: 'created_by' });
   };

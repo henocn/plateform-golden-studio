@@ -16,15 +16,12 @@ import {
 } from "lucide-react";
 import {
   Button,
-  Modal,
-  Select,
   SearchInput,
   EmptyState,
   Skeleton,
   ConfirmDialog,
 } from "../../components/ui";
 import { mediaAPI, foldersAPI } from "../../api/services";
-import { useOrganizationStore } from "../../store/organizationStore";
 import {
   formatDate,
   formatFileSize,
@@ -32,7 +29,6 @@ import {
   formatErrorMessage,
   MEDIA_TYPES,
 } from "../../utils/helpers";
-import { useAuthStore } from "../../store/authStore";
 import { usePermissions } from "../../hooks";
 import toast from "react-hot-toast";
 import UploadModal from "./UploadModal";
@@ -57,8 +53,6 @@ const fileIconColors = {
 };
 
 export default function MediaPage() {
-  const { user } = useAuthStore();
-  const { current: currentOrg, fetchCurrent } = useOrganizationStore();
   const {
     canUploadMedia: canUpload,
     canViewFolder,
@@ -67,8 +61,6 @@ export default function MediaPage() {
     isInternal,
     isSuperAdmin,
   } = usePermissions();
-
-  const currentOrgId = currentOrg?.id ?? user?.organization_id ?? null;
 
   const [breadcrumb, setBreadcrumb] = useState([]);
   const [subfolders, setSubfolders] = useState([]);
@@ -84,10 +76,6 @@ export default function MediaPage() {
 
   const currentFolderId = breadcrumb.length > 0 ? breadcrumb[breadcrumb.length - 1]?.id ?? null : null;
   const isAtRoot = breadcrumb.length <= 1;
-
-  useEffect(() => {
-    if (!currentOrgId && !currentOrg) fetchCurrent();
-  }, [currentOrgId, currentOrg, fetchCurrent]);
 
   const loadContent = useCallback(async () => {
     setLoading(true);
@@ -182,7 +170,6 @@ export default function MediaPage() {
     }
   };
 
-  const currentOrgName = currentOrg?.name || currentOrg?.short_name || user?.organization_name || "Médiathèque";
   const filteredFolders = search
     ? subfolders.filter((f) => f.name?.toLowerCase().includes(search.toLowerCase()))
     : subfolders;
@@ -488,9 +475,7 @@ export default function MediaPage() {
         <CreateFolderModal
           isRoot={isAtRoot}
           parentId={currentFolderId}
-          organizationId={currentOrgId}
-          organizationName={currentOrgName}
-          isSuperAdmin={isSuperAdmin}
+          parentName={breadcrumb[breadcrumb.length - 1]?.name}
           onClose={() => setShowCreateFolder(false)}
           onCreated={handleFolderCreated}
         />

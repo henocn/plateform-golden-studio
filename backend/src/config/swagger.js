@@ -12,8 +12,7 @@ const swaggerDefinition = {
       'API de la plateforme de Gouvernance et de Suivi de Communication Institutionnelle.\n\n' +
       '**Deux types d\'utilisateurs :**\n' +
       '- `internal` — Employés Golden Studio (backoffice)\n' +
-      '- `client` — Utilisateurs des institutions clientes\n\n' +
-      'Isolation multi-tenant automatique par `organization_id`.',
+      '- `client` — Utilisateurs des institutions clientes',
     contact: {
       name: 'Golden Studio',
       email: 'dev@goldenstudio.com',

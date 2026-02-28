@@ -5,7 +5,7 @@ const ApiResponse = require('../../utils/ApiResponse');
 
 const list = async (req, res, next) => {
   try {
-    const pubs = await publicationService.listByProject(req.params.projectId, req.tenantId);
+    const pubs = await publicationService.listByProject(req.params.projectId);
     return ApiResponse.success(res, pubs, 'Publications retrieved');
   } catch (error) {
     return next(error);

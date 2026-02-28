@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Users as UsersIcon, UserPlus, MoreVertical } from 'lucide-react';
 import { Card, Button, Badge, SearchInput, Pagination, EmptyState, Skeleton, Modal, Input, Select, Tabs, Avatar } from '../../components/ui';
-import { usersAPI, organizationsAPI } from '../../api/services';
+import { usersAPI } from '../../api/services';
 import { usePagination, useDebounce, usePermissions } from '../../hooks';
 import { formatDate, ROLE_LABELS, extractList, formatErrorMessage } from '../../utils/helpers';
 import toast from 'react-hot-toast';
@@ -104,7 +104,6 @@ export default function UsersPage() {
                 <tr className="border-b border-surface-200">
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Utilisateur</th>
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Rôle</th>
-                  {activeTab === 'clients' && <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Organisation</th>}
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Statut</th>
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Dernière connexion</th>
                   <th className="px-5 py-3"></th>
@@ -123,9 +122,6 @@ export default function UsersPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3">{getRoleBadge(u.role)}</td>
-                    {activeTab === 'clients' && (
-                      <td className="px-5 py-3 text-body-sm text-ink-500">{u.Organization?.name || u.organization?.name || '—'}</td>
-                    )}
                     <td className="px-5 py-3">
                       <Badge color={u.is_active ? 'success' : 'neutral'} dot size="sm">
                         {u.is_active ? 'Actif' : 'Inactif'}
@@ -162,9 +158,8 @@ export default function UsersPage() {
 }
 
 function CreateUserModal({ open, onClose, onCreated, type }) {
-  const { isInternal, isClientAdmin, user } = usePermissions();
+  const { isInternal, isClientAdmin } = usePermissions();
   const [loading, setLoading] = useState(false);
-  const [orgs, setOrgs] = useState([]);
 
   // For client_admin: always create client users with their own org
   const effectiveType = isClientAdmin ? 'clients' : type;
@@ -172,26 +167,14 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
   const [form, setForm] = useState({
     email: '', password: '', first_name: '', last_name: '',
     role: effectiveType === 'internal' ? 'contributor' : 'client_reader',
-    organization_id: isClientAdmin ? (user?.organization_id || '') : '',
     job_title: '',
   });
 
-  useEffect(() => {
-    // Only internal admins need to fetch organizations list
-    if (open && effectiveType === 'clients' && isInternal) {
-      organizationsAPI.list({ limit: 100 }).then(({ data }) => {
-        setOrgs(extractList(data.data).items);
-      }).catch(() => {});
-    }
-  }, [open, effectiveType, isInternal]);
-
-  // Reset form when modal opens
   useEffect(() => {
     if (open) {
       setForm({
         email: '', password: '', first_name: '', last_name: '',
         role: effectiveType === 'internal' ? 'contributor' : 'client_reader',
-        organization_id: isClientAdmin ? (user?.organization_id || '') : '',
         job_title: '',
       });
     }
@@ -248,14 +231,6 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
         <Input label="Email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <Input label="Mot de passe" type="password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} hint="Min. 8 caractères" />
         <Select label="Rôle" required value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} options={effectiveType === 'internal' ? internalRoles : clientRoles} />
-        {effectiveType === 'clients' && isInternal && (
-          <Select label="Organisation" required value={form.organization_id} onChange={(e) => setForm({ ...form, organization_id: e.target.value })}
-            options={orgs.map((o) => ({ value: o.id, label: o.name }))}
-          />
-        )}
-        {effectiveType === 'clients' && isClientAdmin && (
-          <Input label="Organisation" value={user?.organization_name || 'Mon organisation'} disabled />
-        )}
         <Input label="Poste" value={form.job_title} onChange={(e) => setForm({ ...form, job_title: e.target.value })} />
       </form>
     </Modal>

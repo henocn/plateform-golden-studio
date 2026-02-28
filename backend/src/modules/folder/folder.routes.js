@@ -18,11 +18,7 @@ router.get('/',
   validate(listFolderQuery, 'query'),
   folderController.list);
 
-// Dossiers racine d'une organisation
-router.get('/roots/:organizationId',
-  authorize('folders.view'),
-  folderController.getRootFolders);
-
+// Dossiers racine
 router.get('/roots',
   authorize('folders.view'),
   folderController.getRootFolders);

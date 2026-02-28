@@ -8,7 +8,6 @@ const list = async (req, res, next) => {
   try {
     const { page, limit, offset } = parsePagination(req.query);
     const { data, total } = await taskService.list({
-      tenantId: req.tenantId,
       projectId: req.query.projectId,
       assigneeId: req.query.assignee,
       status: req.query.status,

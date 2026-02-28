@@ -83,11 +83,9 @@ const listClients = async (req, res, next) => {
   try {
     const { page, limit, offset } = parsePagination(req.query);
     const { data, total } = await userService.listClients({
-      tenantId: req.tenantId,
       search: req.query.search,
       role: req.query.role,
       is_active: req.query.is_active,
-      organizationId: req.query.organizationId,
       page, limit, offset,
     });
     const meta = buildPaginationMeta(page, limit, total);

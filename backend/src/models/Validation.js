@@ -13,10 +13,6 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       allowNull: false,
     },
-    organization_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
     validator_id: {
       type: DataTypes.UUID,
       allowNull: false,
@@ -42,7 +38,6 @@ module.exports = (sequelize) => {
 
   Validation.associate = (models) => {
     Validation.belongsTo(models.Proposal, { as: 'proposal', foreignKey: 'proposal_id' });
-    Validation.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
     Validation.belongsTo(models.User, { as: 'validator', foreignKey: 'validator_id' });
   };
 

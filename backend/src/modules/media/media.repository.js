@@ -4,9 +4,9 @@ const { Media } = require('../../models');
 const { Op } = require('sequelize');
 
 class MediaRepository {
+  /* Récupère tous les médias avec filtres */
   async findAll({ type, isGlobal, search, tags, folder_id, page, limit, offset } = {}) {
     const where = {};
-    // Mono-organisation : tous les médias visibles par toute personne ayant le droit
     if (type) where.type = type;
     if (isGlobal !== undefined) where.is_global = isGlobal === 'true' || isGlobal === true;
     if (search) {
@@ -28,7 +28,6 @@ class MediaRepository {
     const { rows, count } = await Media.findAndCountAll({
       where,
       include: [
-        { association: 'organization', attributes: ['id', 'name'] },
         { association: 'uploader', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'folder', attributes: ['id', 'name'] },
       ],
@@ -40,26 +39,29 @@ class MediaRepository {
     return { data: rows, total: count };
   }
 
+  /* Récupère un média par son ID */
   async findById(id) {
     return Media.findByPk(id, {
       include: [
-        { association: 'organization', attributes: ['id', 'name'] },
         { association: 'uploader', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'folder', attributes: ['id', 'name'] },
       ],
     });
   }
 
+  /* Crée un média */
   async create(data) {
     return Media.create(data);
   }
 
+  /* Met à jour un média */
   async update(id, data) {
     const media = await Media.findByPk(id);
     if (!media) return null;
     return media.update(data);
   }
 
+  /* Supprime un média */
   async delete(id) {
     const media = await Media.findByPk(id);
     if (!media) return null;

@@ -9,8 +9,6 @@ import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import { formatDate, formatDateTime, PROPOSAL_STATUS, formatErrorMessage } from "../../utils/helpers";
 import { usePermissions } from "../../hooks";
-import { useOrganizationStore } from "../../store/organizationStore";
-import { useAuthStore } from "../../store/authStore";
 import CreateFolderModal from "../media/CreateFolderModal";
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
@@ -152,10 +150,7 @@ function FileDownloadButton({ projectId, proposalId }) {
 /* ─── Modale Sauvegarder dans la médiathèque (explorateur de dossiers) ────── */
 function SaveToMediaModal({ proposal, onClose, onSaved }) {
   const { canCreateFolder } = usePermissions();
-  const { current: currentOrg, fetchCurrent } = useOrganizationStore();
-  const { user } = useAuthStore();
   const projectId = proposal.project_id || proposal.project?.id;
-  const orgId = currentOrg?.id ?? user?.organization_id ?? null;
 
   const [breadcrumb, setBreadcrumb] = useState([]);
   const [subfolders, setSubfolders] = useState([]);
@@ -167,16 +162,7 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
   const isAtRoot = breadcrumb.length <= 1;
   const selectedFolderId = currentFolderId;
 
-  useEffect(() => {
-    if (!orgId && !currentOrg) fetchCurrent();
-  }, [orgId, currentOrg, fetchCurrent]);
-
   const loadContent = useCallback(async () => {
-    if (!orgId) {
-      setLoading(false);
-      setSubfolders([]);
-      return;
-    }
     setLoading(true);
     try {
       if (!currentFolderId) {
@@ -196,17 +182,17 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
     } finally {
       setLoading(false);
     }
-  }, [orgId, currentFolderId]);
+  }, [currentFolderId]);
 
   useEffect(() => {
     loadContent();
   }, [loadContent]);
 
   useEffect(() => {
-    if (orgId && isAtRoot) {
+    if (isAtRoot) {
       setBreadcrumb([{ id: null, name: "Racine", isRoot: true }]);
     }
-  }, [orgId, isAtRoot]);
+  }, [isAtRoot]);
 
   const openFolder = (folder) => {
     setBreadcrumb((prev) => {
@@ -241,17 +227,6 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
       setSaving(false);
     }
   };
-
-  if (!orgId) {
-    return (
-      <Modal open onClose={onClose} title="Sauvegarder dans la médiathèque" size="md">
-        <p className="text-body-sm text-ink-500">Organisation inconnue.</p>
-        <div className="flex justify-end pt-4">
-          <Button variant="secondary" onClick={onClose}>Fermer</Button>
-        </div>
-      </Modal>
-    );
-  }
 
   return (
     <Modal open onClose={onClose} title="Sauvegarder dans la médiathèque" size="lg">
@@ -344,8 +319,7 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
         <CreateFolderModal
           isRoot={isAtRoot}
           parentId={currentFolderId}
-          organizationId={orgId}
-          organizationName={breadcrumb[breadcrumb.length - 1]?.name}
+          parentName={breadcrumb[breadcrumb.length - 1]?.name}
           onClose={() => setShowCreateFolder(false)}
           onCreated={handleFolderCreated}
         />

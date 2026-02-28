@@ -206,7 +206,6 @@ function CreateEventModal({ projects, onClose, onCreated }) {
     start_date: "",
     end_date: "",
     project_id: "",
-    organization_id: projects[0]?.organization_id || "",
     visibility: "client_visible",
   });
   const [submitting, setSubmitting] = useState(false);

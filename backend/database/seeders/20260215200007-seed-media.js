@@ -10,7 +10,6 @@ module.exports = {
     await queryInterface.bulkInsert('media', [
       {
         id: 'a8b2c3d4-0001-4000-8000-000000000001',
-        organization_id: null,
         name: 'Logo Golden Studio — Couleur',
         type: 'logo',
         tags: JSON.stringify(['logo', 'golden-studio', 'couleur', 'identité']),
@@ -25,7 +24,6 @@ module.exports = {
       },
       {
         id: 'a8b2c3d4-0002-4000-8000-000000000002',
-        organization_id: null,
         name: 'Logo Golden Studio — Monochrome',
         type: 'logo',
         tags: JSON.stringify(['logo', 'golden-studio', 'monochrome', 'noir-blanc']),
@@ -40,7 +38,6 @@ module.exports = {
       },
       {
         id: 'a8b2c3d4-0003-4000-8000-000000000003',
-        organization_id: null,
         name: 'Charte Graphique Golden Studio 2025',
         type: 'graphic_charter',
         tags: JSON.stringify(['charte-graphique', 'golden-studio', 'guidelines', '2025']),

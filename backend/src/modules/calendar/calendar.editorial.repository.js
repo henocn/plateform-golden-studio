@@ -4,9 +4,9 @@ const { Op } = require('sequelize');
 const { Publication } = require('../../models');
 
 class CalendarEditorialRepository {
-  async findAll({ tenantId, projectId, taskId, status, startDate, endDate, search, page, limit, offset }) {
+  /* Récupère toutes les publications du calendrier éditorial avec filtres */
+  async findAll({ projectId, taskId, status, startDate, endDate, search, page, limit, offset }) {
     const where = {};
-    if (tenantId) where.organization_id = tenantId;
     if (projectId) where.project_id = projectId;
     if (taskId) where.task_id = taskId;
     if (status) where.status = status;
@@ -42,9 +42,9 @@ class CalendarEditorialRepository {
     return { data: rows, total: count };
   }
 
-  async findById(id, tenantId = null) {
+  /* Récupère une publication par son ID */
+  async findById(id) {
     const where = { id };
-    if (tenantId) where.organization_id = tenantId;
     return Publication.findOne({
       where,
       include: [
@@ -55,20 +55,22 @@ class CalendarEditorialRepository {
     });
   }
 
+  /* Crée une publication */
   async create(data) {
     return Publication.create(data);
   }
 
+  /* Met à jour une publication */
   async update(id, data) {
     const publication = await Publication.findByPk(id);
     if (!publication) return null;
     return publication.update(data);
   }
 
+  /* Crée plusieurs publications en masse */
   async bulkCreate(items) {
     return Publication.bulkCreate(items);
   }
 }
 
 module.exports = new CalendarEditorialRepository();
-

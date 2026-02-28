@@ -24,7 +24,6 @@ const authenticate = (req, _res, next) => {
       email: decoded.email,
       user_type: decoded.user_type,
       role: decoded.role,
-      organization_id: decoded.organization_id,
     };
 
     return next();
@@ -61,7 +60,6 @@ const optionalAuth = (req, _res, next) => {
       email: decoded.email,
       user_type: decoded.user_type,
       role: decoded.role,
-      organization_id: decoded.organization_id,
     };
   } catch (_err) {
     // Silently ignore — user just won't be attached

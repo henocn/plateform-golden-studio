@@ -44,10 +44,6 @@ module.exports = (sequelize) => {
       type: DataTypes.ENUM(...ALL_ROLES),
       allowNull: false,
     },
-    organization_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
-    },
     job_title: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -94,13 +90,6 @@ module.exports = (sequelize) => {
       },
     },
     validate: {
-      // CONTRAINTE: si user_type = 'client' → organization_id NOT NULL
-      clientMustHaveOrg() {
-        if (this.user_type === 'client' && !this.organization_id) {
-          throw new Error('Client users must belong to an organization');
-        }
-      },
-      // CONTRAINTE: rôles client_* uniquement pour user_type === 'client'
       roleMatchesType() {
         const isClientRole = this.role && this.role.startsWith('client_');
         if (this.user_type === 'internal' && isClientRole) {
@@ -127,7 +116,6 @@ module.exports = (sequelize) => {
   };
 
   User.associate = (models) => {
-    User.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
     User.belongsTo(models.User, { as: 'creator', foreignKey: 'created_by' });
     User.hasMany(models.RefreshToken, { as: 'refreshTokens', foreignKey: 'user_id' });
   };

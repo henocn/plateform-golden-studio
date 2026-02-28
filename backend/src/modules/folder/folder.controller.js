@@ -63,7 +63,7 @@ const getById = async (req, res, next) => {
  */
 const create = async (req, res, next) => {
   try {
-    const folder = await folderService.create(req.body, req.user, req.tenantId);
+    const folder = await folderService.create(req.body, req.user);
     return ApiResponse.created(res, folder, 'Dossier créé');
   } catch (error) {
     return next(error);

@@ -10,8 +10,6 @@ const list = async (req, res, next) => {
   try {
     const { page, limit, offset } = parsePagination(req.query);
     const { data, total } = await editorialService.list({
-      tenantId: req.tenantId,
-      organizationId: req.query.organizationId,
       projectId: req.query.projectId,
       taskId: req.query.taskId,
       status: req.query.status,
@@ -31,7 +29,7 @@ const list = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    const publication = await editorialService.create(req.body, req.user, req.tenantId);
+    const publication = await editorialService.create(req.body, req.user);
     return ApiResponse.created(res, publication, 'Editorial entry created');
   } catch (error) {
     return next(error);
@@ -40,7 +38,7 @@ const create = async (req, res, next) => {
 
 const update = async (req, res, next) => {
   try {
-    const publication = await editorialService.update(req.params.id, req.body, req.user, req.tenantId);
+    const publication = await editorialService.update(req.params.id, req.body, req.user);
     return ApiResponse.success(res, publication, 'Editorial entry updated');
   } catch (error) {
     return next(error);
@@ -49,7 +47,7 @@ const update = async (req, res, next) => {
 
 const assignTask = async (req, res, next) => {
   try {
-    const publication = await editorialService.assignTask(req.params.id, req.body.task_id, req.user, req.tenantId);
+    const publication = await editorialService.assignTask(req.params.id, req.body.task_id, req.user);
     return ApiResponse.success(res, publication, 'Task assigned to editorial entry');
   } catch (error) {
     return next(error);
@@ -65,8 +63,6 @@ const importExcel = async (req, res, next) => {
     const result = await editorialService.importExcel(
       fileBuffer,
       req.user,
-      req.tenantId,
-      req.body.organization_id || null
     );
     return ApiResponse.success(res, result, 'Editorial calendar imported');
   } catch (error) {
@@ -79,8 +75,6 @@ const importExcel = async (req, res, next) => {
 const exportExcel = async (req, res, next) => {
   try {
     const buffer = await editorialService.exportExcel({
-      tenantId: req.tenantId,
-      organizationId: req.query.organizationId,
       projectId: req.query.projectId,
       taskId: req.query.taskId,
       status: req.query.status,

@@ -1,15 +1,10 @@
 'use strict';
 
-const { User, Organization } = require('../../models');
+const { User } = require('../../models');
 const { Op } = require('sequelize');
 
-/**
- * User Repository — CRUD with tenant filtering, separation internal/client
- */
 class UserRepository {
-  /**
-   * Find internal users (user_type = 'internal')
-   */
+  /* Récupère les utilisateurs internes (user_type = 'internal') */
   async findInternalUsers({ search, role, is_active, page, limit, offset } = {}) {
     const where = { user_type: 'internal' };
 
@@ -33,18 +28,9 @@ class UserRepository {
     return { data: rows, total: count };
   }
 
-  /**
-   * Find client users (user_type = 'client'), optionally filtered by tenant
-   */
-  async findClientUsers({ tenantId, search, role, is_active, organizationId, page, limit, offset } = {}) {
+  /* Récupère les utilisateurs clients (user_type = 'client') */
+  async findClientUsers({ search, role, is_active, page, limit, offset } = {}) {
     const where = { user_type: 'client' };
-
-    // Tenant isolation: if tenantId is set, force filter
-    if (tenantId) {
-      where.organization_id = tenantId;
-    } else if (organizationId) {
-      where.organization_id = organizationId;
-    }
 
     if (role) where.role = role;
     if (typeof is_active === 'boolean') where.is_active = is_active;
@@ -58,9 +44,6 @@ class UserRepository {
 
     const { rows, count } = await User.findAndCountAll({
       where,
-      include: [
-        { association: 'organization', attributes: ['id', 'name', 'short_name'] },
-      ],
       order: [['created_at', 'DESC']],
       limit,
       offset,
@@ -69,61 +52,43 @@ class UserRepository {
     return { data: rows, total: count };
   }
 
-  /**
-   * Find by ID
-   */
+  /* Récupère un utilisateur par son ID */
   async findById(id) {
-    return User.findByPk(id, {
-      include: [
-        { association: 'organization', attributes: ['id', 'name', 'short_name', 'type'] },
-      ],
-    });
+    return User.findByPk(id);
   }
 
-  /**
-   * Find by email
-   */
+  /* Récupère un utilisateur par son email */
   async findByEmail(email) {
     return User.findOne({ where: { email } });
   }
 
-  /**
-   * Create user
-   */
+  /* Crée un utilisateur */
   async create(data) {
     return User.create(data);
   }
 
-  /**
-   * Update user
-   */
+  /* Met à jour un utilisateur */
   async update(id, data) {
     const user = await User.findByPk(id);
     if (!user) return null;
     return user.update(data);
   }
 
-  /**
-   * Update role
-   */
+  /* Met à jour le rôle d'un utilisateur */
   async updateRole(id, role) {
     const user = await User.findByPk(id);
     if (!user) return null;
     return user.update({ role });
   }
 
-  /**
-   * Update status
-   */
+  /* Met à jour le statut d'un utilisateur */
   async updateStatus(id, isActive) {
     const user = await User.findByPk(id);
     if (!user) return null;
     return user.update({ is_active: isActive });
   }
 
-  /**
-   * Soft delete (deactivate)
-   */
+  /* Désactive un utilisateur (soft delete) */
   async deactivate(id) {
     return this.updateStatus(id, false);
   }

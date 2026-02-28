@@ -6,31 +6,34 @@ const { Project } = require('../../models');
 
 class TaskService {
   /**
-   * List tasks — internal sees all, client only sees client_visible
+   * Liste les tâches — client ne voit que client_visible
    */
   async list(filters, user) {
     const isClient = user.user_type === 'client';
     if (isClient) {
       filters.visibility = 'client_visible';
-      filters.tenantId = user.organization_id;
     }
     return taskRepository.findAll(filters);
   }
 
+  /**
+   * Récupère une tâche par ID
+   */
   async getById(id, user) {
     const isClient = user.user_type === 'client';
-    const task = await taskRepository.findById(id, isClient ? user.organization_id : null);
+    const task = await taskRepository.findById(id);
     if (!task) throw ApiError.notFound('Tâche');
-    // Client cannot see internal_only tasks
     if (isClient && task.visibility === 'internal_only') {
       throw ApiError.notFound('Task');
     }
     return task;
   }
 
+  /**
+   * Récupère les propositions liées à une tâche
+   */
   async getProposals(id, user) {
-    const isClient = user.user_type === 'client';
-    const proposals = await taskRepository.findProposals(id, isClient ? user.organization_id : null);
+    const proposals = await taskRepository.findProposals(id);
     return proposals;
   }
 
@@ -43,7 +46,6 @@ class TaskService {
 
     return taskRepository.create({
       ...data,
-      organization_id: project.organization_id,
       created_by: user.id,
     });
   }
@@ -128,7 +130,6 @@ class TaskService {
 
     return taskRepository.createComment({
       task_id: taskId,
-      organization_id: task.organization_id,
       user_id: user.id,
       content,
       is_internal: internalFlag,

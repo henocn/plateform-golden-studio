@@ -3,7 +3,6 @@
 const Joi = require('joi');
 
 const createProjectSchema = Joi.object({
-  organization_id: Joi.string().uuid().optional().allow(null),
   title: Joi.string().min(2).max(255).required(),
   description: Joi.string().max(5000).optional().allow(null, ''),
   agency_direction: Joi.string().max(255).optional().allow(null, ''),
@@ -35,7 +34,6 @@ const patchStatusSchema = Joi.object({
 const listProjectQuery = Joi.object({
   status: Joi.string().valid('brief_received', 'in_production', 'in_validation', 'published', 'archived').optional(),
   priority: Joi.string().valid('low', 'normal', 'high', 'urgent').optional(),
-  organizationId: Joi.string().uuid().optional(),
   search: Joi.string().max(255).optional(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),

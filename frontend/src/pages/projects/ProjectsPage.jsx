@@ -151,9 +151,6 @@ export default function ProjectsPage() {
                     Projet
                   </th>
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">
-                    Organisation
-                  </th>
-                  <th className="text-left text-label text-ink-500 font-medium px-5 py-3">
                     Statut
                   </th>
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">
@@ -195,9 +192,6 @@ export default function ProjectsPage() {
                             </p>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-5 py-3 text-body-sm text-ink-500">
-                        {p.Organization?.name || p.organization?.name || "—"}
                       </td>
                       <td className="px-5 py-3">
                         <Badge color={status.color} dot size="sm">

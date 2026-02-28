@@ -1,46 +1,34 @@
 'use strict';
 
 const projectRepository = require('./project.repository');
-const { Organization } = require('../../models');
 const ApiError = require('../../utils/ApiError');
 
 class ProjectService {
-  async resolveOrganizationId(data, user) {
-    if (data.organization_id) return data.organization_id;
-    // Clients : toujours leur organisation
-    if (user?.user_type === 'client' && user.organization_id) {
-      return user.organization_id;
-    }
-    // Internes : on prend l'organisation courante (mode mono-org)
-    const org = await Organization.findOne({
-      where: { is_active: true },
-      order: [['created_at', 'ASC']],
-      attributes: ['id'],
-    });
-    if (!org) throw ApiError.badRequest('Aucune organisation active configurée');
-    return org.id;
-  }
+  /**
+   * Liste tous les projets avec filtres
+   */
   async list(filters) {
     return projectRepository.findAll(filters);
   }
 
-  async getById(id, tenantId = null) {
-    const project = await projectRepository.findById(id, tenantId);
+  async getById(id) {
+    const project = await projectRepository.findById(id);
     if (!project) throw ApiError.notFound('Projet');
     return project;
   }
 
+  /**
+   * Crée un nouveau projet
+   */
   async create(data, createdBy, user) {
-    const organization_id = await this.resolveOrganizationId(data, user);
     return projectRepository.create({
       ...data,
-      organization_id,
       created_by: createdBy,
     });
   }
 
-  async update(id, data, tenantId = null) {
-    const project = await projectRepository.update(id, data, tenantId);
+  async update(id, data) {
+    const project = await projectRepository.update(id, data);
     if (!project) throw ApiError.notFound('Projet');
     return project;
   }
@@ -63,8 +51,8 @@ class ProjectService {
     return project;
   }
 
-  async getDashboardStats(tenantId = null) {
-    return projectRepository.getDashboardStats(tenantId);
+  async getDashboardStats() {
+    return projectRepository.getDashboardStats();
   }
 }
 

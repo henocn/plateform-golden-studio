@@ -4,13 +4,9 @@ const { Proposal, ProposalComment, Validation, User, ProposalAttachment } = requ
 const { Op } = require('sequelize');
 
 class ProposalRepository {
-  /**
-   * Find proposals for a project, with status filtering for clients
-   */
-  async findByProject(projectId, { isClient = false, tenantId = null } = {}) {
+  /* Récupère les propositions d'un projet, avec filtrage de statut pour les clients */
+  async findByProject(projectId, { isClient = false } = {}) {
     const where = { project_id: projectId };
-    if (tenantId) where.organization_id = tenantId;
-    // Clients cannot see drafts
     if (isClient) {
       where.status = { [Op.notIn]: ['draft', 'submitted'] };
     }
@@ -27,15 +23,14 @@ class ProposalRepository {
     });
   }
 
-  async findById(id, tenantId = null) {
+  /* Récupère une proposition par son ID */
+  async findById(id) {
     const where = { id };
-    if (tenantId) where.organization_id = tenantId;
 
     return Proposal.findOne({
       where,
       include: [
         { association: 'project', attributes: ['id', 'title'] },
-        { association: 'organization', attributes: ['id', 'name'] },
         { association: 'author', attributes: ['id', 'first_name', 'last_name', 'email'] },
         { association: 'validatorUser', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'validations', include: [{ association: 'validator', attributes: ['id', 'first_name', 'last_name'] }] },
@@ -44,10 +39,12 @@ class ProposalRepository {
     });
   }
 
+  /* Crée une proposition */
   async create(data) {
     return Proposal.create(data);
   }
 
+  /* Crée les pièces jointes d'une proposition */
   async createAttachments(proposalId, filesMeta) {
     if (!filesMeta || filesMeta.length === 0) return [];
     const records = filesMeta.map((f, i) => ({
@@ -60,16 +57,14 @@ class ProposalRepository {
     return ProposalAttachment.findAll({ where: { proposal_id: proposalId }, order: [['sort_order', 'ASC']] });
   }
 
+  /* Met à jour une proposition */
   async update(id, data) {
     const proposal = await Proposal.findByPk(id);
     if (!proposal) return null;
     return proposal.update(data);
   }
 
-  /**
-   * Get next version number for a task (if taskId) or for a project.
-   * Une même tâche ne peut pas avoir deux propositions avec le même numéro de version.
-   */
+  /* Retourne le prochain numéro de version pour une tâche ou un projet */
   async getNextVersion(projectId, taskId = null) {
     const where = taskId ? { task_id: taskId } : { project_id: projectId };
     const maxVersion = await Proposal.max('version_number', { where });
@@ -78,6 +73,7 @@ class ProposalRepository {
 
   // ─── Comments ────────────────────────────────────────────────
 
+  /* Récupère les commentaires d'une proposition */
   async findComments(proposalId, { isClient = false } = {}) {
     const where = { proposal_id: proposalId };
     if (isClient) where.is_internal = false;
@@ -91,16 +87,19 @@ class ProposalRepository {
     });
   }
 
+  /* Crée un commentaire sur une proposition */
   async createComment(data) {
     return ProposalComment.create(data);
   }
 
   // ─── Validations ─────────────────────────────────────────────
 
+  /* Crée une validation pour une proposition */
   async createValidation(data) {
     return Validation.create(data);
   }
 
+  /* Récupère les validations d'une proposition */
   async findValidations(proposalId) {
     return Validation.findAll({
       where: { proposal_id: proposalId },

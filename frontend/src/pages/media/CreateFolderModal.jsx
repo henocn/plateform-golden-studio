@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FolderPlus } from "lucide-react";
 import { Modal, Input, Button, Select } from "../../components/ui";
 import { foldersAPI } from "../../api/services";
@@ -7,15 +7,12 @@ import toast from "react-hot-toast";
 export default function CreateFolderModal({
   isRoot,
   parentId,
-  organizationId,
-  organizationName,
-  isSuperAdmin,
+  parentName,
   onClose,
   onCreated,
 }) {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [selectedOrgId] = useState(organizationId || "");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,7 +50,7 @@ export default function CreateFolderModal({
           <p className="text-body-sm text-ink-700">
             {isRoot
               ? "Créer un dossier à la racine de la médiathèque."
-              : `Créer un sous-dossier dans "${organizationName || "ce dossier"}".`}
+              : `Créer un sous-dossier dans "${parentName || "ce dossier"}".`}
           </p>
         </div>
 

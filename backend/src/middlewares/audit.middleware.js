@@ -35,7 +35,6 @@ const audit = (action, entityType) => (req, res, next) => {
 
         await AuditLog.create({
           user_id: req.user ? req.user.id : null,
-          organization_id: req.tenantId || (req.user ? req.user.organization_id : null),
           action,
           entity_type: entityType,
           entity_id: entityId,
@@ -80,7 +79,6 @@ const auditAll = (req, res, next) => {
 
         await AuditLog.create({
           user_id: req.user ? req.user.id : null,
-          organization_id: req.tenantId || (req.user ? req.user.organization_id : null),
           action: `${entityType.toUpperCase()}_${action}`,
           entity_type: entityType,
           entity_id: req.params.id || null,

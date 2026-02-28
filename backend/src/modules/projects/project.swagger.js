@@ -30,11 +30,8 @@
  *
  *     CreateProjectRequest:
  *       type: object
- *       required: [organization_id, title]
+ *       required: [title]
  *       properties:
- *         organization_id:
- *           type: string
- *           format: uuid
  *         title:
  *           type: string
  *         description:
@@ -60,7 +57,7 @@
  * @swagger
  * /projects:
  *   get:
- *     summary: List projects (tenant-aware)
+ *     summary: List projects
  *     tags: [Projects]
  *     security:
  *       - BearerAuth: []
@@ -75,11 +72,6 @@
  *         schema:
  *           type: string
  *           enum: [low, medium, high, urgent]
- *       - in: query
- *         name: organizationId
- *         schema:
- *           type: string
- *           format: uuid
  *       - in: query
  *         name: search
  *         schema:
@@ -113,7 +105,7 @@
  *
  * /projects/dashboard/stats:
  *   get:
- *     summary: Dashboard stats (tenant-aware)
+ *     summary: Dashboard stats
  *     tags: [Projects]
  *     security:
  *       - BearerAuth: []

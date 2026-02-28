@@ -10,7 +10,6 @@ const list = async (req, res, next) => {
   try {
     const { page, limit, offset } = parsePagination(req.query);
     const { data, total } = await calendarService.list({
-      tenantId: req.tenantId,
       type: req.query.type,
       projectId: req.query.projectId,
       status: req.query.status,
@@ -80,8 +79,6 @@ const importExcel = async (req, res, next) => {
     const result = await calendarService.importExcel(
       fileBuffer,
       req.user,
-      req.tenantId,
-      req.body.organization_id || null
     );
     return ApiResponse.success(res, result, 'Events calendar imported');
   } catch (error) {
@@ -94,7 +91,6 @@ const importExcel = async (req, res, next) => {
 const exportExcel = async (req, res, next) => {
   try {
     const buffer = await calendarService.exportExcel({
-      tenantId: req.tenantId,
       type: req.query.type,
       projectId: req.query.projectId,
       status: req.query.status,

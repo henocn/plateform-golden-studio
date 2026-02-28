@@ -104,10 +104,6 @@ export const useAuthStore = create(
         try {
           const { data } = await api.get('/auth/me');
           const userData = data.data.user || data.data;
-          // Flatten organization name for easy access
-          if (userData.organization && !userData.organization_name) {
-            userData.organization_name = userData.organization.name;
-          }
           set({ user: userData });
         } catch (error) {
           get().logout();

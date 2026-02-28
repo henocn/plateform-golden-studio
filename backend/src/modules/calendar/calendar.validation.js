@@ -3,7 +3,6 @@
 const Joi = require('joi');
 
 const createEventSchema = Joi.object({
-  organization_id: Joi.string().uuid().optional().allow(null),
   project_id: Joi.string().uuid().optional().allow(null),
   title: Joi.string().min(2).max(255).required(),
   type: Joi.string().valid('event_coverage', 'meeting', 'other').required(),
@@ -30,7 +29,6 @@ const patchEventStatusSchema = Joi.object({
 const listEventQuery = Joi.object({
   type: Joi.string().valid('event_coverage', 'meeting', 'other').optional(),
   projectId: Joi.string().uuid().optional(),
-  organizationId: Joi.string().uuid().optional(),
   status: Joi.string().valid('pending', 'validated', 'scheduled', 'published', 'cancelled').optional(),
   startDate: Joi.date().iso().optional(),
   endDate: Joi.date().iso().optional(),

@@ -70,9 +70,9 @@ export default function CreateProjectModal({
       usersAPI
         .listClients()
         .then(({ data }) => setAllClients(extractList(data.data).items));
-    } else if (userType === "client" && user?.organization_id) {
+    } else if (userType === "client") {
       usersAPI
-        .listClients({ organization_id: user.organization_id })
+        .listClients()
         .then(({ data }) => setAllClients(extractList(data.data).items));
     }
   }, [open, project, userType, user]);

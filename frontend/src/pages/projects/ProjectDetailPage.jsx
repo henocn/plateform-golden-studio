@@ -153,13 +153,7 @@ function DetailsTab({ project }) {
     <Card>
       <div className="space-y-6">
         {/* Identité projet */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-surface-200 pb-4">
-          <div className="space-y-1">
-            <h4 className="text-label text-ink-500">Organisation</h4>
-            <p className="text-body-md text-ink-900 font-medium">
-              {project.organization?.name || '—'}
-            </p>
-          </div>
+        <div className="border-b border-surface-200 pb-4">
           <div className="space-y-1">
             <h4 className="text-label text-ink-500">Direction / Agence</h4>
             <p className="text-body-md text-ink-900 font-medium">

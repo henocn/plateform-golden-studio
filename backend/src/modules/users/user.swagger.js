@@ -22,10 +22,6 @@
  *           enum: [internal, client]
  *         role:
  *           type: string
- *         organization_id:
- *           type: string
- *           format: uuid
- *           nullable: true
  *         job_title:
  *           type: string
  *           nullable: true
@@ -62,7 +58,7 @@
  *
  *     CreateClientUserRequest:
  *       type: object
- *       required: [email, password, first_name, last_name, role, organization_id]
+ *       required: [email, password, first_name, last_name, role]
  *       properties:
  *         email:
  *           type: string
@@ -77,9 +73,6 @@
  *         role:
  *           type: string
  *           enum: [client_admin, client_validator, client_contributor, client_reader]
- *         organization_id:
- *           type: string
- *           format: uuid
  *         job_title:
  *           type: string
  */
@@ -179,11 +172,6 @@
  *         name: role
  *         schema:
  *           type: string
- *       - in: query
- *         name: organizationId
- *         schema:
- *           type: string
- *           format: uuid
  *       - in: query
  *         name: page
  *         schema:

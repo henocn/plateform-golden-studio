@@ -13,10 +13,6 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       allowNull: true,
     },
-    organization_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
     proposal_id: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -86,7 +82,6 @@ module.exports = (sequelize) => {
 
   Publication.associate = (models) => {
     Publication.belongsTo(models.Project, { as: 'project', foreignKey: 'project_id' });
-    Publication.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
     Publication.belongsTo(models.Proposal, { as: 'proposal', foreignKey: 'proposal_id' });
     Publication.belongsTo(models.Task, { as: 'task', foreignKey: 'task_id' });
     Publication.belongsTo(models.User, { as: 'creator', foreignKey: 'created_by' });

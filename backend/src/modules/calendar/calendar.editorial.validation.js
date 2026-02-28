@@ -3,7 +3,6 @@
 const Joi = require('joi');
 
 const createEditorialSchema = Joi.object({
-  organization_id: Joi.string().uuid().optional(),
   project_id: Joi.string().uuid().optional().allow(null),
   proposal_id: Joi.string().uuid().optional().allow(null),
   task_id: Joi.string().uuid().optional().allow(null),
@@ -32,7 +31,6 @@ const assignEditorialTaskSchema = Joi.object({
 });
 
 const listEditorialQuery = Joi.object({
-  organizationId: Joi.string().uuid().optional(),
   projectId: Joi.string().uuid().optional(),
   taskId: Joi.string().uuid().optional(),
   status: Joi.string().valid('scheduled', 'published', 'draft', 'archived').optional(),

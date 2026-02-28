@@ -9,7 +9,6 @@ const list = async (req, res, next) => {
     const { page, limit, offset } = parsePagination(req.query);
     const { data, total } = await auditService.list({
       userId: req.query.userId,
-      organizationId: req.query.organizationId,
       action: req.query.action,
       entityType: req.query.entityType,
       startDate: req.query.startDate,

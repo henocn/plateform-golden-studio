@@ -4,11 +4,11 @@ const { AuditLog } = require('../../models');
 const { Op } = require('sequelize');
 
 class AuditRepository {
-  async findAll({ userId, organizationId, action, entityType, startDate, endDate, search, page, limit, offset } = {}) {
+  /* Récupère tous les logs d'audit avec filtres */
+  async findAll({ userId, action, entityType, startDate, endDate, search, page, limit, offset } = {}) {
     const where = {};
 
     if (userId) where.user_id = userId;
-    if (organizationId) where.organization_id = organizationId;
     if (action) where.action = action;
     if (entityType) where.entity_type = entityType;
     if (startDate && endDate) {
@@ -23,7 +23,6 @@ class AuditRepository {
       where,
       include: [
         { association: 'user', attributes: ['id', 'first_name', 'last_name', 'email'] },
-        { association: 'organization', attributes: ['id', 'name'] },
       ],
       order: [['created_at', 'DESC']],
       limit,
@@ -33,11 +32,11 @@ class AuditRepository {
     return { data: rows, total: count };
   }
 
+  /* Récupère un log d'audit par son ID */
   async findById(id) {
     return AuditLog.findByPk(id, {
       include: [
         { association: 'user', attributes: ['id', 'first_name', 'last_name', 'email'] },
-        { association: 'organization', attributes: ['id', 'name'] },
       ],
     });
   }

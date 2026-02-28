@@ -8,21 +8,24 @@ const {
   buildEditorialExport,
 } = require('./calendar.excel.utils');
 
+
 const VALID_PUBLICATION_STATUS = new Set(['scheduled', 'published', 'draft', 'archived']);
 const VALID_CHANNELS = new Set(['facebook', 'linkedin', 'official_release', 'website', 'tv', 'radio', 'other']);
 const VALID_NETWORKS = new Set(['facebook', 'linkedin', 'instagram', 'youtube', 'x', 'tiktok', 'whatsapp', 'messenger', 'other']);
 
-class CalendarEditorialService {
-  resolveTenantId(user, tenantId, bodyOrgId = null) {
-    if (user.user_type === 'client') return user.organization_id;
-    return tenantId || bodyOrgId || null;
-  }
 
+class CalendarEditorialService {
+  /**
+   * Retourne le nom du publisher à partir de la session utilisateur
+   */
   getPublisherFromSession(user) {
     const fullName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
     return fullName || user?.email || 'Utilisateur';
   }
 
+  /**
+   * Normalise les liens des réseaux sociaux
+   */
   normalizeNetworkLinks(networkLinks) {
     const obj = networkLinks && typeof networkLinks === 'object' ? networkLinks : {};
     const cleaned = {};
@@ -36,6 +39,9 @@ class CalendarEditorialService {
     return cleaned;
   }
 
+  /**
+   * Calcule la liste des réseaux à partir des networks explicites et des liens
+   */
   computeNetworks({ networks, networkLinks }) {
     const explicitNetworks = Array.isArray(networks)
       ? networks.map((n) => String(n).trim().toLowerCase()).filter((n) => VALID_NETWORKS.has(n))
@@ -44,22 +50,22 @@ class CalendarEditorialService {
     return Array.from(new Set([...explicitNetworks, ...fromLinks]));
   }
 
-  async normalizeTaskLink(payload, tenantId) {
+  /**
+   * Résout le lien vers une tâche et enrichit le payload avec project_id
+   */
+  async normalizeTaskLink(payload) {
     if (!payload.task_id) return payload;
-    const task = await Task.findByPk(payload.task_id, { attributes: ['id', 'project_id', 'organization_id', 'title'] });
+    const task = await Task.findByPk(payload.task_id, { attributes: ['id', 'project_id', 'title'] });
     if (!task) throw ApiError.notFound('Tâche');
-    if (tenantId && task.organization_id !== tenantId) {
-      throw ApiError.forbidden('Task does not belong to selected organization');
-    }
-    payload.organization_id = task.organization_id;
     payload.project_id = payload.project_id || task.project_id || null;
     return payload;
   }
 
+  /**
+   * Liste les publications éditoriales avec filtres
+   */
   async list(filters, user) {
-    const resolvedTenantId = this.resolveTenantId(user, filters.tenantId, filters.organizationId);
     return editorialRepository.findAll({
-      tenantId: resolvedTenantId,
       projectId: filters.projectId,
       taskId: filters.taskId,
       status: filters.status,
@@ -72,29 +78,12 @@ class CalendarEditorialService {
     });
   }
 
-  async create(data, user, tenantId) {
-    let resolvedTenantId = this.resolveTenantId(user, tenantId, data.organization_id);
-
-    // Internal users without explicit org filter: infer org from task/project
-    if (!resolvedTenantId) {
-      if (data.task_id) {
-        const task = await Task.findByPk(data.task_id, { attributes: ['id', 'project_id', 'organization_id'] });
-        if (!task) throw ApiError.notFound('Tâche');
-        resolvedTenantId = task.organization_id;
-      } else if (data.project_id) {
-        const project = await Project.findByPk(data.project_id, { attributes: ['id', 'organization_id'] });
-        if (!project) throw ApiError.notFound('Projet');
-        resolvedTenantId = project.organization_id;
-      }
-    }
-
-    if (!resolvedTenantId) {
-      throw ApiError.badRequest('Pour un utilisateur interne, fournissez une tâche publiée (ou un projet) pour déduire l’organisation');
-    }
-
+  /**
+   * Crée une publication éditoriale
+   */
+  async create(data, user) {
     const payload = {
       ...data,
-      organization_id: resolvedTenantId,
       created_by: user.id,
       publisher_name: this.getPublisherFromSession(user),
       network_links: this.normalizeNetworkLinks(data.network_links),
@@ -106,25 +95,24 @@ class CalendarEditorialService {
     if (!VALID_PUBLICATION_STATUS.has(payload.status)) payload.status = 'scheduled';
     if (!VALID_CHANNELS.has(payload.channel)) payload.channel = 'other';
 
-    await this.normalizeTaskLink(payload, resolvedTenantId);
+    await this.normalizeTaskLink(payload);
     if (!payload.project_id) {
       throw ApiError.badRequest('Veuillez sélectionner une tâche publiée (ou un projet)');
     }
 
     if (payload.project_id) {
-      const project = await Project.findByPk(payload.project_id, { attributes: ['id', 'organization_id'] });
+      const project = await Project.findByPk(payload.project_id, { attributes: ['id'] });
       if (!project) throw ApiError.notFound('Projet');
-      if (project.organization_id !== resolvedTenantId) {
-        throw ApiError.forbidden('Project does not belong to selected organization');
-      }
     }
 
     return editorialRepository.create(payload);
   }
 
-  async update(id, data, user, tenantId) {
-    const resolvedTenantId = this.resolveTenantId(user, tenantId);
-    const existing = await editorialRepository.findById(id, resolvedTenantId);
+  /**
+   * Met à jour une publication éditoriale existante
+   */
+  async update(id, data, user) {
+    const existing = await editorialRepository.findById(id);
     if (!existing) throw ApiError.notFound('Editorial publication');
 
     const payload = {
@@ -142,29 +130,25 @@ class CalendarEditorialService {
     if (payload.status && !VALID_PUBLICATION_STATUS.has(payload.status)) payload.status = existing.status;
     if (payload.channel && !VALID_CHANNELS.has(payload.channel)) payload.channel = existing.channel;
 
-    await this.normalizeTaskLink(payload, existing.organization_id);
+    await this.normalizeTaskLink(payload);
 
     if (payload.project_id) {
-      const project = await Project.findByPk(payload.project_id, { attributes: ['id', 'organization_id'] });
+      const project = await Project.findByPk(payload.project_id, { attributes: ['id'] });
       if (!project) throw ApiError.notFound('Projet');
-      if (project.organization_id !== existing.organization_id) {
-        throw ApiError.forbidden('Project does not belong to selected organization');
-      }
     }
 
     return editorialRepository.update(id, payload);
   }
 
-  async assignTask(id, taskId, user, tenantId) {
-    const resolvedTenantId = this.resolveTenantId(user, tenantId);
-    const existing = await editorialRepository.findById(id, resolvedTenantId);
+  /**
+   * Assigne une tâche à une publication éditoriale
+   */
+  async assignTask(id, taskId, user) {
+    const existing = await editorialRepository.findById(id);
     if (!existing) throw ApiError.notFound('Editorial publication');
 
-    const task = await Task.findByPk(taskId, { attributes: ['id', 'title', 'project_id', 'organization_id'] });
+    const task = await Task.findByPk(taskId, { attributes: ['id', 'title', 'project_id'] });
     if (!task) throw ApiError.notFound('Tâche');
-    if (task.organization_id !== existing.organization_id) {
-      throw ApiError.forbidden('Task does not belong to same organization');
-    }
 
     return editorialRepository.update(id, {
       task_id: task.id,
@@ -172,14 +156,12 @@ class CalendarEditorialService {
     });
   }
 
-  async importExcel(fileBuffer, user, tenantId, organizationId = null) {
+  /**
+   * Import en masse depuis un fichier Excel
+   */
+  async importExcel(fileBuffer, user) {
     const rows = await parseEditorialImport(fileBuffer);
     if (!rows.length) return { imported: 0, skipped: 0 };
-
-    const resolvedTenantId = this.resolveTenantId(user, tenantId, organizationId);
-    if (!resolvedTenantId) {
-      throw ApiError.badRequest('organization_id est requis pour les utilisateurs internes');
-    }
 
     const toInsert = [];
     let skipped = 0;
@@ -192,7 +174,6 @@ class CalendarEditorialService {
 
       const normalizedLinks = this.normalizeNetworkLinks(row.network_links || {});
       const payload = {
-        organization_id: resolvedTenantId,
         publication_date: row.publication_date,
         publisher_name: this.getPublisherFromSession(user),
         network_links: normalizedLinks,
@@ -205,8 +186,8 @@ class CalendarEditorialService {
       };
 
       if (row.task_id) {
-        const task = await Task.findByPk(row.task_id, { attributes: ['id', 'title', 'project_id', 'organization_id'] });
-        if (!task || task.organization_id !== resolvedTenantId) {
+        const task = await Task.findByPk(row.task_id, { attributes: ['id', 'title', 'project_id'] });
+        if (!task) {
           skipped += 1;
           continue;
         }
@@ -226,6 +207,9 @@ class CalendarEditorialService {
     return { imported: toInsert.length, skipped };
   }
 
+  /**
+   * Export Excel des publications éditoriales
+   */
   async exportExcel(filters, user) {
     const { data } = await this.list({
       ...filters,
@@ -238,4 +222,3 @@ class CalendarEditorialService {
 }
 
 module.exports = new CalendarEditorialService();
-

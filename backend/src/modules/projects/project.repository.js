@@ -1,16 +1,13 @@
 'use strict';
 
-const { Project, Organization, User } = require('../../models');
+const { Project, User } = require('../../models');
 const { Op } = require('sequelize');
 
 class ProjectRepository {
-  /**
-   * Find all projects with tenant filtering + filters
-   */
-  async findAll({ tenantId, status, priority, search, page, limit, offset } = {}) {
+  /* Récupère tous les projets avec filtres */
+  async findAll({ status, priority, search, page, limit, offset } = {}) {
     const where = {};
 
-    if (tenantId) where.organization_id = tenantId;
     if (status) where.status = status;
     if (priority) where.priority = priority;
     if (search) {
@@ -23,7 +20,6 @@ class ProjectRepository {
     const { rows, count } = await Project.findAndCountAll({
       where,
       include: [
-        { association: 'organization', attributes: ['id', 'name', 'short_name'] },
         { association: 'internalManager', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'studioManager', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'clientContact', attributes: ['id', 'first_name', 'last_name'] },
@@ -36,17 +32,13 @@ class ProjectRepository {
     return { data: rows, total: count };
   }
 
-  /**
-   * Find by ID with all associations
-   */
-  async findById(id, tenantId = null) {
+  /* Récupère un projet par son ID avec toutes les associations */
+  async findById(id) {
     const where = { id };
-    if (tenantId) where.organization_id = tenantId;
 
     return Project.findOne({
       where,
       include: [
-        { association: 'organization', attributes: ['id', 'name', 'short_name', 'type'] },
         { association: 'internalManager', attributes: ['id', 'first_name', 'last_name', 'email'] },
         { association: 'studioManager', attributes: ['id', 'first_name', 'last_name', 'email'] },
         { association: 'clientContact', attributes: ['id', 'first_name', 'last_name', 'email'] },
@@ -55,25 +47,26 @@ class ProjectRepository {
     });
   }
 
+  /* Crée un projet */
   async create(data) {
     return Project.create(data);
   }
 
-  async update(id, data, tenantId = null) {
-    const where = { id };
-    if (tenantId) where.organization_id = tenantId;
-
-    const project = await Project.findOne({ where });
+  /* Met à jour un projet */
+  async update(id, data) {
+    const project = await Project.findOne({ where: { id } });
     if (!project) return null;
     return project.update(data);
   }
 
+  /* Met à jour le statut d'un projet */
   async updateStatus(id, status) {
     const project = await Project.findByPk(id);
     if (!project) return null;
     return project.update({ status });
   }
 
+  /* Supprime un projet (soft ou hard delete) */
   async delete(id, hardDelete = false) {
     const project = await Project.findByPk(id);
     if (!project) return null;
@@ -84,12 +77,9 @@ class ProjectRepository {
     return project.update({ status: 'archived' });
   }
 
-  /**
-   * Dashboard stats — adapted by tenantId
-   */
-  async getDashboardStats(tenantId = null) {
+  /* Statistiques du tableau de bord */
+  async getDashboardStats() {
     const where = {};
-    if (tenantId) where.organization_id = tenantId;
 
     const [total, byStatus, byPriority] = await Promise.all([
       Project.count({ where }),
