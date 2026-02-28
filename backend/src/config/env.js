@@ -47,6 +47,12 @@ const env = cleanEnv(process.env, {
   // Swagger
   SWAGGER_ENABLED: bool({ default: true }),
 
+  // Notifications — jours avant deadline pour les avertissements
+  NOTIF_PUBLICATION_FIRST_WARNING_DAYS: num({ default: 3 }),
+  NOTIF_PUBLICATION_LAST_WARNING_DAYS: num({ default: 1 }),
+  NOTIF_TASK_FIRST_WARNING_DAYS: num({ default: 3 }),
+  NOTIF_TASK_LAST_WARNING_DAYS: num({ default: 1 }),
+
 });
 
 module.exports = env;

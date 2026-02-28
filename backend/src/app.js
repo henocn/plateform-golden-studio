@@ -92,6 +92,7 @@ const mediaRoutes = require('./modules/media/media.routes');
 const folderRoutes = require('./modules/folder/folder.routes');
 const reportingRoutes = require('./modules/reporting/reporting.routes');
 const auditRoutes = require('./modules/audit/audit.routes');
+const notificationRoutes = require('./modules/notifications/notification.routes');
 require('./modules/auth/auth.swagger');
 require('./modules/organizations/organization.swagger');
 require('./modules/users/user.swagger');
@@ -116,6 +117,7 @@ app.use(`${env.API_PREFIX}/media`, mediaRoutes);
 app.use(`${env.API_PREFIX}/folders`, folderRoutes);
 app.use(`${env.API_PREFIX}/reporting`, reportingRoutes);
 app.use(`${env.API_PREFIX}/audit`, auditRoutes);
+app.use(`${env.API_PREFIX}/notifications`, notificationRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────
 app.use((_req, res) => {

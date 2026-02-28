@@ -158,3 +158,11 @@ export const auditAPI = {
   list: (params) => api.get('/audit', { params }),
   getById: (id) => api.get(`/audit/${id}`),
 };
+
+export const notificationsAPI = {
+  list: (params) => api.get('/notifications', { params }),
+  unreadCount: () => api.get('/notifications/unread-count'),
+  markAsRead: (id) => api.patch(`/notifications/${id}/read`),
+  markAllAsRead: () => api.patch('/notifications/read-all'),
+  remove: (id) => api.delete(`/notifications/${id}`),
+};

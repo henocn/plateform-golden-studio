@@ -1,23 +1,25 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, LogOut, User, ChevronDown, Bell } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { useNotificationStore } from '../../store/notificationStore';
 import { useClickOutside } from '../../hooks';
 import Avatar from '../ui/Avatar';
 import { ROLE_LABELS } from '../../utils/helpers';
 import { uploadsUrl } from '../../api/services';
+import NotificationPanel from './NotificationPanel';
 
 export default function Header({ sidebarCollapsed, onMenuClick }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
+  const { unreadCount, panelOpen, togglePanel } = useNotificationStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside(() => setMenuOpen(false));
 
   const roleInfo = ROLE_LABELS[user?.role] || { label: user?.role, color: '#6B7280' };
   const avatarSrc = user?.avatar_path ? uploadsUrl(user.avatar_path) : null;
 
-  // Build breadcrumb from path
   const pathSegments = location.pathname.split('/').filter(Boolean);
   const breadcrumbLabels = {
     dashboard: 'Dashboard',
@@ -71,11 +73,21 @@ export default function Header({ sidebarCollapsed, onMenuClick }) {
         {/* ── Right: Notifications + User ─ */}
         <div className="flex items-center gap-2">
           {/* Notifications bell */}
-          <button className="relative p-2 rounded-lg text-ink-400 hover:bg-surface-100 hover:text-ink-700 transition-default">
-            <Bell className="w-5 h-5" />
-            {/* Unread dot */}
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger-500 rounded-full ring-2 ring-white" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={togglePanel}
+              className="relative p-2 rounded-lg text-ink-400 hover:bg-surface-100 hover:text-ink-700 transition-default"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold bg-danger-500 text-white rounded-full px-1 ring-2 ring-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            <NotificationPanel />
+          </div>
 
           {/* User dropdown */}
           <div className="relative" ref={menuRef}>

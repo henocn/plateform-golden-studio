@@ -435,9 +435,13 @@ function CreateTaskModal({ projects, onClose, onCreated }) {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const { data } = await usersAPI.listInternal();
-        const all = extractList(data.data).items;
-        setUsers(all);
+        const [intRes, cliRes] = await Promise.all([
+          usersAPI.listInternal({ limit: 100 }),
+          usersAPI.listClients({ limit: 100 }),
+        ]);
+        const internal = extractList(intRes.data?.data).items;
+        const clients = extractList(cliRes.data?.data).items;
+        setUsers([...internal, ...clients]);
       } catch {}
     };
     loadUsers();
