@@ -18,8 +18,12 @@ module.exports = (sequelize) => {
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    agency_direction: {
-      type: DataTypes.STRING,
+    agency_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
+    direction_id: {
+      type: DataTypes.UUID,
       allowNull: true,
     },
     internal_manager_id: {
@@ -55,6 +59,8 @@ module.exports = (sequelize) => {
   });
 
   Project.associate = (models) => {
+    Project.belongsTo(models.Agency, { as: 'agency', foreignKey: 'agency_id' });
+    Project.belongsTo(models.Direction, { as: 'direction', foreignKey: 'direction_id' });
     Project.belongsTo(models.User, { as: 'internalManager', foreignKey: 'internal_manager_id' });
     Project.belongsTo(models.User, { as: 'clientContact', foreignKey: 'client_contact_id' });
     Project.belongsTo(models.User, { as: 'creator', foreignKey: 'created_by' });

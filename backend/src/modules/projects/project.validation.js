@@ -5,7 +5,8 @@ const Joi = require('joi');
 const createProjectSchema = Joi.object({
   title: Joi.string().min(2).max(255).required(),
   description: Joi.string().max(5000).optional().allow(null, ''),
-  agency_direction: Joi.string().max(255).optional().allow(null, ''),
+  agency_id: Joi.string().uuid().optional().allow(null, ''),
+  direction_id: Joi.string().uuid().optional().allow(null, ''),
   internal_manager_id: Joi.string().uuid().optional().allow(null),
   client_contact_id: Joi.string().uuid().optional().allow(null),
   priority: Joi.string().valid('low', 'normal', 'high', 'urgent').default('normal'),
@@ -16,7 +17,8 @@ const createProjectSchema = Joi.object({
 const updateProjectSchema = Joi.object({
   title: Joi.string().min(2).max(255).optional(),
   description: Joi.string().max(5000).optional().allow(null, ''),
-  agency_direction: Joi.string().max(255).optional().allow(null, ''),
+  agency_id: Joi.string().uuid().optional().allow(null, ''),
+  direction_id: Joi.string().uuid().optional().allow(null, ''),
   internal_manager_id: Joi.string().uuid().optional().allow(null),
   client_contact_id: Joi.string().uuid().optional().allow(null),
   priority: Joi.string().valid('low', 'normal', 'high', 'urgent').optional(),

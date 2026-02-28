@@ -93,6 +93,8 @@ const folderRoutes = require('./modules/folder/folder.routes');
 const reportingRoutes = require('./modules/reporting/reporting.routes');
 const auditRoutes = require('./modules/audit/audit.routes');
 const notificationRoutes = require('./modules/notifications/notification.routes');
+const agencyRoutes = require('./modules/agencies/agency.routes');
+const directionRoutes = require('./modules/directions/direction.routes');
 require('./modules/auth/auth.swagger');
 require('./modules/organizations/organization.swagger');
 require('./modules/users/user.swagger');
@@ -118,6 +120,8 @@ app.use(`${env.API_PREFIX}/folders`, folderRoutes);
 app.use(`${env.API_PREFIX}/reporting`, reportingRoutes);
 app.use(`${env.API_PREFIX}/audit`, auditRoutes);
 app.use(`${env.API_PREFIX}/notifications`, notificationRoutes);
+app.use(`${env.API_PREFIX}/agencies`, agencyRoutes);
+app.use(`${env.API_PREFIX}/directions`, directionRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────
 app.use((_req, res) => {

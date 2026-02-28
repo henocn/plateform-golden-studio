@@ -69,6 +69,9 @@ const PERMISSIONS = {
 
   // ─── Audit / Logs ────────────────────────────────────────
   'audit.view':                 ['super_admin', 'admin'],
+
+  // ─── Paramètres (agences, directions) ────────────────────
+  'settings.agencies_directions': ['super_admin', 'admin'],
 };
 
 module.exports = PERMISSIONS;

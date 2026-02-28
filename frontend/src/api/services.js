@@ -47,6 +47,22 @@ export const usersAPI = {
   remove: (id) => api.delete(`/users/${id}`),
 };
 
+export const agenciesAPI = {
+  list: () => api.get('/agencies'),
+  getById: (id) => api.get(`/agencies/${id}`),
+  create: (data) => api.post('/agencies', data),
+  update: (id, data) => api.put(`/agencies/${id}`, data),
+  remove: (id) => api.delete(`/agencies/${id}`),
+};
+
+export const directionsAPI = {
+  list: (params) => api.get('/directions', { params }),
+  getById: (id) => api.get(`/directions/${id}`),
+  create: (data) => api.post('/directions', data),
+  update: (id, data) => api.put(`/directions/${id}`, data),
+  remove: (id) => api.delete(`/directions/${id}`),
+};
+
 export const projectsAPI = {
   list: (params) => api.get('/projects', { params }),
   getById: (id) => api.get(`/projects/${id}`),

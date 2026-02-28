@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Modal, Button, Input, Textarea, Select } from "../../components/ui";
-import { projectsAPI, usersAPI } from "../../api/services";
+import { projectsAPI, usersAPI, agenciesAPI, directionsAPI } from "../../api/services";
 import { usePermissions } from "../../hooks";
 import { PRIORITY, extractList, formatErrorMessage } from "../../utils/helpers";
 import toast from "react-hot-toast";
@@ -8,19 +8,21 @@ import toast from "react-hot-toast";
 const DEFAULT_FORM = {
   title: "",
   description: "",
-  agency_direction: "",
+  agency_id: "",
+  direction_id: "",
   priority: "normal",
   target_date: "",
   internal_manager_id: "",
   client_contact_id: "",
 };
 
-function buildInitialForm(project, userType, user) {
+function buildInitialForm(project) {
   const base = project
     ? {
         title: project.title || "",
         description: project.description || "",
-        agency_direction: project.agency_direction || "",
+        agency_id: project.agency_id || "",
+        direction_id: project.direction_id || "",
         priority: project.priority || "normal",
         target_date: project.target_date || "",
         internal_manager_id: project.internal_manager_id || "",
@@ -43,40 +45,49 @@ export default function CreateProjectModal({
   const [allClients, setAllClients] = useState([]);
   const [internalUsers, setInternalUsers] = useState([]);
 
-  const [form, setForm] = useState(() =>
-    buildInitialForm(project, userType, user),
-  );
+  const [form, setForm] = useState(() => buildInitialForm(project));
+  const [agencies, setAgencies] = useState([]);
+  const [directions, setDirections] = useState([]);
+  const agencyIdForDirectionsRef = useRef("");
 
-  const filteredClients = useMemo(() => {
-    return allClients;
-  }, [allClients]);
+  const filteredClients = useMemo(() => allClients, [allClients]);
+
   useEffect(() => {
     if (!form.client_contact_id) return;
-    const stillValid = filteredClients.some(
-      (c) => c.id === form.client_contact_id,
-    );
+    const stillValid = filteredClients.some((c) => c.id === form.client_contact_id);
     if (!stillValid) setForm((prev) => ({ ...prev, client_contact_id: "" }));
   }, [filteredClients, form.client_contact_id]);
 
   useEffect(() => {
     if (!open) return;
-    setForm(buildInitialForm(project, userType, user));
+    setForm(buildInitialForm(project));
     if (userType === "internal") {
-      usersAPI
-        .listMembers({ type: "internal" })
-        .then(({ data }) => setInternalUsers(extractList(data.data).items));
-      usersAPI
-        .listClients()
-        .then(({ data }) => setAllClients(extractList(data.data).items));
+      usersAPI.listMembers({ type: "internal" }).then(({ data }) => setInternalUsers(extractList(data.data).items));
+      usersAPI.listClients().then(({ data }) => setAllClients(extractList(data.data).items));
     } else if (userType === "client") {
-      usersAPI
-        .listClients()
-        .then(({ data }) => setAllClients(extractList(data.data).items));
+      usersAPI.listClients().then(({ data }) => setAllClients(extractList(data.data).items));
     }
-  }, [open, project, userType, user]);
+    agenciesAPI.list().then(({ data }) => setAgencies(Array.isArray(data?.data) ? data.data : data || []));
+    const aid = project?.agency_id || "";
+    agencyIdForDirectionsRef.current = aid;
+    directionsAPI.list(aid ? { agency_id: aid } : { agency_id: "null" }).then(({ data }) =>
+      setDirections(Array.isArray(data?.data) ? data.data : data || []),
+    );
+  }, [open, project, userType]);
+
+  useEffect(() => {
+    if (!open || form.agency_id === agencyIdForDirectionsRef.current) return;
+    agencyIdForDirectionsRef.current = form.agency_id;
+    const params = form.agency_id ? { agency_id: form.agency_id } : { agency_id: "null" };
+    directionsAPI.list(params).then(({ data }) => setDirections(Array.isArray(data?.data) ? data.data : data || []));
+  }, [open, form.agency_id]);
 
   const set = (key) => (e) =>
-    setForm((prev) => ({ ...prev, [key]: e.target.value }));
+    setForm((prev) => {
+      const next = { ...prev, [key]: e.target.value };
+      if (key === "agency_id") next.direction_id = "";
+      return next;
+    });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -85,6 +96,8 @@ export default function CreateProjectModal({
       const payload = { ...form };
       if (!payload.internal_manager_id) delete payload.internal_manager_id;
       if (!payload.client_contact_id) delete payload.client_contact_id;
+      if (!payload.agency_id) delete payload.agency_id;
+      if (!payload.direction_id) delete payload.direction_id;
 
       if (project) {
         await projectsAPI.update(project.id, payload);
@@ -142,12 +155,29 @@ export default function CreateProjectModal({
           rows={3}
         />
 
-        {/* Direction / agence */}
-        <Input
-          label="Direction / Agence"
-          value={form.agency_direction}
-          onChange={set("agency_direction")}
-        />
+        {/* Agence + Direction */}
+        <div className="grid grid-cols-2 gap-4">
+          <Select
+            label="Agence"
+            value={form.agency_id}
+            onChange={set("agency_id")}
+            placeholder="Ministère (aucune)"
+            options={[
+              { value: "", label: "Ministère (aucune)" },
+              ...agencies.map((a) => ({ value: a.id, label: a.name })),
+            ]}
+          />
+          <Select
+            label="Direction"
+            value={form.direction_id}
+            onChange={set("direction_id")}
+            placeholder="Sélectionner une direction"
+            options={[
+              { value: "", label: "—" },
+              ...directions.map((d) => ({ value: d.id, label: d.name })),
+            ]}
+          />
+        </div>
 
         {/* Responsable interne + Responsable client */}
         <div className="grid grid-cols-2 gap-4">

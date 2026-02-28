@@ -157,7 +157,8 @@ function DetailsTab({ project }) {
           <div className="space-y-1">
             <h4 className="text-label text-ink-500">Direction / Agence</h4>
             <p className="text-body-md text-ink-900 font-medium">
-              {project.agency_direction || '—'}
+              {/* {project.agency.name || '—'} / */}
+              {project.direction.name || '—'}
             </p>
           </div>
         </div>

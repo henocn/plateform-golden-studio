@@ -20,6 +20,8 @@ class ProjectRepository {
     const { rows, count } = await Project.findAndCountAll({
       where,
       include: [
+        { association: 'agency', attributes: ['id', 'name', 'code'], required: false },
+        { association: 'direction', attributes: ['id', 'name', 'code', 'agency_id'], required: false },
         { association: 'internalManager', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'clientContact', attributes: ['id', 'first_name', 'last_name'] },
       ],
@@ -38,6 +40,8 @@ class ProjectRepository {
     return Project.findOne({
       where,
       include: [
+        { association: 'agency', attributes: ['id', 'name', 'code'], required: false },
+        { association: 'direction', attributes: ['id', 'name', 'code', 'agency_id'], required: false },
         { association: 'internalManager', attributes: ['id', 'first_name', 'last_name', 'email'] },
         { association: 'clientContact', attributes: ['id', 'first_name', 'last_name', 'email'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
