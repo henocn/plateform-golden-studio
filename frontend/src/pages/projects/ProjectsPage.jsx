@@ -188,7 +188,7 @@ export default function ProjectsPage() {
                               {p.title}
                             </p>
                             <p className="text-body-sm text-ink-400">
-                              {p?.direction?.name || "—"}
+                              {p?.direction?.name || "—"} / {p?.agency?.name || "—"}
                             </p>
                           </div>
                         </div>
