@@ -435,13 +435,8 @@ function CreateTaskModal({ projects, onClose, onCreated }) {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const [intRes, cliRes] = await Promise.all([
-          usersAPI.listInternal({ limit: 100 }),
-          usersAPI.listClients({ limit: 100 }),
-        ]);
-        const internal = extractList(intRes.data?.data).items;
-        const clients = extractList(cliRes.data?.data).items;
-        setUsers([...internal, ...clients]);
+        const { data } = await usersAPI.listInternal({ limit: 100 });
+        setUsers(extractList(data.data).items);
       } catch {}
     };
     loadUsers();
@@ -489,10 +484,10 @@ function CreateTaskModal({ projects, onClose, onCreated }) {
             onChange={(v) => set("project_id", v)}
             options={projects.map((p) => ({ value: p.id, label: p.title }))}
           />
-          <Autocomplete
+          <Select
             label="Assignation"
             value={form.assigned_to}
-            onChange={(v) => set("assigned_to", v)}
+            onChange={(e) => set("assigned_to", e.target.value)}
             options={[
               { value: "", label: "Non assigné" },
               ...users.map((u) => ({

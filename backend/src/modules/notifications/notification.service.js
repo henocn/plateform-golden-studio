@@ -111,41 +111,6 @@ class NotificationService {
 
   // ─── Méthodes métier spécialisées ─────────────────────────
 
-  /* Notifie les participants d'une tâche lors d'un nouveau commentaire */
-  async onTaskComment(task, comment, commentAuthor) {
-    const recipientIds = new Set();
-
-    if (task.assigned_to && task.assigned_to !== commentAuthor.id) {
-      recipientIds.add(task.assigned_to);
-    }
-    if (task.created_by && task.created_by !== commentAuthor.id) {
-      recipientIds.add(task.created_by);
-    }
-
-    if (!recipientIds.size) {
-      logger.debug('[NOTIF] onTaskComment — no recipients for task %s', task.id);
-      return;
-    }
-
-    let authorName = `${commentAuthor.first_name || ''} ${commentAuthor.last_name || ''}`.trim();
-    if (!authorName) {
-      const { User } = require('../../models');
-      const dbUser = await User.findByPk(commentAuthor.id, { attributes: ['first_name', 'last_name'] });
-      authorName = dbUser ? `${dbUser.first_name} ${dbUser.last_name}`.trim() : 'Quelqu\'un';
-    }
-
-    logger.debug('[NOTIF] onTaskComment — notifying %d user(s) for task "%s"', recipientIds.size, task.title);
-
-    await this.notifyMany([...recipientIds], {
-      type: 'task_comment',
-      title: `Nouveau commentaire sur "${task.title}"`,
-      message: `${authorName} a commenté : "${comment.content.substring(0, 120)}${comment.content.length > 120 ? '…' : ''}"`,
-      referenceId: task.id,
-      referenceType: 'task',
-      link: `/tasks/${task.id}`,
-    });
-  }
-
   /* Notifie les validateurs quand une tâche passe en statut "done" */
   async onTaskPendingValidation(task) {
     const validatorRoles = PERMISSIONS['proposals.validate'] || [];

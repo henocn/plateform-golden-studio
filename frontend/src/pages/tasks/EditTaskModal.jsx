@@ -5,7 +5,6 @@ import {
   Input,
   Textarea,
   Select,
-  Autocomplete,
 } from "../../components/ui";
 import { tasksAPI, usersAPI } from "../../api/services";
 import { extractList, formatErrorMessage, TASK_STATUS, PRIORITY } from "../../utils/helpers";
@@ -50,13 +49,8 @@ export default function EditTaskModal({ task, onClose, onSaved }) {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const [intRes, cliRes] = await Promise.all([
-          usersAPI.listInternal({ limit: 100 }),
-          usersAPI.listClients({ limit: 100 }),
-        ]);
-        const internal = extractList(intRes.data?.data).items;
-        const clients = extractList(cliRes.data?.data).items;
-        setUsers([...internal, ...clients]);
+        const { data } = await usersAPI.listInternal({ limit: 100 });
+        setUsers(extractList(data.data).items);
       } catch {}
     };
     loadUsers();
@@ -112,10 +106,10 @@ export default function EditTaskModal({ task, onClose, onSaved }) {
           rows={3}
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Autocomplete
+          <Select
             label="Assigné à"
             value={form.assigned_to}
-            onChange={(v) => set("assigned_to", v)}
+            onChange={(e) => set("assigned_to", e.target.value)}
             options={[
               { value: "", label: "Non assigné" },
               ...users.map((u) => ({

@@ -3,8 +3,6 @@
 const taskRepository = require('./task.repository');
 const ApiError = require('../../utils/ApiError');
 const { Project } = require('../../models');
-const notificationService = require('../notifications/notification.service');
-const logger = require('../../utils/logger');
 
 class TaskService {
   /**
@@ -58,17 +56,9 @@ class TaskService {
     return task;
   }
 
-  /* Met à jour le statut — notifie les validateurs si la tâche passe en "done" */
   async updateStatus(id, status) {
     const task = await taskRepository.updateStatus(id, status);
     if (!task) throw ApiError.notFound('Tâche');
-
-    if (status === 'done') {
-      notificationService.onTaskPendingValidation(task).catch((err) => {
-        logger.error('[NOTIF] onTaskPendingValidation error:', err);
-      });
-    }
-
     return task;
   }
 
@@ -138,18 +128,12 @@ class TaskService {
     // Un client ne peut jamais poster en interne
     const internalFlag = user.user_type === 'client' ? false : Boolean(is_internal);
 
-    const comment = await taskRepository.createComment({
+    return taskRepository.createComment({
       task_id: taskId,
       user_id: user.id,
       content,
       is_internal: internalFlag,
     });
-
-    notificationService.onTaskComment(task, comment, user).catch((err) => {
-      logger.error('[NOTIF] onTaskComment error:', err);
-    });
-
-    return comment;
   }
 
   async deleteComment(commentId, userId) {

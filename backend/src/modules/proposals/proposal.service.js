@@ -6,7 +6,9 @@ const crypto = require('crypto');
 const proposalRepository = require('./proposal.repository');
 const ApiError = require('../../utils/ApiError');
 const env = require('../../config/env');
-const { Project, Media, Folder } = require('../../models');
+const { Project, Task, Media, Folder } = require('../../models');
+const notificationService = require('../notifications/notification.service');
+const logger = require('../../utils/logger');
 
 class ProposalService {
   /**
@@ -52,7 +54,42 @@ class ProposalService {
     if (filesMeta.length > 0) {
       await proposalRepository.createAttachments(proposal.id, filesMeta);
     }
+
+    this._notifyNewProposal(proposal, taskId, projectId).catch((err) => {
+      logger.error('[NOTIF] onNewProposal error:', err);
+    });
+
     return proposalRepository.findById(proposal.id);
+  }
+
+  /* Notifie les validateurs lors de la création d'une proposition */
+  async _notifyNewProposal(proposal, taskId, projectId) {
+    const PERMISSIONS = require('../../config/permissions');
+    const validatorRoles = PERMISSIONS['proposals.validate'] || [];
+    const notifRepo = require('../notifications/notification.repository');
+    const validators = await notifRepo.findUsersByRoles(validatorRoles);
+    const recipientIds = new Set(validators.map((v) => v.id));
+
+    if (taskId) {
+      const task = await Task.findByPk(taskId, { attributes: ['id', 'created_by', 'title'] });
+      if (task && task.created_by) recipientIds.add(task.created_by);
+    }
+
+    recipientIds.delete(proposal.author_id);
+
+    if (!recipientIds.size) return;
+
+    const project = await Project.findByPk(projectId, { attributes: ['id', 'title'] });
+    const projectTitle = project?.title || 'Projet';
+
+    await notificationService.notifyMany([...recipientIds], {
+      type: 'task_pending_validation',
+      title: `Nouvelle proposition — "${projectTitle}"`,
+      message: `Une nouvelle proposition (v${proposal.version_number}) a été soumise pour le projet "${projectTitle}".`,
+      referenceId: taskId || projectId,
+      referenceType: taskId ? 'task' : 'project',
+      link: taskId ? `/tasks/${taskId}` : `/projects/${projectId}`,
+    });
   }
 
   /**
