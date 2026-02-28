@@ -237,6 +237,7 @@ const NETWORK_ICON_MAP = {
 function TasksTab({ tasks, onRefresh }) {
   const navigate = useNavigate();
   const [draggedTask, setDraggedTask] = useState(null);
+  const [showArchived, setShowArchived] = useState(false);
   const dragOverCol = useRef(null);
 
   const handleDragStart = (task) => setDraggedTask(task);
@@ -267,16 +268,32 @@ function TasksTab({ tasks, onRefresh }) {
     return <EmptyState icon={CheckSquare} title="Aucune tâche" description="Aucune tâche associée à ce projet" />;
   }
 
-  const columns = ['todo', 'in_production', 'done', 'blocked'];
+  const baseColumns = ['todo', 'in_production', 'done'];
+  const columns = showArchived ? [...baseColumns, 'cancelled'] : baseColumns;
   const colMap = {
     todo: { label: 'À faire', color: 'bg-surface-300' },
     in_production: { label: 'En cours', color: 'bg-info-500' },
     done: { label: 'Terminé', color: 'bg-success-500' },
-    blocked: { label: 'Bloqué', color: 'bg-danger-500' },
+    cancelled: { label: 'Archivé', color: 'bg-warning-500' },
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <span className="text-body-sm text-ink-500">Archivés</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showArchived}
+            onClick={() => setShowArchived((v) => !v)}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${showArchived ? 'bg-primary-500' : 'bg-surface-300'}`}
+          >
+            <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${showArchived ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+          </button>
+        </label>
+      </div>
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${showArchived ? 'xl:grid-cols-4' : 'xl:grid-cols-3'} gap-4`}>
       {columns.map((col) => {
         const colTasks = tasks.filter((t) => t.status === col);
         const info = colMap[col];
@@ -317,6 +334,7 @@ function TasksTab({ tasks, onRefresh }) {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
