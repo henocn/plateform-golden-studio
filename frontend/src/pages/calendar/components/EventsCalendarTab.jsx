@@ -102,15 +102,15 @@ export default function EventsCalendarTab({ canCreateEvent }) {
             className="hidden"
             onChange={(e) => handleImport(e.target.files?.[0])}
           />
-          <Button variant="secondary" icon={Upload} onClick={() => importInputRef.current?.click()}>
-            Import Excel
+          <Button variant="secondary" icon={Upload} onClick={handleExport}>
+            Export
           </Button>
-          <Button variant="secondary" icon={Download} onClick={handleExport}>
-            Export Excel
+          <Button variant="secondary" icon={Download} onClick={() => importInputRef.current?.click()}>
+            Import
           </Button>
           {canCreateEvent && (
             <Button icon={Plus} onClick={() => setShowCreate(true)}>
-              Nouvel événement
+              Evénement
             </Button>
           )}
         </div>
