@@ -149,31 +149,31 @@ export default function CreateProjectModal({
           onChange={set("agency_direction")}
         />
 
-        {/* Responsable client */}
-        <Select
-          label="Responsable client"
-          value={form.client_contact_id}
-          onChange={set("client_contact_id")}
-          placeholder="Sélectionner"
-          options={filteredClients.map((u) => ({
-            value: u.id,
-            label: `${u.first_name} ${u.last_name}`,
-          }))}
-        />
-
-        {/* Responsable interne */}
-        {userType === "internal" && (
+        {/* Responsable interne + Responsable client */}
+        <div className="grid grid-cols-2 gap-4">
+          {userType === "internal" && (
+            <Select
+              label="Responsable interne"
+              value={form.internal_manager_id}
+              onChange={set("internal_manager_id")}
+              placeholder="Sélectionner"
+              options={internalUsers.map((u) => ({
+                value: u.id,
+                label: `${u.first_name} ${u.last_name}`,
+              }))}
+            />
+          )}
           <Select
-            label="Responsable interne"
-            value={form.internal_manager_id}
-            onChange={set("internal_manager_id")}
+            label="Responsable client"
+            value={form.client_contact_id}
+            onChange={set("client_contact_id")}
             placeholder="Sélectionner"
-            options={internalUsers.map((u) => ({
+            options={filteredClients.map((u) => ({
               value: u.id,
               label: `${u.first_name} ${u.last_name}`,
             }))}
           />
-        )}
+        </div>
 
         {/* Priorité + Date cible */}
         <div className="grid grid-cols-2 gap-4">
