@@ -8,13 +8,22 @@ import {
   Trash2,
   Pencil,
   X,
+  Facebook,
+  Linkedin,
+  Instagram,
+  Youtube,
+  MessageCircle,
+  MessageSquare,
+  Music2,
+  Globe,
+  ExternalLink,
 } from "lucide-react";
 import { addMonths, subMonths, format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Card, Button, Modal, Input, Select, Textarea, Skeleton } from "../../../components/ui";
+import { Card, Button, Modal, Input, Select, Textarea, Skeleton, Checkbox } from "../../../components/ui";
 import { calendarAPI, tasksAPI } from "../../../api/services";
 import { extractList, formatDate, formatErrorMessage, downloadBlob } from "../../../utils/helpers";
-import { BigCalendar, localizer, calendarMessages, eventStyleGetter, EventBadge, toCalendarItems } from "./calendarShared";
+import { BigCalendar, localizer, calendarMessages, eventStyleGetter, toCalendarItems } from "./calendarShared";
 import toast from "react-hot-toast";
 
 const PUBLICATION_STATUS = [
@@ -23,6 +32,135 @@ const PUBLICATION_STATUS = [
   { value: "draft", label: "Brouillon" },
   { value: "archived", label: "Archivée" },
 ];
+
+const STATUS_COLORS = {
+  scheduled: { bg: "#dc2626", border: "#b91c1c", label: "Planifiée" },
+  published: { bg: "#16a34a", border: "#15803d", label: "Publiée" },
+  draft:     { bg: "#6b7280", border: "#4b5563", label: "Brouillon" },
+  archived:  { bg: "#d97706", border: "#b45309", label: "Archivée" },
+};
+
+const NETWORK_OPTIONS = [
+  { value: "facebook", label: "Facebook" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "instagram", label: "Instagram" },
+  { value: "youtube", label: "YouTube" },
+  { value: "x", label: "X" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "messenger", label: "Messenger" },
+  { value: "other", label: "Autre" },
+];
+
+const NETWORK_ICON_MAP = {
+  facebook: Facebook,
+  linkedin: Linkedin,
+  instagram: Instagram,
+  youtube: Youtube,
+  x: MessageSquare,
+  tiktok: Music2,
+  whatsapp: MessageCircle,
+  messenger: MessageSquare,
+  other: Globe,
+};
+
+
+/* Badge affiché sur le calendrier — bg commun + border-left selon statut */
+function EditorialEventBadge({ event }) {
+  const colors = STATUS_COLORS[event.status] || STATUS_COLORS.scheduled;
+  return (
+    <div
+      className="px-2 py-1 rounded text-xs font-semibold truncate shadow-sm"
+      style={{
+        backgroundColor: "#1e293be3",
+        color: "#f1f5f9",
+        borderLeft: `6px solid ${colors.border}`,
+        maxWidth: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}
+      title={event.title}
+    >
+      {event.title}
+    </div>
+  );
+}
+
+
+/* Section réseaux sociaux réutilisable (création + édition) */
+function NetworksSection({ selectedNetworks, networkLinks, onChange }) {
+  const setNetworks = (nets) => onChange({ selectedNetworks: nets, networkLinks });
+  const setLink = (network, value) => onChange({ selectedNetworks, networkLinks: { ...networkLinks, [network]: value } });
+
+  return (
+    <div className="space-y-2">
+      <p className="text-label text-ink-700">Réseaux sociaux</p>
+      <div className="flex flex-wrap gap-3">
+        {NETWORK_OPTIONS.map((network) => (
+          <Checkbox
+            key={network.value}
+            label={network.label}
+            checked={selectedNetworks.includes(network.value)}
+            onChange={(checked) => {
+              const next = checked
+                ? [...selectedNetworks, network.value]
+                : selectedNetworks.filter((n) => n !== network.value);
+              const nextLinks = { ...networkLinks };
+              if (!checked) delete nextLinks[network.value];
+              onChange({ selectedNetworks: next, networkLinks: nextLinks });
+            }}
+          />
+        ))}
+      </div>
+      {selectedNetworks.map((network) => (
+        <Input
+          key={network}
+          label={`Lien ${NETWORK_OPTIONS.find((n) => n.value === network)?.label || network}`}
+          value={networkLinks[network] || ""}
+          onChange={(e) => setLink(network, e.target.value)}
+          placeholder="https://..."
+        />
+      ))}
+    </div>
+  );
+}
+
+
+/* Affichage lecture des réseaux sociaux */
+function NetworksDisplay({ networks, networkLinks }) {
+  const links = Object.entries(networkLinks || {});
+  if (!networks?.length && !links.length) return null;
+
+  return (
+    <div>
+      <p className="text-body-sm text-ink-400 mb-1">Réseaux sociaux</p>
+      {links.length > 0 ? (
+        <div className="space-y-1.5">
+          {links.map(([network, link]) => {
+            const Icon = NETWORK_ICON_MAP[network] || Globe;
+            return (
+              <a
+                key={network}
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 hover:border-primary-300 hover:bg-primary-50 transition-default"
+              >
+                <Icon className="w-4 h-4 text-primary-500 shrink-0" />
+                <span className="text-body-sm font-medium text-ink-700 capitalize">{network}</span>
+                <span className="text-primary-600 text-body-sm truncate ml-auto max-w-[200px]">{link}</span>
+                <ExternalLink className="w-3.5 h-3.5 text-primary-500 shrink-0" />
+              </a>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-body-md text-ink-700">{(networks || []).join(", ")}</p>
+      )}
+    </div>
+  );
+}
 
 
 export default function EditorialCalendarTab({ canCreateEvent }) {
@@ -54,7 +192,6 @@ export default function EditorialCalendarTab({ canCreateEvent }) {
     }
   };
 
-  /* Charge les entrées et affiche le titre sur le calendrier */
   const loadEntries = async () => {
     setLoading(true);
     try {
@@ -155,6 +292,16 @@ export default function EditorialCalendarTab({ canCreateEvent }) {
         />
       </div>
 
+      {/* Légende des statuts */}
+      <div className="flex items-center gap-4 flex-wrap">
+        {Object.entries(STATUS_COLORS).map(([key, val]) => (
+          <div key={key} className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: val.bg }} />
+            <span className="text-body-sm text-ink-500">{val.label}</span>
+          </div>
+        ))}
+      </div>
+
       {loading ? (
         <Skeleton className="h-[600px] rounded-xl" />
       ) : (
@@ -170,7 +317,7 @@ export default function EditorialCalendarTab({ canCreateEvent }) {
               onNavigate={setDate}
               onSelectEvent={setSelectedEntry}
               eventPropGetter={eventStyleGetter}
-              components={{ event: EventBadge }}
+              components={{ event: EditorialEventBadge }}
               messages={calendarMessages}
               culture="fr"
               style={{ height: 620 }}
@@ -217,10 +364,11 @@ function EditorialDetailModal({ entry, tasks, onClose, onUpdated }) {
     status: entry.status || "scheduled",
     task_id: entry.task_id || "",
     notes: entry.notes || "",
+    selectedNetworks: Array.isArray(entry.networks) ? entry.networks : [],
+    networkLinks: entry.network_links && typeof entry.network_links === "object" ? { ...entry.network_links } : {},
   });
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
-  /* Supprime la publication */
   const handleDelete = async () => {
     setDeleting(true);
     try {
@@ -235,7 +383,6 @@ function EditorialDetailModal({ entry, tasks, onClose, onUpdated }) {
     }
   };
 
-  /* Met à jour la publication */
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -245,6 +392,8 @@ function EditorialDetailModal({ entry, tasks, onClose, onUpdated }) {
         status: form.status,
         task_id: form.task_id || null,
         notes: form.notes || null,
+        networks: form.selectedNetworks,
+        network_links: form.networkLinks,
       };
       await calendarAPI.updateEditorial(entry.id, payload);
       toast.success("Publication mise à jour");
@@ -272,7 +421,7 @@ function EditorialDetailModal({ entry, tasks, onClose, onUpdated }) {
               </div>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 entry.status === "published" ? "bg-success-100 text-success-700" :
-                entry.status === "scheduled" ? "bg-primary-100 text-primary-700" :
+                entry.status === "scheduled" ? "bg-red-100 text-red-700" :
                 entry.status === "draft" ? "bg-surface-200 text-ink-500" :
                 "bg-warning-100 text-warning-700"
               }`}>
@@ -302,6 +451,8 @@ function EditorialDetailModal({ entry, tasks, onClose, onUpdated }) {
                 <p className="text-body-md text-ink-700">{entry.project.title}</p>
               </div>
             )}
+
+            <NetworksDisplay networks={entry.networks} networkLinks={entry.network_links} />
 
             <div>
               <p className="text-body-sm text-ink-400">Notes</p>
@@ -353,6 +504,14 @@ function EditorialDetailModal({ entry, tasks, onClose, onUpdated }) {
             ]}
           />
 
+          <NetworksSection
+            selectedNetworks={form.selectedNetworks}
+            networkLinks={form.networkLinks}
+            onChange={({ selectedNetworks, networkLinks }) =>
+              setForm((prev) => ({ ...prev, selectedNetworks, networkLinks }))
+            }
+          />
+
           <Textarea
             label="Notes"
             value={form.notes}
@@ -378,6 +537,8 @@ function CreateEditorialModal({ tasks, onClose, onCreated }) {
     task_id: "",
     status: "scheduled",
     notes: "",
+    selectedNetworks: [],
+    networkLinks: {},
   });
   const [submitting, setSubmitting] = useState(false);
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
@@ -392,6 +553,8 @@ function CreateEditorialModal({ tasks, onClose, onCreated }) {
         task_id: form.task_id || null,
         status: form.status,
         notes: form.notes || null,
+        networks: form.selectedNetworks,
+        network_links: form.networkLinks,
       };
       await calendarAPI.createEditorial(payload);
       toast.success("Publication éditoriale créée");
@@ -426,6 +589,15 @@ function CreateEditorialModal({ tasks, onClose, onCreated }) {
             ...tasks.map((t) => ({ value: t.id, label: t.title })),
           ]}
         />
+
+        <NetworksSection
+          selectedNetworks={form.selectedNetworks}
+          networkLinks={form.networkLinks}
+          onChange={({ selectedNetworks, networkLinks }) =>
+            setForm((prev) => ({ ...prev, selectedNetworks, networkLinks }))
+          }
+        />
+
         <Textarea label="Notes" value={form.notes} onChange={(e) => setField("notes", e.target.value)} rows={2} />
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" onClick={onClose}>Annuler</Button>
