@@ -46,8 +46,10 @@ export default function EditorialCalendarTab({ canCreateEvent }) {
   const loadTasks = async () => {
     try {
       const { data } = await tasksAPI.list({ limit: 100 });
-      setTasks(extractList(data.data).items);
-    } catch {
+      const list = extractList(data?.data);
+      setTasks(list.items || []);
+    } catch (err) {
+      console.error("[EditorialCalendarTab] loadTasks error:", err);
       setTasks([]);
     }
   };
