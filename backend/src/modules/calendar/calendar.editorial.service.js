@@ -160,10 +160,7 @@ class CalendarEditorialService {
    * Import en masse depuis un fichier Excel (format allégé sans tâche ni projet)
    */
   async importExcel(fileBuffer, user) {
-    console.log('[DEBUG editorial svc] importExcel called, buffer length:', fileBuffer?.length || 0);
     const rows = await parseEditorialImport(fileBuffer);
-    console.log('[DEBUG editorial svc] parsed rows count:', rows.length);
-    if (rows.length > 0) console.log('[DEBUG editorial svc] first parsed row:', JSON.stringify(rows[0]));
     if (!rows.length) return { imported: 0, skipped: 0 };
 
     const toInsert = [];
@@ -171,7 +168,6 @@ class CalendarEditorialService {
 
     for (const row of rows) {
       if (!row.publication_title && !row.publication_date && !row.notes) {
-        console.log('[DEBUG editorial svc] skipping empty row:', JSON.stringify(row));
         skipped += 1;
         continue;
       }
@@ -191,7 +187,6 @@ class CalendarEditorialService {
       toInsert.push(payload);
     }
 
-    console.log('[DEBUG editorial svc] toInsert count:', toInsert.length, '| skipped:', skipped);
     if (toInsert.length) await editorialRepository.bulkCreate(toInsert);
     return { imported: toInsert.length, skipped };
   }

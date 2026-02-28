@@ -58,18 +58,14 @@ const importExcel = async (req, res, next) => {
   let filePath = null;
   try {
     if (!req.file) throw ApiError.badRequest('Le fichier Excel est requis');
-    console.log('[DEBUG importExcel ctrl] file received:', req.file.originalname, '| mimetype:', req.file.mimetype, '| size:', req.file.size, '| path:', req.file.path, '| hasBuffer:', !!req.file.buffer);
     filePath = req.file.path || null;
     const fileBuffer = req.file.buffer || fs.readFileSync(req.file.path);
-    console.log('[DEBUG importExcel ctrl] fileBuffer type:', typeof fileBuffer, '| isBuffer:', Buffer.isBuffer(fileBuffer), '| length:', fileBuffer?.length || 0);
     const result = await editorialService.importExcel(
       fileBuffer,
       req.user,
     );
-    console.log('[DEBUG importExcel ctrl] result:', JSON.stringify(result));
     return ApiResponse.success(res, result, 'Editorial calendar imported');
   } catch (error) {
-    console.log('[DEBUG importExcel ctrl] ERROR:', error.message);
     return next(error);
   } finally {
     if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);

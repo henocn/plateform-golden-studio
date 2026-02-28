@@ -75,23 +75,18 @@ const extractCellValue = (cell) => {
 
 const readWorksheetRows = async (buffer) => {
   const workbook = new ExcelJS.Workbook();
-  console.log('[DEBUG readWorksheetRows] loading buffer, size:', buffer?.length || 0);
   await workbook.xlsx.load(buffer);
-  const sheet = workbook.worksheets[0];
-  console.log('[DEBUG readWorksheetRows] sheet found:', !!sheet, '| name:', sheet?.name || 'N/A');
+
+  const sheet = workbook.worksheets.find((ws) => ws.rowCount > 0) || workbook.worksheets[0];
   if (!sheet) return [];
 
-  console.log('[DEBUG readWorksheetRows] total row count:', sheet.rowCount);
   const rows = [];
   sheet.eachRow((row, rowNumber) => {
-    console.log('[DEBUG readWorksheetRows] row', rowNumber, '| raw values:', JSON.stringify(row.values));
     if (rowNumber === 1) return;
     const values = row.values.slice(1).map(extractCellValue);
-    console.log('[DEBUG readWorksheetRows] row', rowNumber, '| extracted:', JSON.stringify(values));
     if (values.every((v) => v === null || v === undefined || String(v).trim() === '')) return;
     rows.push(values);
   });
-  console.log('[DEBUG readWorksheetRows] total data rows:', rows.length);
   return rows;
 };
 
@@ -108,12 +103,7 @@ const buildWorkbook = async ({ headers, rows, sheetName }) => {
 };
 
 const parseEditorialImport = async (buffer) => {
-  console.log('[DEBUG editorial import] buffer type:', typeof buffer, '| length:', buffer?.length || 0);
   const rows = await readWorksheetRows(buffer);
-  console.log('[DEBUG editorial import] rows parsed:', rows.length);
-  if (rows.length > 0) {
-    console.log('[DEBUG editorial import] first row sample:', JSON.stringify(rows[0]));
-  }
   return rows.map((values) => ({
     publication_title: values[0] ? String(values[0]).trim() : null,
     publication_date: parseDateCell(values[1]),
