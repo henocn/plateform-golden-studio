@@ -109,6 +109,7 @@ export const calendarAPI = {
   listEditorial: (params) => api.get('/calendar/editorial', { params }),
   createEditorial: (data) => api.post('/calendar/editorial', data),
   updateEditorial: (id, data) => api.put(`/calendar/editorial/${id}`, data),
+  removeEditorial: (id) => api.delete(`/calendar/editorial/${id}`),
   assignEditorialTask: (id, task_id) => api.patch(`/calendar/editorial/${id}/assign-task`, { task_id }),
   importEditorialExcel: (formData) => api.post('/calendar/editorial/import', formData),
   exportEditorialExcel: (params) => api.get('/calendar/editorial/export', { params, responseType: 'blob' }),

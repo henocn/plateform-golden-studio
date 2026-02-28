@@ -67,6 +67,14 @@ class CalendarEditorialRepository {
     return publication.update(data);
   }
 
+  /* Supprime une publication */
+  async delete(id) {
+    const publication = await Publication.findByPk(id);
+    if (!publication) return null;
+    await publication.destroy();
+    return publication;
+  }
+
   /* Crée plusieurs publications en masse */
   async bulkCreate(items) {
     return Publication.bulkCreate(items);

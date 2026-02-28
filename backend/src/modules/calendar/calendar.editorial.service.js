@@ -62,6 +62,24 @@ class CalendarEditorialService {
   }
 
   /**
+   * Récupère une publication éditoriale par son ID
+   */
+  async getById(id) {
+    const entry = await editorialRepository.findById(id);
+    if (!entry) throw ApiError.notFound('Publication éditoriale');
+    return entry;
+  }
+
+  /**
+   * Supprime une publication éditoriale
+   */
+  async delete(id) {
+    const entry = await editorialRepository.delete(id);
+    if (!entry) throw ApiError.notFound('Publication éditoriale');
+    return entry;
+  }
+
+  /**
    * Liste les publications éditoriales avec filtres
    */
   async list(filters, user) {

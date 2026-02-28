@@ -5,19 +5,13 @@ import {
   Plus,
   Upload,
   Download,
-  Facebook,
-  Linkedin,
-  Instagram,
-  Youtube,
-  MessageCircle,
-  MessageSquare,
-  Music2,
-  Globe,
-  ExternalLink,
+  Trash2,
+  Pencil,
+  X,
 } from "lucide-react";
 import { addMonths, subMonths, format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Card, Button, Modal, Input, Select, Textarea, Skeleton, Checkbox } from "../../../components/ui";
+import { Card, Button, Modal, Input, Select, Textarea, Skeleton } from "../../../components/ui";
 import { calendarAPI, tasksAPI } from "../../../api/services";
 import { extractList, formatDate, formatErrorMessage, downloadBlob } from "../../../utils/helpers";
 import { BigCalendar, localizer, calendarMessages, eventStyleGetter, EventBadge, toCalendarItems } from "./calendarShared";
@@ -30,29 +24,6 @@ const PUBLICATION_STATUS = [
   { value: "archived", label: "Archivée" },
 ];
 
-const NETWORK_OPTIONS = [
-  { value: "facebook", label: "Facebook" },
-  { value: "linkedin", label: "LinkedIn" },
-  { value: "instagram", label: "Instagram" },
-  { value: "youtube", label: "YouTube" },
-  { value: "x", label: "X" },
-  { value: "tiktok", label: "TikTok" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "messenger", label: "Messenger" },
-  { value: "other", label: "Autre" },
-];
-
-const NETWORK_ICON_MAP = {
-  facebook: Facebook,
-  linkedin: Linkedin,
-  instagram: Instagram,
-  youtube: Youtube,
-  x: MessageSquare,
-  tiktok: Music2,
-  whatsapp: MessageCircle,
-  messenger: MessageSquare,
-  other: Globe,
-};
 
 export default function EditorialCalendarTab({ canCreateEvent }) {
   const [date, setDate] = useState(new Date());
@@ -81,6 +52,7 @@ export default function EditorialCalendarTab({ canCreateEvent }) {
     }
   };
 
+  /* Charge les entrées et affiche le titre sur le calendrier */
   const loadEntries = async () => {
     setLoading(true);
     try {
@@ -88,7 +60,7 @@ export default function EditorialCalendarTab({ canCreateEvent }) {
       if (statusFilter) params.status = statusFilter;
       const { data } = await calendarAPI.listEditorial(params);
       const items = extractList(data.data).items;
-      setEntries(toCalendarItems(items, (entry) => entry.task?.title || entry.notes || "Publication"));
+      setEntries(toCalendarItems(items, (entry) => entry.publication_title || entry.task?.title || "Publication"));
     } catch {
       toast.error("Erreur lors du chargement du calendrier éditorial");
     } finally {
@@ -232,16 +204,48 @@ export default function EditorialCalendarTab({ canCreateEvent }) {
   );
 }
 
-function EditorialDetailModal({ entry, tasks, onClose, onUpdated }) {
-  const [taskId, setTaskId] = useState(entry.task_id || "");
-  const [saving, setSaving] = useState(false);
 
-  const handleAssign = async () => {
-    if (!taskId) return;
+function EditorialDetailModal({ entry, tasks, onClose, onUpdated }) {
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    publication_title: entry.publication_title || "",
+    publication_date: entry.publication_date ? format(new Date(entry.publication_date), "yyyy-MM-dd") : "",
+    status: entry.status || "scheduled",
+    task_id: entry.task_id || "",
+    notes: entry.notes || "",
+  });
+  const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  /* Supprime la publication */
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await calendarAPI.removeEditorial(entry.id);
+      toast.success("Publication supprimée");
+      onUpdated();
+    } catch (err) {
+      const details = formatErrorMessage(err);
+      details.forEach((d) => toast.error(d.message));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  /* Met à jour la publication */
+  const handleSave = async () => {
     setSaving(true);
     try {
-      await calendarAPI.assignEditorialTask(entry.id, taskId);
-      toast.success("Tâche assignée");
+      const payload = {
+        publication_title: form.publication_title || null,
+        publication_date: form.publication_date || null,
+        status: form.status,
+        task_id: form.task_id || null,
+        notes: form.notes || null,
+      };
+      await calendarAPI.updateEditorial(entry.id, payload);
+      toast.success("Publication mise à jour");
       onUpdated();
     } catch (err) {
       const details = formatErrorMessage(err);
@@ -251,69 +255,125 @@ function EditorialDetailModal({ entry, tasks, onClose, onUpdated }) {
     }
   };
 
+  const statusLabel = PUBLICATION_STATUS.find((s) => s.value === entry.status)?.label || entry.status;
+  const taskLabel = tasks.find((t) => t.id === entry.task_id)?.title || entry.task?.title;
+
   return (
-    <Modal open onClose={onClose} title="Détail publication éditoriale" size="md">
-      <div className="space-y-3">
-        <p><span className="text-ink-400">Publicateur:</span> <span className="text-ink-700">{entry.publisher_name || "—"}</span></p>
-        <p><span className="text-ink-400">Date de publication:</span> <span className="text-ink-700">{formatDate(entry.publication_date)}</span></p>
-        <p><span className="text-ink-400">Tâche publiée:</span> <span className="text-ink-700">{entry.task?.title || "—"}</span></p>
-        <p><span className="text-ink-400">Réseaux:</span> <span className="text-ink-700">{(entry.networks || []).join(", ") || "—"}</span></p>
-        <div>
-          <span className="text-ink-400">Liens réseaux:</span>
-          <div className="mt-2 space-y-2">
-            {Object.entries(entry.network_links || {}).length ? (
-              Object.entries(entry.network_links || {}).map(([network, link]) => (
-                <a
-                  key={network}
-                  href={link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between gap-3 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 hover:border-primary-300 hover:bg-primary-50 transition-default"
-                >
-                  <span className="flex items-center gap-2 min-w-0">
-                    {(() => {
-                      const Icon = NETWORK_ICON_MAP[String(network || "").toLowerCase()] || Globe;
-                      return <Icon className="w-4 h-4 text-primary-500 shrink-0" />;
-                    })()}
-                    <span className="text-body-sm font-medium text-ink-700 capitalize">{network}</span>
-                  </span>
-                  <span className="flex items-center gap-1 text-primary-600 text-body-sm truncate">
-                    <span className="truncate max-w-[220px]">{link}</span>
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                  </span>
-                </a>
-              ))
-            ) : (
-              <p className="text-ink-700">—</p>
+    <Modal open onClose={onClose} title="Publication éditoriale" size="md">
+      {!editing ? (
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-body-sm text-ink-400">Titre</p>
+                <p className="text-body-md text-ink-800 font-medium">{entry.publication_title || "—"}</p>
+              </div>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                entry.status === "published" ? "bg-success-100 text-success-700" :
+                entry.status === "scheduled" ? "bg-primary-100 text-primary-700" :
+                entry.status === "draft" ? "bg-surface-200 text-ink-500" :
+                "bg-warning-100 text-warning-700"
+              }`}>
+                {statusLabel}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-body-sm text-ink-400">Date de publication</p>
+                <p className="text-body-md text-ink-700">{formatDate(entry.publication_date) || "—"}</p>
+              </div>
+              <div>
+                <p className="text-body-sm text-ink-400">Publicateur</p>
+                <p className="text-body-md text-ink-700">{entry.publisher_name || "—"}</p>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-body-sm text-ink-400">Tâche liée</p>
+              <p className="text-body-md text-ink-700">{taskLabel || "Aucune tâche assignée"}</p>
+            </div>
+
+            {entry.project?.title && (
+              <div>
+                <p className="text-body-sm text-ink-400">Projet</p>
+                <p className="text-body-md text-ink-700">{entry.project.title}</p>
+              </div>
             )}
+
+            <div>
+              <p className="text-body-sm text-ink-400">Notes</p>
+              <p className="text-body-md text-ink-700 whitespace-pre-wrap">{entry.notes || "—"}</p>
+            </div>
+          </div>
+
+          <div className="flex justify-between pt-2 border-t border-surface-200">
+            <Button variant="danger" icon={Trash2} onClick={handleDelete} loading={deleting} size="sm">
+              Supprimer
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={onClose} size="sm">Fermer</Button>
+              <Button icon={Pencil} onClick={() => setEditing(true)} size="sm">Modifier</Button>
+            </div>
           </div>
         </div>
-        <Select
-          label="Tâche..."
-          value={taskId}
-          onChange={(e) => setTaskId(e.target.value)}
-          options={[
-            { value: "", label: "Tâche..." },
-            ...tasks.map((t) => ({ value: t.id, label: t.title })),
-          ]}
-        />
+      ) : (
+        <div className="space-y-4">
+          <Input
+            label="Titre"
+            value={form.publication_title}
+            onChange={(e) => setField("publication_title", e.target.value)}
+            placeholder="Titre de la publication"
+          />
 
-        <div className="flex justify-end">
-          <Button onClick={handleAssign} loading={saving} disabled={!taskId}>
-            Assigner tâche
-          </Button>
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Date de publication"
+              type="date"
+              value={form.publication_date}
+              onChange={(e) => setField("publication_date", e.target.value)}
+            />
+            <Select
+              label="Statut"
+              value={form.status}
+              onChange={(e) => setField("status", e.target.value)}
+              options={PUBLICATION_STATUS}
+            />
+          </div>
+
+          <Select
+            label="Tâche liée"
+            value={form.task_id}
+            onChange={(e) => setField("task_id", e.target.value)}
+            options={[
+              { value: "", label: "Aucune tâche" },
+              ...tasks.map((t) => ({ value: t.id, label: t.title })),
+            ]}
+          />
+
+          <Textarea
+            label="Notes"
+            value={form.notes}
+            onChange={(e) => setField("notes", e.target.value)}
+            rows={3}
+          />
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-surface-200">
+            <Button variant="secondary" icon={X} onClick={() => setEditing(false)} size="sm">Annuler</Button>
+            <Button onClick={handleSave} loading={saving} size="sm">Mettre à jour</Button>
+          </div>
         </div>
-      </div>
+      )}
     </Modal>
   );
 }
 
+
 function CreateEditorialModal({ tasks, onClose, onCreated }) {
   const [form, setForm] = useState({
+    publication_title: "",
     publication_date: "",
     task_id: "",
-    selectedNetworks: [],
-    networkLinks: {},
     status: "scheduled",
     notes: "",
   });
@@ -322,17 +382,12 @@ function CreateEditorialModal({ tasks, onClose, onCreated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.task_id) {
-      toast.error("Veuillez sélectionner la tâche publiée");
-      return;
-    }
     setSubmitting(true);
     try {
       const payload = {
+        publication_title: form.publication_title || null,
         publication_date: form.publication_date || null,
         task_id: form.task_id || null,
-        networks: form.selectedNetworks,
-        network_links: form.networkLinks,
         status: form.status,
         notes: form.notes || null,
       };
@@ -350,60 +405,31 @@ function CreateEditorialModal({ tasks, onClose, onCreated }) {
   return (
     <Modal open onClose={onClose} title="Nouvelle publication éditoriale" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Titre"
+          value={form.publication_title}
+          onChange={(e) => setField("publication_title", e.target.value)}
+          placeholder="Titre de la publication"
+        />
         <div className="grid grid-cols-2 gap-4">
           <Input label="Date de publication" type="date" value={form.publication_date} onChange={(e) => setField("publication_date", e.target.value)} />
           <Select label="Statut" value={form.status} onChange={(e) => setField("status", e.target.value)} options={PUBLICATION_STATUS} />
         </div>
         <Select
-          label="Tâche publiée *"
+          label="Tâche liée"
           value={form.task_id}
           onChange={(e) => setField("task_id", e.target.value)}
           options={[
-            { value: "", label: "Aucune tâche liée" },
+            { value: "", label: "Aucune tâche" },
             ...tasks.map((t) => ({ value: t.id, label: t.title })),
           ]}
         />
-        <div className="space-y-2">
-          <p className="text-label text-ink-700">Réseaux</p>
-          <div className="flex flex-wrap gap-3">
-            {NETWORK_OPTIONS.map((network) => (
-              <Checkbox
-                key={network.value}
-                label={network.label}
-                checked={form.selectedNetworks.includes(network.value)}
-                onChange={(checked) => {
-                  const next = checked
-                    ? [...form.selectedNetworks, network.value]
-                    : form.selectedNetworks.filter((n) => n !== network.value);
-                  setField("selectedNetworks", next);
-                  if (!checked) {
-                    const nextLinks = { ...form.networkLinks };
-                    delete nextLinks[network.value];
-                    setField("networkLinks", nextLinks);
-                  }
-                }}
-              />
-            ))}
-          </div>
-          {form.selectedNetworks.map((network) => (
-            <Input
-              key={network}
-              label={`Lien ${NETWORK_OPTIONS.find((n) => n.value === network)?.label || network}`}
-              value={form.networkLinks[network] || ""}
-              onChange={(e) =>
-                setField("networkLinks", { ...form.networkLinks, [network]: e.target.value })
-              }
-              placeholder="https://..."
-            />
-          ))}
-        </div>
         <Textarea label="Notes" value={form.notes} onChange={(e) => setField("notes", e.target.value)} rows={2} />
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" onClick={onClose}>Annuler</Button>
-          <Button type="submit" loading={submitting} disabled={!form.task_id}>Créer</Button>
+          <Button type="submit" loading={submitting}>Créer</Button>
         </div>
       </form>
     </Modal>
   );
 }
-

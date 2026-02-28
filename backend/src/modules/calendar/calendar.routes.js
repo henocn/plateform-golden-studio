@@ -61,10 +61,16 @@ router.post('/editorial',
   authorize('calendar.manage'),
   validate(createEditorialSchema),
   editorialController.create);
+router.get('/editorial/:id',
+  authorize('calendar.manage', 'calendar.view'),
+  editorialController.getById);
 router.put('/editorial/:id',
   authorize('calendar.manage'),
   validate(updateEditorialSchema),
   editorialController.update);
+router.delete('/editorial/:id',
+  authorize('calendar.manage'),
+  editorialController.deleteEntry);
 router.patch('/editorial/:id/assign-task',
   authorize('calendar.manage'),
   validate(assignEditorialTaskSchema),

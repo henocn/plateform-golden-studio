@@ -27,6 +27,15 @@ const list = async (req, res, next) => {
   }
 };
 
+const getById = async (req, res, next) => {
+  try {
+    const publication = await editorialService.getById(req.params.id);
+    return ApiResponse.success(res, publication, 'Editorial entry retrieved');
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const create = async (req, res, next) => {
   try {
     const publication = await editorialService.create(req.body, req.user);
@@ -49,6 +58,15 @@ const assignTask = async (req, res, next) => {
   try {
     const publication = await editorialService.assignTask(req.params.id, req.body.task_id, req.user);
     return ApiResponse.success(res, publication, 'Task assigned to editorial entry');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const deleteEntry = async (req, res, next) => {
+  try {
+    await editorialService.delete(req.params.id);
+    return ApiResponse.success(res, null, 'Editorial entry deleted');
   } catch (error) {
     return next(error);
   }
@@ -93,8 +111,10 @@ const exportExcel = async (req, res, next) => {
 
 module.exports = {
   list,
+  getById,
   create,
   update,
+  deleteEntry,
   assignTask,
   importExcel,
   exportExcel,
