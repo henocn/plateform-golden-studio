@@ -65,6 +65,16 @@ const parseDateCell = (value) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
+const extractCellValue = (cell) => {
+  if (cell === null || cell === undefined) return null;
+  if (typeof cell === 'object' && cell.text) return cell.text;
+  if (typeof cell === 'object' && cell.richText) {
+    return cell.richText.map((r) => r.text || '').join('');
+  }
+  if (typeof cell === 'object' && cell.result !== undefined) return cell.result;
+  return cell;
+};
+
 const readWorksheetRows = async (buffer) => {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer);
@@ -74,7 +84,7 @@ const readWorksheetRows = async (buffer) => {
   const rows = [];
   sheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return;
-    const values = row.values.slice(1);
+    const values = row.values.slice(1).map(extractCellValue);
     if (values.every((v) => v === null || v === undefined || String(v).trim() === '')) return;
     rows.push(values);
   });
