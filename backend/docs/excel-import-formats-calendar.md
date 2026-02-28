@@ -5,7 +5,7 @@ Ce document décrit les formats Excel acceptés pour :
 - le **calendrier éditorial** (`/api/v1/calendar/editorial/import`)
 - le **calendrier des événements** (`/api/v1/calendar/events/import`)
 
-> Fichier attendu : `.xlsx` (ou `.xls`) avec **une seule feuille**, en-têtes sur la **première ligne**.
+> Fichier attendu : `.xlsx` avec **une seule feuille**, en-têtes sur la **première ligne**.
 
 ---
 
@@ -16,34 +16,28 @@ Ce document décrit les formats Excel acceptés pour :
 | Colonne | En-tête Excel | Obligatoire | Description |
 |---------|--------------|-------------|-------------|
 | A | **Titre** | Oui | Le titre de la publication |
-| B | **Date de publication** | Oui | La date prévue (ex : `15/03/2026` ou `2026-03-15`) |
-| C | **Réseaux sociaux** | Non | Liste séparée par des virgules : `facebook, linkedin, instagram` |
-| D | **Liens réseaux** | Non | Couples réseau=lien séparés par des virgules (voir exemple) |
-| E | **Notes** | Non | Texte libre (description, contexte, remarques) |
+| B | **Date de publication** | Oui | La date prévue (ex : `15/03/2026`) |
+| C | **Notes** | Non | Texte libre (description, contexte, remarques) |
 
 ### Détails de remplissage
 
 - **Titre** : texte libre décrivant la publication (ex : "Communiqué bilan annuel 2025")
-- **Date de publication** : format date Excel classique ou texte (`15/03/2026` ou `2026-03-15`)
-- **Réseaux sociaux** : noms séparés par des virgules parmi :
-  `facebook`, `linkedin`, `instagram`, `youtube`, `x`, `tiktok`, `whatsapp`, `messenger`, `autre`
-- **Liens réseaux** : couples `réseau=lien` séparés par des virgules
-  Exemple : `facebook=https://fb.com/post/123, linkedin=https://linkedin.com/posts/abc`
+- **Date de publication** : format date Excel classique (ex : `15/03/2026`)
 - **Notes** : toute information complémentaire utile
 
 ### Comportement automatique
 
 - Le **statut** est automatiquement mis à **"Planifié"** pour chaque publication importée.
 - Le **publicateur** est automatiquement défini comme l'utilisateur connecté qui lance l'import.
-- Aucune tâche ni projet n'est requis lors de l'import (ils peuvent être assignés après dans l'application).
+- Les **réseaux sociaux** et **liens** pourront être ajoutés après l'import, lors de l'assignation d'une tâche.
 
 ### Exemple de fichier
 
-| Titre | Date de publication | Réseaux sociaux | Liens réseaux | Notes |
-|-------|-------------------|-----------------|---------------|-------|
-| Communiqué bilan annuel 2025 | 15/03/2026 | facebook, linkedin | facebook=https://fb.com/p/123, linkedin=https://lnkd.in/abc | Publication du compte-rendu de la campagne annuelle |
-| Annonce nouveau programme | 22/03/2026 | facebook, instagram | | Lancement officiel du programme jeunesse |
-| Point presse trimestriel | 01/04/2026 | | | Conférence de presse Q1 |
+| Titre | Date de publication | Notes |
+|-------|-------------------|-------|
+| Communiqué bilan annuel 2025 | 15/03/2026 | Publication du compte-rendu de la campagne annuelle |
+| Annonce nouveau programme | 22/03/2026 | Lancement officiel du programme jeunesse |
+| Point presse trimestriel | 01/04/2026 | Conférence de presse Q1 |
 
 ---
 
@@ -97,7 +91,7 @@ Ce document décrit les formats Excel acceptés pour :
 
 ## Conseils pratiques
 
-- Les dates peuvent être au **format date Excel** ou en texte (`JJ/MM/AAAA` ou `AAAA-MM-JJ`).
+- Les dates peuvent être au **format date Excel** classique (ex : `15/03/2026`).
 - Évitez les **lignes vides** au milieu du fichier.
 - Utilisez l'encodage **UTF-8** pour les accents.
 - En cas d'erreur, l'API retourne le nombre de lignes importées et le nombre de lignes ignorées.
