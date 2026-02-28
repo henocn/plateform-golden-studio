@@ -157,7 +157,7 @@ class CalendarEditorialService {
   }
 
   /**
-   * Import en masse depuis un fichier Excel
+   * Import en masse depuis un fichier Excel (format allégé sans tâche ni projet)
    */
   async importExcel(fileBuffer, user) {
     const rows = await parseEditorialImport(fileBuffer);
@@ -167,38 +167,23 @@ class CalendarEditorialService {
     let skipped = 0;
 
     for (const row of rows) {
-      if (!row.publication_date && !row.task_id && !row.notes) {
+      if (!row.publication_title && !row.publication_date && !row.notes) {
         skipped += 1;
         continue;
       }
 
       const normalizedLinks = this.normalizeNetworkLinks(row.network_links || {});
       const payload = {
+        publication_title: row.publication_title || null,
         publication_date: row.publication_date,
         publisher_name: this.getPublisherFromSession(user),
         network_links: normalizedLinks,
         networks: this.computeNetworks({ networks: row.networks || [], networkLinks: normalizedLinks }),
-        status: VALID_PUBLICATION_STATUS.has(row.status) ? row.status : 'scheduled',
-        channel: VALID_CHANNELS.has(row.channel) ? row.channel : 'other',
+        status: 'scheduled',
+        channel: 'other',
         notes: row.notes,
-        project_id: row.project_id || null,
         created_by: user.id,
       };
-
-      if (row.task_id) {
-        const task = await Task.findByPk(row.task_id, { attributes: ['id', 'title', 'project_id'] });
-        if (!task) {
-          skipped += 1;
-          continue;
-        }
-        payload.task_id = task.id;
-        payload.project_id = payload.project_id || task.project_id || null;
-      }
-
-      if (!payload.project_id) {
-        skipped += 1;
-        continue;
-      }
 
       toInsert.push(payload);
     }

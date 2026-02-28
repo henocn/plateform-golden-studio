@@ -8,8 +8,30 @@ const {
 } = require('./calendar.excel.utils');
 
 const VALID_EVENT_TYPES = new Set(['event_coverage', 'meeting', 'other']);
-const VALID_EVENT_STATUS = new Set(['pending', 'validated', 'scheduled', 'published', 'cancelled']);
-const VALID_EVENT_VISIBILITY = new Set(['internal_only', 'client_visible']);
+const EVENT_STATUS_ALIASES = {
+  'en attente': 'pending',
+  'pending': 'pending',
+  'validé': 'validated',
+  'validée': 'validated',
+  'validated': 'validated',
+  'planifié': 'scheduled',
+  'planifiée': 'scheduled',
+  'scheduled': 'scheduled',
+  'publié': 'published',
+  'publiée': 'published',
+  'published': 'published',
+  'annulé': 'cancelled',
+  'annulée': 'cancelled',
+  'cancelled': 'cancelled',
+};
+const EVENT_VISIBILITY_ALIASES = {
+  'interne': 'internal_only',
+  'interne uniquement': 'internal_only',
+  'internal_only': 'internal_only',
+  'visible client': 'client_visible',
+  'client': 'client_visible',
+  'client_visible': 'client_visible',
+};
 const EVENT_TYPE_ALIASES = {
   evenement: 'event_coverage',
   'événement': 'event_coverage',
@@ -90,15 +112,14 @@ class CalendarService {
         continue;
       }
       toInsert.push({
-        project_id: row.project_id || null,
         title: row.title,
         type: VALID_EVENT_TYPES.has(EVENT_TYPE_ALIASES[String(row.type || '').toLowerCase()])
           ? EVENT_TYPE_ALIASES[String(row.type || '').toLowerCase()]
           : 'other',
         start_date: row.start_date,
         end_date: row.end_date,
-        status: VALID_EVENT_STATUS.has(row.status) ? row.status : 'pending',
-        visibility: VALID_EVENT_VISIBILITY.has(row.visibility) ? row.visibility : 'client_visible',
+        status: EVENT_STATUS_ALIASES[String(row.status || '').toLowerCase()] || 'pending',
+        visibility: EVENT_VISIBILITY_ALIASES[String(row.visibility || '').toLowerCase()] || 'client_visible',
         description: row.description,
         created_by: user.id,
       });

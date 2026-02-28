@@ -9,41 +9,41 @@ Ce document décrit les formats Excel acceptés pour :
 
 ---
 
-## 1) Import calendrier éditorial
+## 1) Import calendrier éditorial (publications)
 
 ### Colonnes attendues (ordre exact)
 
-1. `date_publication`
-2. `tache_id`
-3. `reseaux`
-4. `liens_reseaux`
-5. `statut`
-6. `notes`
-7. `projet_id`
+| Colonne | En-tête Excel | Obligatoire | Description |
+|---------|--------------|-------------|-------------|
+| A | **Titre** | Oui | Le titre de la publication |
+| B | **Date de publication** | Oui | La date prévue (ex : `15/03/2026` ou `2026-03-15`) |
+| C | **Réseaux sociaux** | Non | Liste séparée par des virgules : `facebook, linkedin, instagram` |
+| D | **Liens réseaux** | Non | Couples réseau=lien séparés par des virgules (voir exemple) |
+| E | **Notes** | Non | Texte libre (description, contexte, remarques) |
 
 ### Détails de remplissage
 
-- `date_publication` : date Excel ou texte ISO (`2026-03-15`)
-- `tache_id` : UUID de tâche (optionnel mais recommandé)
-- `reseaux` : liste séparée par virgule  
-  Ex: `facebook,linkedin,instagram`
-- `liens_reseaux` : couples `reseau=url` séparés par virgule  
-  Ex: `facebook=https://fb.com/post/1,linkedin=https://linkedin.com/posts/abc`
-- `statut` : `scheduled` | `published` | `draft` | `archived`
-- `notes` : texte libre (description de publication)
-- `projet_id` : UUID projet (optionnel)
+- **Titre** : texte libre décrivant la publication (ex : "Communiqué bilan annuel 2025")
+- **Date de publication** : format date Excel classique ou texte (`15/03/2026` ou `2026-03-15`)
+- **Réseaux sociaux** : noms séparés par des virgules parmi :
+  `facebook`, `linkedin`, `instagram`, `youtube`, `x`, `tiktok`, `whatsapp`, `messenger`, `autre`
+- **Liens réseaux** : couples `réseau=lien` séparés par des virgules
+  Exemple : `facebook=https://fb.com/post/123, linkedin=https://linkedin.com/posts/abc`
+- **Notes** : toute information complémentaire utile
 
-### Important
+### Comportement automatique
 
-- **Le publicateur n'est pas importé** : il est automatiquement défini à l'utilisateur connecté qui lance l'import.
-- Si `tache_id` est vide, l'entrée peut quand même être importée (puis tâche assignable après import).
-- Les colonnes non listées sont ignorées.
+- Le **statut** est automatiquement mis à **"Planifié"** pour chaque publication importée.
+- Le **publicateur** est automatiquement défini comme l'utilisateur connecté qui lance l'import.
+- Aucune tâche ni projet n'est requis lors de l'import (ils peuvent être assignés après dans l'application).
 
-### Exemple de ligne
+### Exemple de fichier
 
-| date_publication | tache_id | reseaux | liens_reseaux | statut | notes | projet_id |
-|---|---|---|---|---|---|---|
-| 2026-03-15 | a1b2c3d4-1111-4000-8000-000000000123 | facebook,linkedin | facebook=https://fb.com/p/123,linkedin=https://lnkd.in/abc | scheduled | Publication du compte-rendu campagne | a1b2c3d4-0001-4000-8000-000000000001 |
+| Titre | Date de publication | Réseaux sociaux | Liens réseaux | Notes |
+|-------|-------------------|-----------------|---------------|-------|
+| Communiqué bilan annuel 2025 | 15/03/2026 | facebook, linkedin | facebook=https://fb.com/p/123, linkedin=https://lnkd.in/abc | Publication du compte-rendu de la campagne annuelle |
+| Annonce nouveau programme | 22/03/2026 | facebook, instagram | | Lancement officiel du programme jeunesse |
+| Point presse trimestriel | 01/04/2026 | | | Conférence de presse Q1 |
 
 ---
 
@@ -51,41 +51,54 @@ Ce document décrit les formats Excel acceptés pour :
 
 ### Colonnes attendues (ordre exact)
 
-1. `titre`
-2. `type`
-3. `date_debut`
-4. `date_fin`
-5. `statut`
-6. `visibilite`
-7. `description`
-8. `projet_id`
+| Colonne | En-tête Excel | Obligatoire | Description |
+|---------|--------------|-------------|-------------|
+| A | **Titre** | Oui | Le nom de l'événement |
+| B | **Type** | Oui | Le type d'événement (voir valeurs acceptées) |
+| C | **Date début** | Oui | La date de début |
+| D | **Date fin** | Non | La date de fin (si différente de la date de début) |
+| E | **Statut** | Non | L'état de l'événement (par défaut : "En attente") |
+| F | **Visibilité** | Non | Qui peut voir l'événement (par défaut : "Visible client") |
+| G | **Description** | Non | Texte libre de description |
 
-### Détails de remplissage
+### Valeurs acceptées
 
-- `titre` : obligatoire
-- `type` : **3 types supportés**  
-  - `evenement` (ou `event_coverage`)
-  - `reunion` (ou `meeting`)
-  - `autre` (ou `other`)
-- `date_debut` : obligatoire
-- `date_fin` : optionnelle
-- `statut` : `pending` | `validated` | `scheduled` | `published` | `cancelled`
-- `visibilite` : `internal_only` | `client_visible`
-- `description` : texte libre
-- `projet_id` : UUID projet (optionnel)
+**Type** (colonne B) :
+| Valeur à écrire | Signification |
+|-----------------|---------------|
+| Événement | Couverture d'événement |
+| Réunion | Réunion interne ou externe |
+| Autre | Tout autre type |
 
-### Exemple de ligne
+**Statut** (colonne E) :
+| Valeur à écrire | Signification |
+|-----------------|---------------|
+| En attente | Non encore validé (valeur par défaut) |
+| Validé | Approuvé et confirmé |
+| Planifié | Programmé dans le calendrier |
+| Publié | Rendu public |
+| Annulé | Événement annulé |
 
-| titre | type | date_debut | date_fin | statut | visibilite | description | projet_id |
-|---|---|---|---|---|---|---|---|
-| Réunion coordination | reunion | 2026-03-10 | 2026-03-10 | scheduled | client_visible | Point hebdo équipe | a1b2c3d4-0001-4000-8000-000000000001 |
+**Visibilité** (colonne F) :
+| Valeur à écrire | Signification |
+|-----------------|---------------|
+| Interne | Visible uniquement par l'équipe interne |
+| Visible client | Visible par le client (valeur par défaut) |
+
+### Exemple de fichier
+
+| Titre | Type | Date début | Date fin | Statut | Visibilité | Description |
+|-------|------|-----------|----------|--------|------------|-------------|
+| Réunion de coordination | Réunion | 10/03/2026 | 10/03/2026 | Planifié | Visible client | Point hebdomadaire de l'équipe |
+| Conférence de presse | Événement | 15/03/2026 | 15/03/2026 | En attente | Visible client | Présentation des résultats annuels |
+| Revue interne du projet | Réunion | 20/03/2026 | 20/03/2026 | Validé | Interne | Bilan d'avancement interne |
 
 ---
 
 ## Conseils pratiques
 
-- Garder les UUID exacts (tâches/projets).
-- Éviter les lignes vides au milieu.
-- Utiliser UTF-8 pour les accents.
-- En cas d'erreur, l'API retourne le nombre importé et ignoré.
-
+- Les dates peuvent être au **format date Excel** ou en texte (`JJ/MM/AAAA` ou `AAAA-MM-JJ`).
+- Évitez les **lignes vides** au milieu du fichier.
+- Utilisez l'encodage **UTF-8** pour les accents.
+- En cas d'erreur, l'API retourne le nombre de lignes importées et le nombre de lignes ignorées.
+- Les colonnes supplémentaires au-delà de celles listées sont ignorées.

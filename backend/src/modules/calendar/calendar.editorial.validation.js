@@ -3,6 +3,7 @@
 const Joi = require('joi');
 
 const createEditorialSchema = Joi.object({
+  publication_title: Joi.string().max(500).optional().allow(null, ''),
   project_id: Joi.string().uuid().optional().allow(null),
   proposal_id: Joi.string().uuid().optional().allow(null),
   task_id: Joi.string().uuid().optional().allow(null),
@@ -15,6 +16,7 @@ const createEditorialSchema = Joi.object({
 });
 
 const updateEditorialSchema = Joi.object({
+  publication_title: Joi.string().max(500).optional().allow(null, ''),
   project_id: Joi.string().uuid().optional().allow(null),
   proposal_id: Joi.string().uuid().optional().allow(null),
   task_id: Joi.string().uuid().optional().allow(null),

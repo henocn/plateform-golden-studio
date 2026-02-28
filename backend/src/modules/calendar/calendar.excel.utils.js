@@ -3,24 +3,21 @@
 const ExcelJS = require('exceljs');
 
 const EDITORIAL_HEADERS = [
-  'date_publication',
-  'tache_id',
-  'reseaux',
-  'liens_reseaux',
-  'statut',
-  'notes',
-  'projet_id',
+  'Titre',
+  'Date de publication',
+  'Réseaux sociaux',
+  'Liens réseaux',
+  'Notes',
 ];
 
 const EVENT_HEADERS = [
-  'titre',
-  'type',
-  'date_debut',
-  'date_fin',
-  'statut',
-  'visibilite',
-  'description',
-  'projet_id',
+  'Titre',
+  'Type',
+  'Date début',
+  'Date fin',
+  'Statut',
+  'Visibilité',
+  'Description',
 ];
 
 const parseNetworkLinksCell = (value) => {
@@ -99,13 +96,11 @@ const buildWorkbook = async ({ headers, rows, sheetName }) => {
 const parseEditorialImport = async (buffer) => {
   const rows = await readWorksheetRows(buffer);
   return rows.map((values) => ({
-    publication_date: parseDateCell(values[0]),
-    task_id: values[1] ? String(values[1]).trim() : null,
+    publication_title: values[0] ? String(values[0]).trim() : null,
+    publication_date: parseDateCell(values[1]),
     networks: parseListCell(values[2]),
     network_links: parseNetworkLinksCell(values[3]),
-    status: values[4] ? String(values[4]).trim() : null,
-    notes: values[5] ? String(values[5]).trim() : null,
-    project_id: values[6] ? String(values[6]).trim() : null,
+    notes: values[4] ? String(values[4]).trim() : null,
   }));
 };
 
@@ -119,7 +114,6 @@ const parseEventsImport = async (buffer) => {
     status: values[4] ? String(values[4]).trim() : null,
     visibility: values[5] ? String(values[5]).trim() : null,
     description: values[6] ? String(values[6]).trim() : null,
-    project_id: values[7] ? String(values[7]).trim() : null,
   }));
 };
 
@@ -127,13 +121,11 @@ const buildEditorialExport = async (items) => buildWorkbook({
   headers: EDITORIAL_HEADERS,
   sheetName: 'Calendrier editorial',
   rows: items.map((item) => [
+    item.publication_title || '',
     item.publication_date || '',
-    item.task_id || '',
     Array.isArray(item.networks) ? item.networks.join(', ') : '',
     stringifyNetworkLinks(item.network_links),
-    item.status || '',
     item.notes || '',
-    item.project_id || '',
   ]),
 });
 
@@ -148,7 +140,6 @@ const buildEventsExport = async (items) => buildWorkbook({
     item.status || '',
     item.visibility || '',
     item.description || '',
-    item.project_id || '',
   ]),
 });
 
