@@ -57,7 +57,7 @@ describe('Auth Integration Tests', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.user.user_type).toBe('client');
       expect(res.body.data.user.role).toBe('client_admin');
-      expect(res.body.data.user.organization_id).toBeDefined();
+      expect(res.body.data.user).not.toHaveProperty('organization_id');
     });
 
     test('should reject invalid password', async () => {

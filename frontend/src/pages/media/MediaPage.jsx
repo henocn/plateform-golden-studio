@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import {
   Button,
+  Modal,
   SearchInput,
   EmptyState,
   Skeleton,
