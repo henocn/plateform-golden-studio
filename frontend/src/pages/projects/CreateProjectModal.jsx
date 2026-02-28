@@ -12,7 +12,6 @@ const DEFAULT_FORM = {
   priority: "normal",
   target_date: "",
   internal_manager_id: "",
-  studio_manager_id: "",
   client_contact_id: "",
 };
 
@@ -25,7 +24,6 @@ function buildInitialForm(project, userType, user) {
         priority: project.priority || "normal",
         target_date: project.target_date || "",
         internal_manager_id: project.internal_manager_id || "",
-        studio_manager_id: project.studio_manager_id || "",
         client_contact_id: project.client_contact_id || "",
       }
     : { ...DEFAULT_FORM };
@@ -84,12 +82,8 @@ export default function CreateProjectModal({
     e.preventDefault();
     setLoading(true);
     try {
-      const is_parametrized = !!(
-        form.internal_manager_id || form.studio_manager_id
-      );
-      const payload = { ...form, is_parametrized };
+      const payload = { ...form };
       if (!payload.internal_manager_id) delete payload.internal_manager_id;
-      if (!payload.studio_manager_id) delete payload.studio_manager_id;
       if (!payload.client_contact_id) delete payload.client_contact_id;
 
       if (project) {
@@ -167,30 +161,18 @@ export default function CreateProjectModal({
           }))}
         />
 
-        {/* Responsables internes */}
+        {/* Responsable interne */}
         {userType === "internal" && (
-          <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Responsable interne"
-              value={form.internal_manager_id}
-              onChange={set("internal_manager_id")}
-              placeholder="Sélectionner"
-              options={internalUsers.map((u) => ({
-                value: u.id,
-                label: `${u.first_name} ${u.last_name}`,
-              }))}
-            />
-            <Select
-              label="Responsable studio"
-              value={form.studio_manager_id}
-              onChange={set("studio_manager_id")}
-              placeholder="Sélectionner"
-              options={internalUsers.map((u) => ({
-                value: u.id,
-                label: `${u.first_name} ${u.last_name}`,
-              }))}
-            />
-          </div>
+          <Select
+            label="Responsable interne"
+            value={form.internal_manager_id}
+            onChange={set("internal_manager_id")}
+            placeholder="Sélectionner"
+            options={internalUsers.map((u) => ({
+              value: u.id,
+              label: `${u.first_name} ${u.last_name}`,
+            }))}
+          />
         )}
 
         {/* Priorité + Date cible */}

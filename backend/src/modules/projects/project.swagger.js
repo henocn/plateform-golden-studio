@@ -42,9 +42,6 @@
  *         internal_manager_id:
  *           type: string
  *           format: uuid
- *         studio_manager_id:
- *           type: string
- *           format: uuid
  *         client_contact_id:
  *           type: string
  *           format: uuid

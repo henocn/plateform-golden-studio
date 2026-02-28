@@ -2,7 +2,6 @@
 
 const ADMIN        = 'b1b2c3d4-0001-4000-8000-000000000001';
 const MANAGER      = 'b1b2c3d4-0002-4000-8000-000000000002';
-const CONTRIBUTOR  = 'b1b2c3d4-0004-4000-8000-000000000004';
 const CLIENT_MIPISE = 'c1b2c3d4-0001-4000-8000-000000000001';
 const CLIENT_APIZF  = 'c1b2c3d4-0004-4000-8000-000000000004';
 
@@ -19,7 +18,6 @@ module.exports = {
         description: 'Conception et déploiement de la campagne de communication institutionnelle du ministère pour l\'année 2025. Inclut identité visuelle, supports print et digital.',
         agency_direction: 'Direction de la Communication',
         internal_manager_id: MANAGER,
-        studio_manager_id: CONTRIBUTOR,
         client_contact_id: CLIENT_MIPISE,
         priority: 'high',
         status: 'in_production',
@@ -34,7 +32,6 @@ module.exports = {
         description: 'Refonte complète du site web institutionnel du ministère. Migration vers une architecture moderne, responsive, conforme RGAA.',
         agency_direction: 'Direction des Systèmes d\'Information',
         internal_manager_id: ADMIN,
-        studio_manager_id: CONTRIBUTOR,
         client_contact_id: CLIENT_MIPISE,
         priority: 'urgent',
         status: 'in_validation',
@@ -49,7 +46,6 @@ module.exports = {
         description: 'Conception graphique et mise en page du rapport annuel d\'activité du ministère pour l\'exercice 2024.',
         agency_direction: 'Direction Générale',
         internal_manager_id: MANAGER,
-        studio_manager_id: CONTRIBUTOR,
         client_contact_id: CLIENT_MIPISE,
         priority: 'normal',
         status: 'brief_received',
@@ -66,7 +62,6 @@ module.exports = {
         description: 'Création d\'une brochure de promotion des zones franches d\'investissement en Algérie. Trilingue : arabe, français, anglais.',
         agency_direction: 'Direction de la Promotion',
         internal_manager_id: MANAGER,
-        studio_manager_id: CONTRIBUTOR,
         client_contact_id: CLIENT_APIZF,
         priority: 'high',
         status: 'in_production',
@@ -81,7 +76,6 @@ module.exports = {
         description: 'Réalisation d\'une vidéo promotionnelle de 3 minutes présentant les avantages des zones franches pour les investisseurs nationaux et internationaux.',
         agency_direction: 'Direction de la Communication',
         internal_manager_id: ADMIN,
-        studio_manager_id: CONTRIBUTOR,
         client_contact_id: CLIENT_APIZF,
         priority: 'normal',
         status: 'published',

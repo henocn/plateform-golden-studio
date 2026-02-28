@@ -199,20 +199,12 @@ function DetailsTab({ project }) {
         </div>
 
         {/* Responsables */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-surface-50 border border-surface-200 rounded-xl p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-surface-50 border border-surface-200 rounded-xl p-4">
           <div className="space-y-1">
             <h4 className="text-label text-ink-500">Responsable interne</h4>
             <p className="text-body-md text-ink-700">
               {project.internalManager
                 ? `${project.internalManager.first_name || ''} ${project.internalManager.last_name || ''}`.trim()
-                : '—'}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <h4 className="text-label text-ink-500">Responsable studio</h4>
-            <p className="text-body-md text-ink-700">
-              {project.studioManager
-                ? `${project.studioManager.first_name || ''} ${project.studioManager.last_name || ''}`.trim()
                 : '—'}
             </p>
           </div>

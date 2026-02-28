@@ -26,10 +26,6 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       allowNull: true,
     },
-    studio_manager_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
-    },
     client_contact_id: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -60,7 +56,6 @@ module.exports = (sequelize) => {
 
   Project.associate = (models) => {
     Project.belongsTo(models.User, { as: 'internalManager', foreignKey: 'internal_manager_id' });
-    Project.belongsTo(models.User, { as: 'studioManager', foreignKey: 'studio_manager_id' });
     Project.belongsTo(models.User, { as: 'clientContact', foreignKey: 'client_contact_id' });
     Project.belongsTo(models.User, { as: 'creator', foreignKey: 'created_by' });
     Project.hasMany(models.Task, { as: 'tasks', foreignKey: 'project_id' });

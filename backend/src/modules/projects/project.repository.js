@@ -21,7 +21,6 @@ class ProjectRepository {
       where,
       include: [
         { association: 'internalManager', attributes: ['id', 'first_name', 'last_name'] },
-        { association: 'studioManager', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'clientContact', attributes: ['id', 'first_name', 'last_name'] },
       ],
       order: [['created_at', 'DESC']],
@@ -40,7 +39,6 @@ class ProjectRepository {
       where,
       include: [
         { association: 'internalManager', attributes: ['id', 'first_name', 'last_name', 'email'] },
-        { association: 'studioManager', attributes: ['id', 'first_name', 'last_name', 'email'] },
         { association: 'clientContact', attributes: ['id', 'first_name', 'last_name', 'email'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
       ],
