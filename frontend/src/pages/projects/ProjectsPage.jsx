@@ -207,7 +207,7 @@ export default function ProjectsPage() {
                         {formatDate(p.target_date)}
                       </td>
                       <td className="px-5 py-3">
-                        {can("projects.update") && (
+                        {can("projects.edit") && (
                           <ProjectActions
                             project={p}
                             onRefresh={loadProjects}
