@@ -10,11 +10,9 @@ const EDITORIAL_HEADERS = [
 
 const EVENT_HEADERS = [
   'Titre',
-  'Type',
   'Date début',
   'Date fin',
   'Statut',
-  'Visibilité',
   'Description',
 ];
 
@@ -115,12 +113,10 @@ const parseEventsImport = async (buffer) => {
   const rows = await readWorksheetRows(buffer);
   return rows.map((values) => ({
     title: values[0] ? String(values[0]).trim() : null,
-    type: values[1] ? String(values[1]).trim() : null,
-    start_date: parseDateCell(values[2]),
-    end_date: parseDateCell(values[3]),
-    status: values[4] ? String(values[4]).trim() : null,
-    visibility: values[5] ? String(values[5]).trim() : null,
-    description: values[6] ? String(values[6]).trim() : null,
+    start_date: parseDateCell(values[1]),
+    end_date: parseDateCell(values[2]),
+    status: values[3] ? String(values[3]).trim() : null,
+    description: values[4] ? String(values[4]).trim() : null,
   }));
 };
 
@@ -139,11 +135,9 @@ const buildEventsExport = async (items) => buildWorkbook({
   sheetName: 'Calendrier evenements',
   rows: items.map((item) => [
     item.title || '',
-    item.type || '',
     item.start_date || '',
     item.end_date || '',
     item.status || '',
-    item.visibility || '',
     item.description || '',
   ]),
 });

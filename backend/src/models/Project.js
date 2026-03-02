@@ -67,7 +67,6 @@ module.exports = (sequelize) => {
     Project.hasMany(models.Task, { as: 'tasks', foreignKey: 'project_id' });
     // Project.hasMany(models.Proposal, { as: 'proposals', foreignKey: 'project_id' });
     Project.hasMany(models.Publication, { as: 'publications', foreignKey: 'project_id' });
-    Project.hasMany(models.CalendarEvent, { as: 'calendarEvents', foreignKey: 'project_id' });
   };
 
   return Project;

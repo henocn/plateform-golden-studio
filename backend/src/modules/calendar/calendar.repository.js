@@ -5,13 +5,10 @@ const { Op } = require('sequelize');
 
 class CalendarRepository {
   /* Récupère tous les événements du calendrier avec filtres */
-  async findAll({ type, projectId, status, visibility, startDate, endDate, search, page, limit, offset } = {}) {
+  async findAll({ status, startDate, endDate, search, page, limit, offset } = {}) {
     const where = {};
 
-    if (type) where.type = type;
-    if (projectId) where.project_id = projectId;
     if (status) where.status = status;
-    if (visibility) where.visibility = visibility;
     if (startDate && endDate) {
       where.start_date = { [Op.between]: [new Date(startDate), new Date(endDate)] };
     } else if (startDate) {
@@ -29,8 +26,9 @@ class CalendarRepository {
     const { rows, count } = await CalendarEvent.findAndCountAll({
       where,
       include: [
-        { association: 'project', attributes: ['id', 'title'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
+        { association: 'agency', attributes: ['id', 'name', 'code'] },
+        { association: 'direction', attributes: ['id', 'name', 'code'] },
       ],
       order: [['start_date', 'ASC']],
       limit,
@@ -47,8 +45,9 @@ class CalendarRepository {
     return CalendarEvent.findOne({
       where,
       include: [
-        { association: 'project', attributes: ['id', 'title'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
+        { association: 'agency', attributes: ['id', 'name', 'code'] },
+        { association: 'direction', attributes: ['id', 'name', 'code'] },
       ],
     });
   }
