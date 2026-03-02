@@ -163,7 +163,15 @@ class UserService {
    * Delete user (soft delete = deactivate)
    */
   async delete(id, requestUser) {
-    return this.updateStatus(id, false, requestUser);
+    const user = await userRepository.findById(id);
+    if (!user) throw ApiError.notFound('User');
+
+    // Empêche un utilisateur de se supprimer lui-même
+    if (id === requestUser.id) {
+      throw ApiError.badRequest('You cannot delete your own account');
+    }
+
+    return userRepository.delete(id);
   }
 }
 

@@ -9,7 +9,9 @@ class UserRepository {
     const where = { user_type: 'internal' };
 
     if (role) where.role = role;
-    if (typeof is_active === 'boolean') where.is_active = is_active;
+    if (typeof is_active === 'boolean') {
+      where.is_active = is_active;
+    }
     if (search) {
       where[Op.or] = [
         { first_name: { [Op.iLike]: `%${search}%` } },
@@ -33,7 +35,9 @@ class UserRepository {
     const where = { user_type: 'client' };
 
     if (role) where.role = role;
-    if (typeof is_active === 'boolean') where.is_active = is_active;
+    if (typeof is_active === 'boolean') {
+      where.is_active = is_active;
+    }
     if (search) {
       where[Op.or] = [
         { first_name: { [Op.iLike]: `%${search}%` } },
@@ -88,9 +92,12 @@ class UserRepository {
     return user.update({ is_active: isActive });
   }
 
-  /* Désactive un utilisateur (soft delete) */
-  async deactivate(id) {
-    return this.updateStatus(id, false);
+  /* Supprime définitivement un utilisateur (hard delete) */
+  async delete(id) {
+    const user = await User.findByPk(id);
+    if (!user) return null;
+    await user.destroy();
+    return user;
   }
 }
 
