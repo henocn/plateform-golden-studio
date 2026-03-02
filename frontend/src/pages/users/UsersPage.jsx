@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Users as UsersIcon, UserPlus, MoreVertical } from 'lucide-react';
+import { Users as UsersIcon, UserPlus } from 'lucide-react';
 import { Card, Button, Badge, SearchInput, Pagination, EmptyState, Skeleton, Modal, Input, Select, Tabs, Avatar } from '../../components/ui';
 import { usersAPI } from '../../api/services';
 import { usePagination, useDebounce, usePermissions } from '../../hooks';
 import { formatDate, ROLE_LABELS, extractList, formatErrorMessage } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
+import UserActions from './UserActions';
+
 export default function UsersPage() {
-  const { isInternal, isClientAdmin, canManageUsers } = usePermissions();
+  const { isInternal, isClientAdmin, canManageUsers, can } = usePermissions();
   const [activeTab, setActiveTab] = useState(isInternal ? 'internal' : 'clients');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -128,10 +130,22 @@ export default function UsersPage() {
                       </Badge>
                     </td>
                     <td className="px-5 py-3 text-body-sm text-ink-400">{formatDate(u.last_login_at) || '—'}</td>
-                    <td className="px-5 py-3">
-                      <button className="p-1 rounded-lg text-ink-400 hover:bg-surface-200 transition-default">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+                    <td className="px-5 py-3" onClick={(e) => e.stopPropagation()}>
+                      {(can('users.manage_internal') && activeTab === 'internal') || (activeTab === 'clients' && (can('users.manage_clients') || can('users.manage_own_org'))) ? (
+                        <UserActions
+                          user={u}
+                          userType={activeTab}
+                          onRefresh={loadUsers}
+                          canUpdate={
+                            (activeTab === 'internal' && can('users.manage_internal')) ||
+                            (activeTab === 'clients' && (can('users.manage_clients') || can('users.manage_own_org')))
+                          }
+                          canDelete={
+                            (activeTab === 'internal' && can('users.manage_internal')) ||
+                            (activeTab === 'clients' && can('users.manage_clients'))
+                          }
+                        />
+                      ) : null}
                     </td>
                   </tr>
                 ))}

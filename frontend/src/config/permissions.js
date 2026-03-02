@@ -56,10 +56,10 @@ const PERMISSIONS = {
   'publications.manage':        ['super_admin', 'admin', 'contributor'],
 
   // ─── Utilisateurs ────────────────────────────────────────
-  'users.list_members':         ['super_admin', 'admin', 'validator', 'contributor', 'reader'],
+  'users.list_members':         ['super_admin', 'admin', 'contributor'],
   'users.manage_internal':      ['super_admin'],
-  'users.manage_clients':       ['super_admin', 'admin'],
-  'users.manage_own_org':       ['client_admin'],
+  'users.manage_clients':       ['super_admin', 'admin', 'client_admin'],
+  'users.manage_own_org':       ['super_admin', 'client_admin'],
 
   // ─── Organisations ───────────────────────────────────────
   'organizations.manage':       ['super_admin'],
