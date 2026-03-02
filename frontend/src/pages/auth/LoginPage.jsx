@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { useOrganizationStore } from '../../store/organizationStore';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
@@ -17,8 +18,16 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isLoading } = useAuthStore();
+  const { fetchCurrent, logoUrl, displayName } = useOrganizationStore();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState('');
+
+  useEffect(() => {
+    fetchCurrent();
+  }, [fetchCurrent]);
+
+  const logoSrc = logoUrl();
+  const orgName = displayName();
 
   const from = location.state?.from?.pathname || '/dashboard';
 
@@ -49,7 +58,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* ── Left: Branding Panel ───────────── */}
-      <div className="hidden lg:flex lg:w-[45%] bg-primary-500 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[45%] lg:h-screen lg:max-h-screen bg-primary-500 relative overflow-hidden flex-col">
         {/* Abstract geometric pattern */}
         <div className="absolute inset-0">
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary-400/20 rounded-full -translate-y-1/2 translate-x-1/3" />
@@ -57,29 +66,45 @@ export default function LoginPage() {
           <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-primary-400/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
         </div>
 
-        <div className="relative z-10 flex flex-col justify-between p-12 text-white">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <span className="text-white font-bold text-lg">G</span>
-              </div>
-              <span className="text-xl font-bold tracking-tight">GovCom</span>
+        <div className="relative z-10 flex flex-col min-h-0 flex-1 p-8 md:p-10 text-white">
+          {/* Kidou (gauche) + Logo organisation (droite), même taille et même style */}
+          <div className="flex items-center justify-between gap-4 shrink-0 mb-6">
+            <div className="w-28 h-28 md:w-32 md:h-32 rounded-xl border border-white/30 bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden shrink-0">
+              <img
+                src="/images/Qidoo white.jpeg"
+                alt=""
+                className="w-full h-full object-cover"
+              />
             </div>
-            <p className="text-primary-200 text-body-md">Golden Studio Platform</p>
+            <div className="w-28 h-28 md:w-32 md:h-32 rounded-xl border border-white/30 bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden shrink-0">
+              {logoSrc ? (
+                <img src={logoSrc} alt="" className="w-full h-full object-contain" />
+              ) : (
+                <span className="text-white font-bold text-xl md:text-2xl">O</span>
+              )}
+            </div>
           </div>
 
-          <div className="max-w-md">
-            <h1 className="text-3xl font-bold leading-tight mb-4">
-              Pilotez la communication institutionnelle avec excellence.
-            </h1>
-            <p className="text-primary-200 text-body-lg leading-relaxed">
-              Plateforme centralisée de gestion de projets, validation de contenus
-              et suivi de publications pour les institutions gouvernementales.
-            </p>
+          {/* Bannière totale (PNG) */}
+          <div className="flex-1 min-h-0 flex flex-col justify-center items-center">
+            <img
+              src="/images/baniere totale.png"
+              alt=""
+              className="max-w-full w-full max-h-[260px] object-contain object-center mb-4"
+            />
+            <div className="max-w-md">
+              <h1 className="text-xl md:text-2xl font-bold text-white mb-5">
+                Pilotez la communication institutionnelle avec excellence.
+              </h1>
+              <p className="text-primary-200 text-body-sm md:text-body-md leading-relaxed mt-2">
+                Plateforme centralisée de gestion de projets, validation de contenus
+                et suivi de publications pour les institutions gouvernementales.
+              </p>
+            </div>
           </div>
 
-          <p className="text-primary-300 text-body-sm">
-            © {new Date().getFullYear()} Golden Studio — Tous droits réservés
+          <p className="text-primary-300 text-body-sm shrink-0 pt-4">
+            © {new Date().getFullYear()} Tous droits réservés
           </p>
         </div>
       </div>
@@ -89,10 +114,14 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">G</span>
+            <div className="w-16 h-16 rounded-xl bg-primary-500 flex items-center justify-center overflow-hidden shrink-0">
+              {logoSrc ? (
+                <img src={logoSrc} alt="" className="w-full h-full object-contain" />
+              ) : (
+                <span className="text-white font-bold text-xl">G</span>
+              )}
             </div>
-            <span className="text-xl font-bold text-ink-900 tracking-tight">GovCom</span>
+            <span className="text-xl font-bold text-ink-900 tracking-tight">{orgName}</span>
           </div>
 
           <div className="mb-8">

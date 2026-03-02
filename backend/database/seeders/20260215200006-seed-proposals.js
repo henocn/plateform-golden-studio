@@ -1,8 +1,5 @@
 'use strict';
 
-const ORG_MIPISE = 'a1b2c3d4-0001-4000-8000-000000000001';
-const ORG_APIZF  = 'a1b2c3d4-0002-4000-8000-000000000002';
-
 const PROJECT_1 = 'd1b2c3d4-0001-4000-8000-000000000001';
 const PROJECT_2 = 'd1b2c3d4-0002-4000-8000-000000000002';
 const PROJECT_3 = 'd1b2c3d4-0003-4000-8000-000000000003';
@@ -23,7 +20,6 @@ module.exports = {
       {
         id: 'a7b2c3d4-0001-4000-8000-000000000001',
         project_id: PROJECT_1,
-        organization_id: ORG_MIPISE,
         version_number: 1,
         title: 'Direction artistique campagne — V1',
         description: 'Première proposition de direction artistique. Palette bleu/or, typographie institutionnelle, iconographie minimaliste.',
@@ -38,7 +34,6 @@ module.exports = {
       {
         id: 'a7b2c3d4-0002-4000-8000-000000000002',
         project_id: PROJECT_1,
-        organization_id: ORG_MIPISE,
         version_number: 2,
         title: 'Direction artistique campagne — V2',
         description: 'Deuxième proposition intégrant les retours client. Palette bleu/blanc, illustrations vectorielles, style épuré.',
@@ -55,7 +50,6 @@ module.exports = {
       {
         id: 'a7b2c3d4-0003-4000-8000-000000000003',
         project_id: PROJECT_2,
-        organization_id: ORG_MIPISE,
         version_number: 1,
         title: 'Maquettes UI site web — V1',
         description: 'Maquettes haute fidélité Figma des 5 pages principales. Design responsive, mode sombre optionnel.',
@@ -72,7 +66,6 @@ module.exports = {
       {
         id: 'a7b2c3d4-0004-4000-8000-000000000004',
         project_id: PROJECT_3,
-        organization_id: ORG_MIPISE,
         version_number: 1,
         title: 'Gabarit rapport annuel — V1',
         description: 'Proposition de gabarit éditorial : couverture, sommaire, mise en page type chapitres, infographies.',
@@ -89,7 +82,6 @@ module.exports = {
       {
         id: 'a7b2c3d4-0005-4000-8000-000000000005',
         project_id: PROJECT_4,
-        organization_id: ORG_APIZF,
         version_number: 1,
         title: 'Maquette brochure trilingue — V1',
         description: 'Première maquette de la brochure 24 pages. Mise en page bilingue FR/AR avec encarts EN.',
@@ -104,7 +96,6 @@ module.exports = {
       {
         id: 'a7b2c3d4-0006-4000-8000-000000000006',
         project_id: PROJECT_4,
-        organization_id: ORG_APIZF,
         version_number: 2,
         title: 'Maquette brochure trilingue — V2',
         description: 'Version révisée avec corrections de mise en page et intégration photos terrain.',
@@ -121,7 +112,6 @@ module.exports = {
       {
         id: 'a7b2c3d4-0007-4000-8000-000000000007',
         project_id: PROJECT_5,
-        organization_id: ORG_APIZF,
         version_number: 1,
         title: 'Vidéo motion design finale',
         description: 'Version finale de la vidéo promotionnelle avec voix-off professionnelle et sous-titrage trilingue.',

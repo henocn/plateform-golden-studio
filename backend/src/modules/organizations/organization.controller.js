@@ -8,6 +8,18 @@ const {
 } = require("../../utils/pagination");
 
 /**
+ * GET /api/v1/organizations/current — public, for branding (logo, name)
+ */
+const getCurrent = async (req, res, next) => {
+  try {
+    const organization = await organizationService.getCurrent();
+    return ApiResponse.success(res, organization, "Current organization");
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
  * GET /api/v1/organizations
  */
 const list = async (req, res, next) => {
@@ -43,7 +55,7 @@ const create = async (req, res, next) => {
     return ApiResponse.created(
       res,
       organization,
-      "Organization created successfully",
+      'Organisation créée avec succès',
     );
   } catch (error) {
     return next(error);
@@ -56,25 +68,33 @@ const create = async (req, res, next) => {
 const getById = async (req, res, next) => {
   try {
     const organization = await organizationService.getById(req.params.id);
-    return ApiResponse.success(res, organization, "Organization retrieved");
+    return ApiResponse.success(res, organization, 'Organisation récupérée');
   } catch (error) {
     return next(error);
   }
 };
 
 /**
- * PUT /api/v1/organizations/:id
+ * PUT /api/v1/organizations/:id (optional logo upload via multipart)
  */
 const update = async (req, res, next) => {
   try {
-    const organization = await organizationService.update(
-      req.params.id,
-      req.body,
-    );
+    const path = require("path");
+    const env = require("../../config/env");
+    const body = { ...req.body };
+    if (req.file && req.file.path) {
+      body.logo_path = path.relative(env.UPLOAD_DIR, req.file.path).split(path.sep).join('/');
+    }
+    const hasUpdate = Object.keys(body).length > 0;
+    if (!hasUpdate) {
+      const organization = await organizationService.getById(req.params.id);
+      return ApiResponse.success(res, organization, 'Aucune modification');
+    }
+    const organization = await organizationService.update(req.params.id, body);
     return ApiResponse.success(
       res,
       organization,
-      "Organization updated successfully",
+      'Organisation mise à jour avec succès',
     );
   } catch (error) {
     return next(error);
@@ -170,6 +190,7 @@ const remove = async (req, res, next) => {
 };
 
 module.exports = {
+  getCurrent,
   list,
   create,
   getById,

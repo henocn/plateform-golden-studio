@@ -62,8 +62,6 @@ module.exports = (sequelize) => {
 
   Organization.associate = (models) => {
     Organization.belongsTo(models.User, { as: 'creator', foreignKey: 'created_by' });
-    Organization.hasMany(models.User, { as: 'users', foreignKey: 'organization_id' });
-    Organization.hasMany(models.Project, { as: 'projects', foreignKey: 'organization_id' });
   };
 
   return Organization;

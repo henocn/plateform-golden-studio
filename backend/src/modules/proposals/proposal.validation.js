@@ -24,9 +24,14 @@ const createCommentSchema = Joi.object({
   content: Joi.string().min(1).max(5000).required(),
 });
 
+const saveToMediaSchema = Joi.object({
+  folder_id: Joi.string().uuid().required().messages({ 'any.required': 'folder_id est requis' }),
+});
+
 module.exports = {
   createProposalSchema,
   updateProposalSchema,
   validateProposalSchema,
   createCommentSchema,
+  saveToMediaSchema,
 };

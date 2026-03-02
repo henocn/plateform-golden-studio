@@ -5,6 +5,7 @@ const { authenticate } = require('../../middlewares/auth.middleware');
 const { authorize } = require('../../middlewares/role.middleware');
 const tenantMiddleware = require('../../middlewares/tenant.middleware');
 const validate = require('../../middlewares/validate.middleware');
+const { uploadSingle, ALLOWED_MIME_TYPES } = require('../../middlewares/upload.middleware');
 const userController = require('./user.controller');
 const {
   createInternalUserSchema,
@@ -62,7 +63,19 @@ router.patch('/clients/:id/role',
 
 // ─── Common Routes ──────────────────────────────────────────
 router.get('/:id', userController.getById);
-router.put('/:id', validate(updateUserSchema), userController.update);
+router.put(
+  '/:id',
+  validate(updateUserSchema),
+  userController.update,
+);
+router.put(
+  '/:id/avatar',
+  uploadSingle('avatar', {
+    maxFileSize: 5 * 1024 * 1024,
+    allowedMimes: ALLOWED_MIME_TYPES.images,
+  }),
+  userController.updateAvatar,
+);
 router.patch('/:id/status', authorize('users.manage_internal', 'users.manage_clients', 'users.manage_own_org'), validate(patchStatusSchema), userController.patchStatus);
 router.delete('/:id', authorize('users.manage_internal', 'users.manage_clients'), userController.deleteUser);
 

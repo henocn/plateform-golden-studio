@@ -12,7 +12,7 @@ const authenticate = (req, _res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw ApiError.unauthorized('Access token is required');
+      throw ApiError.unauthorized('Le jeton d’accès est requis');
     }
 
     const token = authHeader.split(' ')[1];
@@ -24,7 +24,6 @@ const authenticate = (req, _res, next) => {
       email: decoded.email,
       user_type: decoded.user_type,
       role: decoded.role,
-      organization_id: decoded.organization_id,
     };
 
     return next();
@@ -36,10 +35,10 @@ const authenticate = (req, _res, next) => {
       return next(ApiError.tokenExpired());
     }
     if (error.name === 'JsonWebTokenError') {
-      return next(ApiError.unauthorized('Invalid authentication token'));
+      return next(ApiError.unauthorized('Jeton d’authentification invalide'));
     }
     logger.error('Auth middleware error', { error: error.message });
-    return next(ApiError.unauthorized('Authentication failed'));
+    return next(ApiError.unauthorized('Échec de l’authentification'));
   }
 };
 
@@ -61,7 +60,6 @@ const optionalAuth = (req, _res, next) => {
       email: decoded.email,
       user_type: decoded.user_type,
       role: decoded.role,
-      organization_id: decoded.organization_id,
     };
   } catch (_err) {
     // Silently ignore — user just won't be attached

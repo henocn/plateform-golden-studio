@@ -9,15 +9,14 @@ import LoadingScreen from './components/ui/LoadingScreen';
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const TwoFactorPage = lazy(() => import('./pages/auth/TwoFactorPage'));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
-const OrganizationsPage = lazy(() => import('./pages/organizations/OrganizationsPage'));
-const OrganizationDetailPage = lazy(() => import('./pages/organizations/OrganizationDetailPage'));
 const UsersPage = lazy(() => import('./pages/users/UsersPage'));
 const ProjectsPage = lazy(() => import('./pages/projects/ProjectsPage'));
 const ProjectDetailPage = lazy(() => import('./pages/projects/ProjectDetailPage'));
 const TasksPage = lazy(() => import('./pages/tasks/TasksPage'));
 const TaskDetailPage = lazy(() => import('./pages/tasks/TaskDetailPage'));
 const ProposalsPage = lazy(() => import('./pages/proposals/ProposalsPage'));
-const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage'));
+const EditorialCalendarPage = lazy(() => import('./pages/calendar/EditorialCalendarPage'));
+const EventsCalendarPage = lazy(() => import('./pages/calendar/EventsCalendarPage'));
 const MediaPage = lazy(() => import('./pages/media/MediaPage'));
 const ReportingPage = lazy(() => import('./pages/reporting/ReportingPage'));
 const AuditPage = lazy(() => import('./pages/audit/AuditPage'));
@@ -46,7 +45,9 @@ export default function App() {
             <Route path="tasks" element={<TasksPage />} />
             <Route path="tasks/:id" element={<TaskDetailPage />} />
             <Route path="proposals" element={<ProposalsPage />} />
-            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="calendar/editorial" element={<EditorialCalendarPage />} />
+            <Route path="calendar/events" element={<EventsCalendarPage />} />
+            <Route path="calendar" element={<Navigate to="/calendar/editorial" replace />} />
             <Route path="media" element={<MediaPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
@@ -54,10 +55,8 @@ export default function App() {
             {/* Users — internal admins + client_admin (page adapts) */}
             <Route path="users" element={<UsersPage />} />
 
-            {/* Admin-only pages — internal users only */}
+            {/* Admin-only pages — internal users only (single-organisation mode) */}
             <Route element={<AdminRoute />}>
-              <Route path="organizations" element={<OrganizationsPage />} />
-              <Route path="organizations/:id" element={<OrganizationDetailPage />} />
               <Route path="reporting" element={<ReportingPage />} />
               <Route path="audit" element={<AuditPage />} />
             </Route>

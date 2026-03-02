@@ -5,17 +5,13 @@ const {
   TaskComment,
   Proposal,
   User,
-  Organization,
   Project,
 } = require("../../models");
 const { Op } = require("sequelize");
 
 class TaskRepository {
-  /**
-   * Find all tasks with filters and visibility filtering
-   */
+  /* Récupère toutes les tâches avec filtres et visibilité */
   async findAll({
-    tenantId,
     projectId,
     assigneeId,
     status,
@@ -29,7 +25,6 @@ class TaskRepository {
   } = {}) {
     const where = {};
 
-    if (tenantId) where.organization_id = tenantId;
     if (projectId) where.project_id = projectId;
     if (assigneeId) where.assigned_to = assigneeId;
     if (status) where.status = status;
@@ -59,7 +54,6 @@ class TaskRepository {
             },
           ],
         },
-        { association: "organization", attributes: ["id", "name"] },
         {
           association: "assignee",
           attributes: ["id", "first_name", "last_name", "email"],
@@ -77,9 +71,9 @@ class TaskRepository {
     return { data: rows, total: count };
   }
 
-  async findById(id, tenantId = null) {
+  /* Récupère une tâche par son ID */
+  async findById(id) {
     const where = { id };
-    if (tenantId) where.organization_id = tenantId;
 
     return Task.findOne({
       where,
@@ -94,7 +88,6 @@ class TaskRepository {
             },
           ],
         },
-        { association: "organization", attributes: ["id", "name"] },
         {
           association: "assignee",
           attributes: ["id", "first_name", "last_name", "email"],
@@ -107,14 +100,15 @@ class TaskRepository {
     });
   }
 
-  async findProposals(taskId, tenantId = null) {
+  /* Récupère les propositions liées à une tâche */
+  async findProposals(taskId) {
     const where = { task_id: taskId };
-    if (tenantId) where.organization_id = tenantId;
     return Proposal.findAll({
       where,
       include: [
         { association: 'author', attributes: ['id', 'first_name', 'last_name', 'email'] },
         { association: 'project', attributes: ['id', 'title'] },
+        { association: 'attachments', order: [['sort_order', 'ASC']] },
         {
           association: 'comments',
           order: [['created_at', 'ASC']],
@@ -134,22 +128,26 @@ class TaskRepository {
     });
   }
 
+  /* Crée une tâche */
   async create(data) {
     return Task.create(data);
   }
 
+  /* Met à jour une tâche */
   async update(id, data) {
     const task = await Task.findByPk(id);
     if (!task) return null;
     return task.update(data);
   }
 
+  /* Met à jour le statut d'une tâche */
   async updateStatus(id, status) {
     const task = await Task.findByPk(id);
     if (!task) return null;
     return task.update({ status });
   }
 
+  /* Supprime une tâche */
   async delete(id) {
     const task = await Task.findByPk(id);
     if (!task) return null;
@@ -159,9 +157,9 @@ class TaskRepository {
 
   // ─── Comments ────────────────────────────────────────────────
 
+  /* Récupère les commentaires d'une tâche */
   async findComments(taskId, { isClient = false } = {}) {
     const where = { task_id: taskId };
-    // Clients only see non-internal comments
     if (isClient) where.is_internal = false;
 
     return TaskComment.findAll({
@@ -176,14 +174,17 @@ class TaskRepository {
     });
   }
 
+  /* Crée un commentaire sur une tâche */
   async createComment(data) {
     return TaskComment.create(data);
   }
 
+  /* Récupère un commentaire par son ID */
   async findCommentById(commentId) {
     return TaskComment.findByPk(commentId);
   }
 
+  /* Supprime un commentaire */
   async deleteComment(commentId) {
     const comment = await TaskComment.findByPk(commentId);
     if (!comment) return null;

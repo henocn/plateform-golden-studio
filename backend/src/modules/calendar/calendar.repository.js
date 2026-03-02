@@ -4,14 +4,11 @@ const { CalendarEvent } = require('../../models');
 const { Op } = require('sequelize');
 
 class CalendarRepository {
-  async findAll({ tenantId, type, projectId, status, visibility, startDate, endDate, search, page, limit, offset } = {}) {
+  /* Récupère tous les événements du calendrier avec filtres */
+  async findAll({ status, startDate, endDate, search, page, limit, offset } = {}) {
     const where = {};
 
-    if (tenantId) where.organization_id = tenantId;
-    if (type) where.type = type;
-    if (projectId) where.project_id = projectId;
     if (status) where.status = status;
-    if (visibility) where.visibility = visibility;
     if (startDate && endDate) {
       where.start_date = { [Op.between]: [new Date(startDate), new Date(endDate)] };
     } else if (startDate) {
@@ -29,9 +26,9 @@ class CalendarRepository {
     const { rows, count } = await CalendarEvent.findAndCountAll({
       where,
       include: [
-        { association: 'organization', attributes: ['id', 'name'] },
-        { association: 'project', attributes: ['id', 'title'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
+        { association: 'agency', attributes: ['id', 'name', 'code'] },
+        { association: 'direction', attributes: ['id', 'name', 'code'] },
       ],
       order: [['start_date', 'ASC']],
       limit,
@@ -41,36 +38,45 @@ class CalendarRepository {
     return { data: rows, total: count };
   }
 
-  async findById(id, tenantId = null) {
+  /* Récupère un événement par son ID */
+  async findById(id) {
     const where = { id };
-    if (tenantId) where.organization_id = tenantId;
 
     return CalendarEvent.findOne({
       where,
       include: [
-        { association: 'organization', attributes: ['id', 'name'] },
-        { association: 'project', attributes: ['id', 'title'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
+        { association: 'agency', attributes: ['id', 'name', 'code'] },
+        { association: 'direction', attributes: ['id', 'name', 'code'] },
       ],
     });
   }
 
+  /* Crée un événement */
   async create(data) {
     return CalendarEvent.create(data);
   }
 
+  /* Crée plusieurs événements en masse */
+  async bulkCreate(items) {
+    return CalendarEvent.bulkCreate(items);
+  }
+
+  /* Met à jour un événement */
   async update(id, data) {
     const event = await CalendarEvent.findByPk(id);
     if (!event) return null;
     return event.update(data);
   }
 
+  /* Met à jour le statut d'un événement */
   async updateStatus(id, status) {
     const event = await CalendarEvent.findByPk(id);
     if (!event) return null;
     return event.update({ status });
   }
 
+  /* Supprime un événement */
   async delete(id) {
     const event = await CalendarEvent.findByPk(id);
     if (!event) return null;

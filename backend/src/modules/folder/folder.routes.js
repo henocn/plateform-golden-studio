@@ -18,11 +18,7 @@ router.get('/',
   validate(listFolderQuery, 'query'),
   folderController.list);
 
-// Dossiers racine d'une organisation
-router.get('/roots/:organizationId',
-  authorize('folders.view'),
-  folderController.getRootFolders);
-
+// Dossiers racine
 router.get('/roots',
   authorize('folders.view'),
   folderController.getRootFolders);
@@ -37,9 +33,9 @@ router.get('/:id',
   authorize('folders.view'),
   folderController.getById);
 
-// Créer un dossier (racine ou sous-dossier)
+// Créer un dossier (racine ou sous-dossier) — une seule permission pour tout
 router.post('/',
-  authorize('folders.create_root', 'folders.create_subfolder'),
+  authorize('folders.create'),
   validate(createFolderSchema),
   folderController.create);
 

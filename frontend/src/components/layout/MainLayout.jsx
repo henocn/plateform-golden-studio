@@ -1,15 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import { useNotificationStore } from '../../store/notificationStore';
+
+let _socketBooted = false;
 
 export default function MainLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    if (_socketBooted) return;
+    _socketBooted = true;
+
+    const store = useNotificationStore.getState();
+    store.initSocket();
+    store.fetchUnreadCount();
+    store.fetchNotifications();
+  }, []);
+
   return (
     <div className="min-h-screen bg-surface-100">
-      {/* ── Sidebar ─────────────────── */}
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -17,7 +29,6 @@ export default function MainLayout() {
         onMobileClose={() => setMobileSidebarOpen(false)}
       />
 
-      {/* ── Main Area ───────────────── */}
       <div
         className={`
           transition-all duration-300 ease-out
@@ -36,7 +47,6 @@ export default function MainLayout() {
         </main>
       </div>
 
-      {/* ── Mobile sidebar overlay ──── */}
       {mobileSidebarOpen && (
         <div
           className="fixed inset-0 bg-ink-900/30 backdrop-blur-sm z-40 lg:hidden"

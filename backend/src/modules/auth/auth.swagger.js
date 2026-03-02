@@ -66,10 +66,6 @@
  *         role:
  *           type: string
  *           enum: [super_admin, admin, validator, contributor, reader, client_admin, client_validator, client_contributor, client_reader]
- *         organization_id:
- *           type: string
- *           format: uuid
- *           nullable: true
  *         avatar_path:
  *           type: string
  *           nullable: true

@@ -80,7 +80,7 @@ describe('Permissions Integration Tests', () => {
       const res = await request(app)
         .post(`${API}/projects`)
         .set('Authorization', `Bearer ${clientReaderToken}`)
-        .send({ title: 'Test', organization_id: 'x' });
+        .send({ title: 'Test' });
 
       expect([403]).toContain(res.statusCode);
     });

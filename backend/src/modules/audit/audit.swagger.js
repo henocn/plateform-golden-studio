@@ -15,11 +15,6 @@
  *           type: string
  *           format: uuid
  *       - in: query
- *         name: organizationId
- *         schema:
- *           type: string
- *           format: uuid
- *       - in: query
  *         name: action
  *         schema:
  *           type: string

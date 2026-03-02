@@ -13,10 +13,6 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       allowNull: true,
     },
-    organization_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
-    },
     task_id: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -36,6 +32,11 @@ module.exports = (sequelize) => {
     file_path: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    file_name: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: 'Original filename for download',
     },
     author_id: {
       type: DataTypes.UUID,
@@ -62,13 +63,13 @@ module.exports = (sequelize) => {
 
   Proposal.associate = (models) => {
     Proposal.belongsTo(models.Project, { as: 'project', foreignKey: 'project_id' });
-    Proposal.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
     Proposal.belongsTo(models.Task, { as: 'task', foreignKey: 'task_id' });
     Proposal.belongsTo(models.User, { as: 'author', foreignKey: 'author_id' });
     Proposal.belongsTo(models.User, { as: 'validatorUser', foreignKey: 'validator_id' });
     Proposal.hasMany(models.ProposalComment, { as: 'comments', foreignKey: 'proposal_id' });
     Proposal.hasMany(models.Validation, { as: 'validations', foreignKey: 'proposal_id' });
     Proposal.hasMany(models.Publication, { as: 'publications', foreignKey: 'proposal_id' });
+    Proposal.hasMany(models.ProposalAttachment, { as: 'attachments', foreignKey: 'proposal_id' });
   };
 
   return Proposal;

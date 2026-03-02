@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
-  User, Mail, Phone, Shield, Key, Camera, Save,
+  User, Mail, Phone, Key, Camera, Save,
 } from 'lucide-react';
 import { Card, Button, Input, Badge, Avatar } from '../../components/ui';
-import { authAPI, usersAPI } from '../../api/services';
+import { authAPI, usersAPI, uploadsUrl } from '../../api/services';
 import { useAuthStore } from '../../store/authStore';
 import { formatErrorMessage, ROLE_LABELS } from '../../utils/helpers';
 import toast from 'react-hot-toast';
@@ -11,10 +11,32 @@ import toast from 'react-hot-toast';
 export default function ProfilePage() {
   const { user, fetchMe } = useAuthStore();
   const [tab, setTab] = useState('info');
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef(null);
 
   if (!user) return null;
 
   const roleInfo = ROLE_LABELS[user.role] || { label: user.role };
+  const avatarSrc = user.avatar_path ? uploadsUrl(user.avatar_path) : null;
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      await usersAPI.uploadAvatar(user.id, formData);
+      await fetchMe();
+      toast.success('Photo de profil mise à jour');
+    } catch (err) {
+      const details = formatErrorMessage(err);
+      details.forEach((detail) => toast.error(detail.message));
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -22,8 +44,25 @@ export default function ProfilePage() {
       <Card>
         <div className="flex items-center gap-5">
           <div className="relative">
-            <Avatar name={`${user.first_name} ${user.last_name}`} size="xl" />
-            <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-primary-600 transition-default">
+            <Avatar
+              src={avatarSrc}
+              firstName={user.first_name}
+              lastName={user.last_name}
+              size="lg"
+            />
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+            <button
+              type="button"
+              disabled={avatarUploading}
+              onClick={() => avatarInputRef.current?.click()}
+              className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-primary-600 disabled:opacity-60 disabled:cursor-default transition-default"
+            >
               <Camera className="w-4 h-4" />
             </button>
           </div>
@@ -43,7 +82,6 @@ export default function ProfilePage() {
         {[
           { id: 'info', label: 'Informations', icon: User },
           { id: 'password', label: 'Mot de passe', icon: Key },
-          { id: '2fa', label: 'Sécurité 2FA', icon: Shield },
         ].map((t) => (
           <button
             key={t.id}
@@ -61,7 +99,6 @@ export default function ProfilePage() {
       <div className="animate-fade-in">
         {tab === 'info' && <ProfileInfoTab user={user} onUpdate={fetchMe} />}
         {tab === 'password' && <PasswordTab />}
-        {tab === '2fa' && <TwoFactorTab user={user} />}
       </div>
     </div>
   );
@@ -140,104 +177,6 @@ function PasswordTab() {
           <Button type="submit" loading={saving} icon={Save}>Modifier le mot de passe</Button>
         </div>
       </form>
-    </Card>
-  );
-}
-
-function TwoFactorTab({ user }) {
-  const [enabling, setEnabling] = useState(false);
-  const [qrData, setQrData] = useState(null);
-  const [token, setToken] = useState('');
-  const [verifying, setVerifying] = useState(false);
-
-  const is2FAEnabled = user.two_factor_enabled;
-
-  const handleEnable = async () => {
-    setEnabling(true);
-    try {
-      const { data } = await authAPI.setup2FA();
-      setQrData(data.data);
-    } catch (err) {
-      const details = formatErrorMessage(err);
-      details.forEach((detail) => toast.error(detail.message));
-    } finally {
-      setEnabling(false);
-    }
-  };
-
-  const handleVerify = async () => {
-    if (!token || token.length !== 6) return toast.error('Code à 6 chiffres requis');
-    setVerifying(true);
-    try {
-      await authAPI.verify2FA({ token });
-      toast.success('2FA activé avec succès');
-      setQrData(null);
-      setToken('');
-    } catch (err) {
-      const details =  formatErrorMessage(err);
-      details.forEach((detail) => toast.error(detail.message));
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  const handleDisable = async () => {
-    try {
-      await authAPI.disable2FA();
-      toast.success('2FA désactivé');
-    } catch (err) {
-      const details = formatErrorMessage(err);
-      details.forEach((detail) => toast.error(detail.message));
-    }
-  };
-
-  return (
-    <Card>
-      <div className="space-y-5">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${is2FAEnabled ? 'bg-success-50' : 'bg-surface-100'}`}>
-            <Shield className={`w-5 h-5 ${is2FAEnabled ? 'text-success-500' : 'text-ink-400'}`} />
-          </div>
-          <div>
-            <h3 className="text-body-lg font-medium text-ink-900">Authentification à deux facteurs</h3>
-            <p className="text-body-sm text-ink-400">
-              {is2FAEnabled ? 'Activée — votre compte est protégé par une double authentification' : 'Désactivée — activez-la pour renforcer la sécurité'}
-            </p>
-          </div>
-          <div className="ml-auto">
-            <Badge color={is2FAEnabled ? 'success' : 'neutral'} dot>{is2FAEnabled ? 'Activé' : 'Désactivé'}</Badge>
-          </div>
-        </div>
-
-        {!is2FAEnabled && !qrData && (
-          <Button onClick={handleEnable} loading={enabling} icon={Shield}>Activer la 2FA</Button>
-        )}
-
-        {qrData && (
-          <div className="border border-surface-200 rounded-xl p-5 space-y-4">
-            <p className="text-body-sm text-ink-500">Scannez ce QR code avec votre application d'authentification (Google Authenticator, Authy, etc.)</p>
-            {qrData.qr_code && (
-              <div className="flex justify-center">
-                <img src={qrData.qr_code} alt="QR Code 2FA" className="w-48 h-48 rounded-lg" />
-              </div>
-            )}
-            {qrData.secret && (
-              <div className="bg-surface-50 rounded-lg p-3 text-center">
-                <p className="text-body-sm text-ink-400 mb-1">Clé secrète (si QR impossible)</p>
-                <p className="text-body-md font-mono font-medium text-ink-700 select-all">{qrData.secret}</p>
-              </div>
-            )}
-            <div className="flex items-end gap-3">
-              <Input label="Code de vérification" value={token} onChange={(e) => setToken(e.target.value)} placeholder="000000" className="flex-1" maxLength={6} />
-              <Button onClick={handleVerify} loading={verifying}>Vérifier</Button>
-            </div>
-          </div>
-        )}
-
-        {is2FAEnabled && (
-          <Button variant="danger" onClick={handleDisable}>Désactiver la 2FA</Button>
-        )}
-      </div>
     </Card>
   );
 }

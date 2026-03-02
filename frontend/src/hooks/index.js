@@ -45,9 +45,9 @@ export function usePermissions() {
       canManageUsers: can('users.manage_internal') || can('users.manage_clients') || can('users.manage_own_org'),
       canViewAudit: can('audit.view'),
       canViewReporting: can('reporting.global') || can('reporting.own_org'),
-      // Folder permissions
-      canCreateFolder: can('folders.create_root') || can('folders.create_subfolder'),
-      canCreateRootFolder: can('folders.create_root'),
+      // Folder permissions (création partout : racine ou sous-dossier)
+      canCreateFolder: can('folders.create'),
+      canCreateRootFolder: can('folders.create'),
       canEditFolder: can('folders.edit'),
       canDeleteFolder: can('folders.delete'),
       canViewFolder: can('folders.view'),

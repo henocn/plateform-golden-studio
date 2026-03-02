@@ -13,10 +13,6 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       allowNull: true,
     },
-    organization_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
-    },
     action: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -54,7 +50,6 @@ module.exports = (sequelize) => {
 
   AuditLog.associate = (models) => {
     AuditLog.belongsTo(models.User, { as: 'user', foreignKey: 'user_id' });
-    AuditLog.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
   };
 
   return AuditLog;

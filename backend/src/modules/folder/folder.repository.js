@@ -4,11 +4,9 @@ const { Folder, Media } = require('../../models');
 const { Op } = require('sequelize');
 
 class FolderRepository {
-  async findAll({ tenantId, search, parent_id, page, limit, offset } = {}) {
+  /* Récupère tous les dossiers avec filtres */
+  async findAll({ search, parent_id, page, limit, offset } = {}) {
     const where = {};
-    if (tenantId) {
-      where.organization_id = tenantId;
-    }
     if (search) {
       where.name = { [Op.iLike]: `%${search}%` };
     }
@@ -18,7 +16,6 @@ class FolderRepository {
     const { rows, count } = await Folder.findAndCountAll({
       where,
       include: [
-        { association: 'organization', attributes: ['id', 'name', 'short_name'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
       ],
       order: [['created_at', 'DESC']],
@@ -28,40 +25,25 @@ class FolderRepository {
     return { data: rows, total: count };
   }
 
-  /**
-   * Récupère les dossiers racine d'une organisation (parent_id = null)
-   */
-  async findRootFolders(organizationId) {
+  /* Récupère tous les dossiers racine (parent_id = null) */
+  async findRootFolders() {
     return Folder.findAll({
-      where: {
-        organization_id: organizationId,
-        parent_id: null,
-      },
+      where: { parent_id: null },
       include: [
-        { association: 'organization', attributes: ['id', 'name', 'short_name'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
       ],
       order: [['created_at', 'DESC']],
     });
   }
 
-  /**
-   * Explore un dossier : retourne les sous-dossiers et fichiers
-   */
-  async explore(folderId, tenantId = null) {
+  /* Explore un dossier : retourne les sous-dossiers et fichiers */
+  async explore(folderId) {
     const where = { folder_id: folderId };
-    if (tenantId) {
-      where[Op.or] = [
-        { is_global: true },
-        { organization_id: tenantId },
-      ];
-    }
 
     const [subfolders, media] = await Promise.all([
       Folder.findAll({
         where: { parent_id: folderId },
         include: [
-          { association: 'organization', attributes: ['id', 'name', 'short_name'] },
           { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
         ],
         order: [['name', 'ASC']],
@@ -69,7 +51,6 @@ class FolderRepository {
       Media.findAll({
         where,
         include: [
-          { association: 'organization', attributes: ['id', 'name'] },
           { association: 'uploader', attributes: ['id', 'first_name', 'last_name'] },
         ],
         order: [['name', 'ASC']],
@@ -79,25 +60,23 @@ class FolderRepository {
     return { subfolders, media };
   }
 
-  async findById(id, tenantId = null) {
-    const where = { id };
-    if (tenantId) {
-      where.organization_id = tenantId;
-    }
+  /* Récupère un dossier par son ID */
+  async findById(id) {
     return Folder.findOne({
-      where,
+      where: { id },
       include: [
-        { association: 'organization', attributes: ['id', 'name', 'short_name'] },
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'parent', attributes: ['id', 'name'] },
       ],
     });
   }
 
+  /* Crée un dossier */
   async create(data) {
     return Folder.create(data);
   }
 
+  /* Met à jour un dossier */
   async update(id, data) {
     const folder = await Folder.findByPk(id);
     if (!folder) return null;
@@ -105,6 +84,7 @@ class FolderRepository {
     return folder;
   }
 
+  /* Supprime un dossier */
   async delete(id) {
     const folder = await Folder.findByPk(id);
     if (!folder) return null;

@@ -1,17 +1,15 @@
 'use strict';
 
-const { Project, Task, Proposal, Publication, Validation, User, Organization } = require('../../models');
+const { Project, Task, Proposal, Publication, Validation, User } = require('../../models');
 const { Op } = require('sequelize');
 const sequelize = require('sequelize');
 
+
 class ReportingService {
   /**
-   * Overview KPIs — global for internal, org-scoped for client
+   * Overview KPIs globaux
    */
   async getOverview(user) {
-    const isClient = user.user_type === 'client';
-    const orgWhere = isClient ? { organization_id: user.organization_id } : {};
-
     const [
       totalProjects,
       activeProjects,
@@ -22,14 +20,14 @@ class ReportingService {
       totalPublications,
       scheduledPublications,
     ] = await Promise.all([
-      Project.count({ where: { ...orgWhere } }),
-      Project.count({ where: { ...orgWhere, status: { [Op.in]: ['brief_received', 'in_production'] } } }),
-      Project.count({ where: { ...orgWhere, status: 'in_validation' } }),
-      Project.count({ where: { ...orgWhere, status: 'published' } }),
-      Task.count({ where: orgWhere }),
-      Proposal.count({ where: orgWhere }),
-      Publication.count({ where: orgWhere }),
-      Publication.count({ where: { ...orgWhere, status: 'scheduled' } }),
+      Project.count(),
+      Project.count({ where: { status: { [Op.in]: ['brief_received', 'in_production'] } } }),
+      Project.count({ where: { status: 'in_validation' } }),
+      Project.count({ where: { status: 'published' } }),
+      Task.count(),
+      Proposal.count(),
+      Publication.count(),
+      Publication.count({ where: { status: 'scheduled' } }),
     ]);
 
     return {
@@ -45,14 +43,10 @@ class ReportingService {
   }
 
   /**
-   * Project stats
+   * Statistiques des projets par statut et priorité
    */
   async getProjectStats(user) {
-    const isClient = user.user_type === 'client';
-    const orgWhere = isClient ? { organization_id: user.organization_id } : {};
-
     const byStatus = await Project.findAll({
-      where: orgWhere,
       attributes: [
         'status',
         [Project.sequelize.fn('COUNT', Project.sequelize.col('id')), 'count'],
@@ -62,7 +56,7 @@ class ReportingService {
     });
 
     const byPriority = await Project.findAll({
-      where: { ...orgWhere, status: { [Op.ne]: 'archived' } },
+      where: { status: { [Op.ne]: 'archived' } },
       attributes: [
         'priority',
         [Project.sequelize.fn('COUNT', Project.sequelize.col('id')), 'count'],
@@ -78,7 +72,7 @@ class ReportingService {
   }
 
   /**
-   * User stats — internal admin+ only
+   * Statistiques utilisateurs (admin+ uniquement)
    */
   async getUserStats() {
     const byType = await User.findAll({
@@ -109,14 +103,10 @@ class ReportingService {
   }
 
   /**
-   * Publication stats — by channel, adapted to tenant
+   * Statistiques des publications par canal
    */
   async getPublicationStats(user) {
-    const isClient = user.user_type === 'client';
-    const orgWhere = isClient ? { organization_id: user.organization_id } : {};
-
     const byChannel = await Publication.findAll({
-      where: orgWhere,
       attributes: [
         'channel',
         [Publication.sequelize.fn('COUNT', Publication.sequelize.col('id')), 'count'],
@@ -131,14 +121,10 @@ class ReportingService {
   }
 
   /**
-   * Validation stats
+   * Statistiques des validations par statut
    */
   async getValidationStats(user) {
-    const isClient = user.user_type === 'client';
-    const orgWhere = isClient ? { organization_id: user.organization_id } : {};
-
     const byStatus = await Validation.findAll({
-      where: orgWhere,
       attributes: [
         'status',
         [Validation.sequelize.fn('COUNT', Validation.sequelize.col('id')), 'count'],
@@ -147,7 +133,7 @@ class ReportingService {
       raw: true,
     });
 
-    const total = await Validation.count({ where: orgWhere });
+    const total = await Validation.count();
 
     return {
       total,

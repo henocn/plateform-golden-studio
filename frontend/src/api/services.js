@@ -11,17 +11,27 @@ export const authAPI = {
   disable2FA: (data) => api.post('/auth/2fa/disable', data),
 };
 
+const API_BASE = '/api/v1';
+
 export const organizationsAPI = {
+  getCurrent: () => api.get('/organizations/current'),
   list: (params) => api.get('/organizations', { params }),
   getById: (id) => api.get(`/organizations/${id}`),
   create: (data) => api.post('/organizations', data),
   update: (id, data) => api.put(`/organizations/${id}`, data),
+  updateWithLogo: (id, formData) => api.put(`/organizations/${id}`, formData),
   delete: (id) => api.delete(`/organizations/${id}`),
   patchStatus: (id, data) => api.patch(`/organizations/${id}/status`, data),
   getUsers: (id, params) => api.get(`/organizations/${id}/users`, { params }),
   getProjects: (id, params) => api.get(`/organizations/${id}/projects`, { params }),
   getStats: (id) => api.get(`/organizations/${id}/stats`),
 };
+
+/** URL pour un fichier uploadé (ex: logo organisation). */
+export function uploadsUrl(relativePath) {
+  if (!relativePath) return null;
+  return `${API_BASE}/uploads/${String(relativePath).replace(/^\/+/, '')}`;
+}
 
 export const usersAPI = {
   listMembers: (params) => api.get('/users/members', { params }),
@@ -31,9 +41,26 @@ export const usersAPI = {
   createInternal: (data) => api.post('/users/internal', data),
   createClient: (data) => api.post('/users/clients', data),
   update: (id, data) => api.put(`/users/${id}`, data),
+  uploadAvatar: (id, formData) => api.put(`/users/${id}/avatar`, formData),
   patchRole: (type, id, data) => api.patch(`/users/${type}/${id}/role`, data),
   patchStatus: (id, data) => api.patch(`/users/${id}/status`, data),
   remove: (id) => api.delete(`/users/${id}`),
+};
+
+export const agenciesAPI = {
+  list: () => api.get('/agencies'),
+  getById: (id) => api.get(`/agencies/${id}`),
+  create: (data) => api.post('/agencies', data),
+  update: (id, data) => api.put(`/agencies/${id}`, data),
+  remove: (id) => api.delete(`/agencies/${id}`),
+};
+
+export const directionsAPI = {
+  list: (params) => api.get('/directions', { params }),
+  getById: (id) => api.get(`/directions/${id}`),
+  create: (data) => api.post('/directions', data),
+  update: (id, data) => api.put(`/directions/${id}`, data),
+  remove: (id) => api.delete(`/directions/${id}`),
 };
 
 export const projectsAPI = {
@@ -44,18 +71,6 @@ export const projectsAPI = {
   patchStatus: (id, data) => api.patch(`/projects/${id}/status`, data),
   remove: (id) => api.delete(`/projects/${id}`),
   dashboardStats: (params) => api.get('/projects/dashboard/stats', { params }),
-};
-
-export const briefsAPI = {
-  list: (projectId, params) => api.get(`/projects/${projectId}/briefs`, { params }),
-  getById: (projectId, id) => api.get(`/projects/${projectId}/briefs/${id}`),
-  create: (projectId, data) => api.post(`/projects/${projectId}/briefs`, data),
-  update: (projectId, id, data) => api.put(`/projects/${projectId}/briefs/${id}`, data),
-  addAttachment: (projectId, id, formData) =>
-    api.post(`/projects/${projectId}/briefs/${id}/attachments`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  removeAttachment: (projectId, id, attachId) => api.delete(`/projects/${projectId}/briefs/${id}/attachments/${attachId}`),
 };
 
 export const tasksAPI = {
@@ -74,6 +89,8 @@ export const tasksAPI = {
 export const proposalsAPI = {
   list: (projectId, params) => api.get(`/projects/${projectId}/proposals`, { params }),
   getById: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}`),
+  download: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}/download`, { responseType: 'blob' }),
+  saveToMedia: (projectId, id, data) => api.post(`/projects/${projectId}/proposals/${id}/save-to-media`, data),
   create: (projectId, data) =>
     api.post(`/projects/${projectId}/proposals`, data, {
       headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
@@ -95,6 +112,25 @@ export const publicationsAPI = {
 };
 
 export const calendarAPI = {
+  // Events calendar
+  listEvents: (params) => api.get('/calendar/events', { params }),
+  getEventById: (id) => api.get(`/calendar/${id}`),
+  createEvent: (data) => api.post('/calendar/events', data),
+  updateEvent: (id, data) => api.put(`/calendar/${id}`, data),
+  removeEvent: (id) => api.delete(`/calendar/${id}`),
+  importEventsExcel: (formData) => api.post('/calendar/events/import', formData),
+  exportEventsExcel: (params) => api.get('/calendar/events/export', { params, responseType: 'blob' }),
+
+  // Editorial calendar
+  listEditorial: (params) => api.get('/calendar/editorial', { params }),
+  createEditorial: (data) => api.post('/calendar/editorial', data),
+  updateEditorial: (id, data) => api.put(`/calendar/editorial/${id}`, data),
+  removeEditorial: (id) => api.delete(`/calendar/editorial/${id}`),
+  assignEditorialTask: (id, task_id) => api.patch(`/calendar/editorial/${id}/assign-task`, { task_id }),
+  importEditorialExcel: (formData) => api.post('/calendar/editorial/import', formData),
+  exportEditorialExcel: (params) => api.get('/calendar/editorial/export', { params, responseType: 'blob' }),
+
+  // Backward compatibility
   list: (params) => api.get('/calendar', { params }),
   getById: (id) => api.get(`/calendar/${id}`),
   create: (data) => api.post('/calendar', data),
@@ -116,9 +152,8 @@ export const mediaAPI = {
 
 export const foldersAPI = {
   list: (params) => api.get('/folders', { params }),
-  getRootFolders: (organizationId) =>
-    organizationId ? api.get(`/folders/roots/${organizationId}`) : api.get('/folders/roots'),
-  explore: (id) => api.get(`/folders/${id}/explore`),
+  getRootFolders: () => api.get('/folders/roots'),
+  explore: (id, params) => api.get(`/folders/${id}/explore`, { params: params || {} }),
   getById: (id) => api.get(`/folders/${id}`),
   create: (data) => api.post('/folders', data),
   update: (id, data) => api.put(`/folders/${id}`, data),
@@ -138,4 +173,12 @@ export const reportingAPI = {
 export const auditAPI = {
   list: (params) => api.get('/audit', { params }),
   getById: (id) => api.get(`/audit/${id}`),
+};
+
+export const notificationsAPI = {
+  list: (params) => api.get('/notifications', { params }),
+  unreadCount: () => api.get('/notifications/unread-count'),
+  markAsRead: (id) => api.patch(`/notifications/${id}/read`),
+  markAllAsRead: () => api.patch('/notifications/read-all'),
+  remove: (id) => api.delete(`/notifications/${id}`),
 };

@@ -12,19 +12,17 @@ import {
   Trash2,
   Eye,
   ChevronRight,
-  Building2,
   Image,
 } from "lucide-react";
 import {
   Button,
   Modal,
-  Select,
   SearchInput,
   EmptyState,
   Skeleton,
   ConfirmDialog,
 } from "../../components/ui";
-import { mediaAPI, foldersAPI, organizationsAPI } from "../../api/services";
+import { mediaAPI, foldersAPI } from "../../api/services";
 import {
   formatDate,
   formatFileSize,
@@ -32,7 +30,6 @@ import {
   formatErrorMessage,
   MEDIA_TYPES,
 } from "../../utils/helpers";
-import { useAuthStore } from "../../store/authStore";
 import { usePermissions } from "../../hooks";
 import toast from "react-hot-toast";
 import UploadModal from "./UploadModal";
@@ -57,17 +54,15 @@ const fileIconColors = {
 };
 
 export default function MediaPage() {
-  const { user } = useAuthStore();
   const {
     canUploadMedia: canUpload,
     canViewFolder,
     canCreateFolder,
+    canDeleteFolder,
     isInternal,
     isSuperAdmin,
   } = usePermissions();
 
-  const [organizations, setOrganizations] = useState([]);
-  const [currentOrgId, setCurrentOrgId] = useState(null);
   const [breadcrumb, setBreadcrumb] = useState([]);
   const [subfolders, setSubfolders] = useState([]);
   const [media, setMedia] = useState([]);
@@ -78,44 +73,20 @@ export default function MediaPage() {
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState(null);
 
   const currentFolderId = breadcrumb.length > 0 ? breadcrumb[breadcrumb.length - 1]?.id ?? null : null;
   const isAtRoot = breadcrumb.length <= 1;
 
-  const loadOrganizations = useCallback(async () => {
-    if (!isInternal) return;
-    try {
-      const { data } = await organizationsAPI.list({ limit: 100 });
-      const list = data?.data?.data ?? data?.data ?? [];
-      const items = Array.isArray(list) ? list : list?.rows ?? [];
-      setOrganizations(items);
-      if (items.length > 0 && !currentOrgId) setCurrentOrgId(items[0].id);
-    } catch {
-      setOrganizations([]);
-    }
-  }, [isInternal, currentOrgId]);
-
-  useEffect(() => {
-    if (isInternal) loadOrganizations();
-    else if (user?.organization_id) setCurrentOrgId(user.organization_id);
-  }, [isInternal, user?.organization_id]);
-
   const loadContent = useCallback(async () => {
-    if (!currentOrgId) {
-      setLoading(false);
-      setSubfolders([]);
-      setMedia([]);
-      return;
-    }
     setLoading(true);
     try {
       if (!currentFolderId) {
         const [rootsRes, mediaRes] = await Promise.all([
-          foldersAPI.getRootFolders(currentOrgId),
+          foldersAPI.getRootFolders(),
           mediaAPI.list({
             limit: 100,
-            folder_id: '', // racine : uniquement médias sans dossier
-            ...(isInternal && currentOrgId ? { organizationId: currentOrgId } : {}),
+            folder_id: '', // racine : médias sans dossier
           }),
         ]);
         const rootsData = rootsRes?.data?.data ?? rootsRes?.data;
@@ -125,10 +96,11 @@ export default function MediaPage() {
         setSubfolders(roots);
         setMedia(mediaList ?? []);
       } else {
-        const { data } = await foldersAPI.explore(currentFolderId);
-        const result = data?.data ?? data;
-        setSubfolders(result?.subfolders ?? []);
-        setMedia(result?.media ?? []);
+        const res = await foldersAPI.explore(currentFolderId);
+        const data = res?.data?.data ?? res?.data;
+        const result = data && typeof data === 'object' ? data : {};
+        setSubfolders(Array.isArray(result?.subfolders) ? result.subfolders : []);
+        setMedia(Array.isArray(result?.media) ? result.media : []);
       }
     } catch (err) {
       toast.error("Erreur lors du chargement");
@@ -137,18 +109,17 @@ export default function MediaPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentOrgId, currentFolderId, isInternal]);
+  }, [currentFolderId]);
 
   useEffect(() => {
     loadContent();
   }, [loadContent]);
 
   useEffect(() => {
-    if (currentOrgId && isAtRoot) {
-      const org = organizations.find((o) => o.id === currentOrgId) || { name: "Racine" };
-      setBreadcrumb([{ id: null, name: org.name || "Racine", isRoot: true }]);
+    if (isAtRoot) {
+      setBreadcrumb([{ id: null, name: "Racine", isRoot: true }]);
     }
-  }, [currentOrgId, organizations, isAtRoot]);
+  }, [isAtRoot]);
 
   const openFolder = (folder) => {
     setBreadcrumb((prev) => {
@@ -188,7 +159,18 @@ export default function MediaPage() {
     }
   };
 
-  const currentOrg = organizations.find((o) => o.id === currentOrgId) || (user?.organization_id === currentOrgId ? { name: user?.organization_name || "Mon organisation" } : null);
+  const handleDeleteFolder = async () => {
+    if (!deleteFolderTarget) return;
+    try {
+      await foldersAPI.remove(deleteFolderTarget.id);
+      toast.success("Dossier supprimé");
+      setDeleteFolderTarget(null);
+      loadContent();
+    } catch (err) {
+      formatErrorMessage(err).forEach((d) => toast.error(d.message));
+    }
+  };
+
   const filteredFolders = search
     ? subfolders.filter((f) => f.name?.toLowerCase().includes(search.toLowerCase()))
     : subfolders;
@@ -206,50 +188,16 @@ export default function MediaPage() {
         <div>
           <h1 className="text-display-lg text-ink-900">Médiathèque</h1>
           <p className="text-body-md text-ink-500 mt-0.5">
-            Explorateur de fichiers par organisation
+            Fichiers de votre organisation. Les fichiers enregistrés depuis une proposition se trouvent dans le dossier que vous avez choisi lors de la sauvegarde.
           </p>
         </div>
       </div>
 
       <div className="flex gap-6 flex-1 min-h-0">
-        {/* Sidebar — Organisations (internes uniquement) */}
-        {isInternal && (
-          <aside className="w-56 shrink-0 flex flex-col rounded-xl border border-surface-300 bg-white shadow-card overflow-hidden">
-            <div className="px-4 py-3 border-b border-surface-200 bg-surface-100">
-              <span className="text-label text-ink-500 font-medium">Organisations</span>
-            </div>
-            <nav className="flex-1 overflow-y-auto py-2">
-              {organizations.map((org) => (
-                <button
-                  key={org.id}
-                  onClick={() => {
-                    setCurrentOrgId(org.id);
-                    setBreadcrumb([{ id: null, name: org.name, isRoot: true }]);
-                  }}
-                  className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-default ${
-                    currentOrgId === org.id
-                      ? "bg-primary-50 text-primary-700 border-r-2 border-primary-500"
-                      : "text-ink-700 hover:bg-surface-100"
-                  }`}
-                >
-                  <Building2 className="w-4 h-4 shrink-0 text-ink-400" />
-                  <span className="text-body-sm font-medium truncate">{org.name}</span>
-                </button>
-              ))}
-            </nav>
-          </aside>
-        )}
-
-        {/* Zone principale */}
         <main className="flex-1 flex flex-col min-w-0 rounded-xl border border-surface-300 bg-white shadow-card overflow-hidden">
           {/* Fil d'Ariane */}
           <div className="px-5 py-3 border-b border-surface-200 bg-surface-50 flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setCurrentOrgId(null)}
-              className="text-body-sm text-ink-500 hover:text-primary-600 transition-default"
-            >
-              Médiathèque
-            </button>
+            <span className="text-body-sm text-ink-500">Médiathèque</span>
             {breadcrumb.map((item, i) => (
               <span key={i} className="flex items-center gap-2">
                 <ChevronRight className="w-4 h-4 text-ink-300" />
@@ -326,12 +274,6 @@ export default function MediaPage() {
                       <Skeleton key={i} className="h-14 rounded-lg" />
                     ))}
               </div>
-            ) : !currentOrgId ? (
-              <EmptyState
-                icon={FolderOpen}
-                title="Sélectionnez une organisation"
-                description="Choisissez une organisation dans la liste pour afficher sa médiathèque."
-              />
             ) : filteredFolders.length === 0 && filteredMedia.length === 0 ? (
               <EmptyState
                 icon={FolderOpen}
@@ -359,18 +301,33 @@ export default function MediaPage() {
                 {view === "grid" ? (
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
                     {filteredFolders.map((folder) => (
-                      <button
+                      <div
                         key={folder.id}
-                        onClick={() => openFolder(folder)}
-                        className="group flex flex-col items-center p-4 rounded-xl border border-surface-300 bg-surface-50 hover:bg-primary-50 hover:border-primary-200 transition-default text-center"
+                        className="group relative flex flex-col items-center p-4 rounded-xl border border-surface-300 bg-surface-50 hover:bg-primary-50 hover:border-primary-200 transition-default text-center"
                       >
-                        <div className="w-14 h-14 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center mb-2 group-hover:bg-primary-200 transition-default">
-                          <FolderOpen className="w-7 h-7" />
-                        </div>
-                        <span className="text-body-sm font-medium text-ink-700 truncate w-full">
-                          {folder.name}
-                        </span>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => openFolder(folder)}
+                          className="flex flex-col items-center w-full"
+                        >
+                          <div className="w-14 h-14 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center mb-2 group-hover:bg-primary-200 transition-default">
+                            <FolderOpen className="w-7 h-7" />
+                          </div>
+                          <span className="text-body-sm font-medium text-ink-700 truncate w-full">
+                            {folder.name}
+                          </span>
+                        </button>
+                        {canDeleteFolder && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setDeleteFolderTarget(folder); }}
+                            className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/90 hover:bg-danger-50 text-ink-400 hover:text-danger-500 transition-default shadow-sm"
+                            title="Supprimer le dossier"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     ))}
                     {filteredMedia.map((f) => {
                       const cat = getFileCategory(f.mime_type);
@@ -432,19 +389,34 @@ export default function MediaPage() {
                 ) : (
                   <div className="space-y-1">
                     {filteredFolders.map((folder) => (
-                      <button
+                      <div
                         key={folder.id}
-                        onClick={() => openFolder(folder)}
-                        className="w-full flex items-center gap-4 px-4 py-3 rounded-lg border border-surface-200 bg-white hover:bg-primary-50 hover:border-primary-200 transition-default text-left"
+                        className="w-full flex items-center gap-4 px-4 py-3 rounded-lg border border-surface-200 bg-white hover:bg-primary-50 hover:border-primary-200 transition-default"
                       >
-                        <div className="w-10 h-10 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center shrink-0">
-                          <FolderOpen className="w-5 h-5" />
-                        </div>
-                        <span className="text-body-md font-medium text-ink-700 flex-1 truncate">
-                          {folder.name}
-                        </span>
-                        <ChevronRight className="w-4 h-4 text-ink-400 shrink-0" />
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => openFolder(folder)}
+                          className="flex items-center gap-4 flex-1 min-w-0 text-left"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center shrink-0">
+                            <FolderOpen className="w-5 h-5" />
+                          </div>
+                          <span className="text-body-md font-medium text-ink-700 flex-1 truncate">
+                            {folder.name}
+                          </span>
+                          <ChevronRight className="w-4 h-4 text-ink-400 shrink-0" />
+                        </button>
+                        {canDeleteFolder && (
+                          <button
+                            type="button"
+                            onClick={() => setDeleteFolderTarget(folder)}
+                            className="p-2 rounded-lg hover:bg-danger-50 text-ink-500 hover:text-danger-500 shrink-0"
+                            title="Supprimer le dossier"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     ))}
                     {filteredMedia.map((f) => {
                       const cat = getFileCategory(f.mime_type);
@@ -504,9 +476,7 @@ export default function MediaPage() {
         <CreateFolderModal
           isRoot={isAtRoot}
           parentId={currentFolderId}
-          organizationId={currentOrgId}
-          organizationName={currentOrg?.name}
-          isSuperAdmin={isSuperAdmin}
+          parentName={breadcrumb[breadcrumb.length - 1]?.name}
           onClose={() => setShowCreateFolder(false)}
           onCreated={handleFolderCreated}
         />
@@ -531,6 +501,14 @@ export default function MediaPage() {
         message={`Supprimer « ${deleteTarget?.name} » ? Cette action est irréversible.`}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteFolderTarget}
+        title="Supprimer le dossier"
+        message={`Supprimer le dossier « ${deleteFolderTarget?.name} » ? La suppression entraîne également celle de tous les sous-dossiers et fichiers qu'il contient. Cette action est irréversible.`}
+        onConfirm={handleDeleteFolder}
+        onCancel={() => setDeleteFolderTarget(null)}
       />
     </div>
   );

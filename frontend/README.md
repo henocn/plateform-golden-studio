@@ -1,6 +1,6 @@
-# GovCom Backoffice — Frontend Golden Studio
+# Plateforme — Frontend
 
-> Interface d'administration interne de la plateforme GovCom.
+> Interface d'administration interne.
 > Réservée aux utilisateurs **internal** (super_admin, admin, project_manager, collaborator).
 
 ## Stack Technique

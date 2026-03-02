@@ -57,7 +57,6 @@ class UserService {
       ...data,
       password_hash,
       user_type: 'internal',
-      organization_id: null,
       created_by: createdBy,
     });
   }
@@ -67,30 +66,19 @@ class UserService {
    * - internal admin+ can create for any org
    * - client_admin can create only within their own org
    */
+  /**
+   * Crée un utilisateur client
+   */
   async createClient(data, requestUser) {
-    // Validate role is client
     if (!CLIENT_ROLES.includes(data.role)) {
       throw ApiError.badRequest(`Role must be one of: ${CLIENT_ROLES.join(', ')}`);
     }
 
-    if (!data.organization_id) {
-      throw ApiError.badRequest('organization_id is required for client users');
-    }
-
-    // If requestUser is client_admin, ensure they can only create in their own org
-    if (requestUser.user_type === 'client') {
-      if (data.organization_id !== requestUser.organization_id) {
-        throw ApiError.unauthorizedOrgAccess();
-      }
-    }
-
-    // Check email uniqueness
     const existing = await userRepository.findByEmail(data.email);
     if (existing) {
       throw ApiError.conflict('A user with this email already exists');
     }
 
-    // Hash password
     const salt = await bcrypt.genSalt(12);
     const password_hash = await bcrypt.hash(data.password, salt);
 
@@ -105,18 +93,13 @@ class UserService {
   /**
    * Update user profile
    */
+  /**
+   * Met à jour le profil utilisateur
+   */
   async update(id, data, requestUser) {
     const user = await userRepository.findById(id);
     if (!user) throw ApiError.notFound('User');
 
-    // Client users can only update users within their own organization
-    if (requestUser.user_type === 'client') {
-      if (user.organization_id !== requestUser.organization_id) {
-        throw ApiError.unauthorizedOrgAccess();
-      }
-    }
-
-    // Never allow updating email, password, role, user_type through this endpoint
     const { email, password, role, user_type, password_hash, ...safeData } = data;
 
     return userRepository.update(id, safeData);
@@ -142,6 +125,9 @@ class UserService {
   /**
    * Change client user role
    */
+  /**
+   * Change le rôle d'un utilisateur client
+   */
   async changeClientRole(id, newRole, requestUser) {
     if (!CLIENT_ROLES.includes(newRole)) {
       throw ApiError.badRequest(`Role must be one of: ${CLIENT_ROLES.join(', ')}`);
@@ -153,33 +139,21 @@ class UserService {
       throw ApiError.badRequest('This user is not a client user');
     }
 
-    // client_admin can only change roles within their own org
-    if (requestUser.user_type === 'client') {
-      if (user.organization_id !== requestUser.organization_id) {
-        throw ApiError.unauthorizedOrgAccess();
-      }
-    }
-
     return userRepository.updateRole(id, newRole);
   }
 
   /**
    * Activate / deactivate user
    */
+  /**
+   * Active / désactive un utilisateur
+   */
   async updateStatus(id, isActive, requestUser) {
     const user = await userRepository.findById(id);
     if (!user) throw ApiError.notFound('User');
 
-    // Prevent self-deactivation
     if (id === requestUser.id && !isActive) {
       throw ApiError.badRequest('You cannot deactivate your own account');
-    }
-
-    // client_admin can only manage their own org
-    if (requestUser.user_type === 'client') {
-      if (user.organization_id !== requestUser.organization_id) {
-        throw ApiError.unauthorizedOrgAccess();
-      }
     }
 
     return userRepository.updateStatus(id, isActive);
@@ -189,7 +163,15 @@ class UserService {
    * Delete user (soft delete = deactivate)
    */
   async delete(id, requestUser) {
-    return this.updateStatus(id, false, requestUser);
+    const user = await userRepository.findById(id);
+    if (!user) throw ApiError.notFound('User');
+
+    // Empêche un utilisateur de se supprimer lui-même
+    if (id === requestUser.id) {
+      throw ApiError.badRequest('You cannot delete your own account');
+    }
+
+    return userRepository.delete(id);
   }
 }
 

@@ -4,7 +4,6 @@ const Joi = require('joi');
 
 const listAuditQuery = Joi.object({
   userId: Joi.string().uuid().optional(),
-  organizationId: Joi.string().uuid().optional(),
   action: Joi.string().max(100).optional(),
   entityType: Joi.string().max(100).optional(),
   startDate: Joi.date().iso().optional(),

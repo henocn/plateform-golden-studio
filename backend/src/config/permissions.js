@@ -33,11 +33,6 @@ const PERMISSIONS = {
   'proposals.validate':         ['super_admin', 'admin', 'client_validator', 'client_admin'],
   'proposals.validate_client':  ['client_admin', 'client_validator'],
 
-  // ─── Briefs ──────────────────────────────────────────────
-  'briefs.create':              ['super_admin', 'admin', 'contributor', 'client_admin'],
-  'briefs.edit':                ['super_admin', 'admin', 'contributor', 'client_admin'],
-  'briefs.submit':              ['client_admin', 'client_contributor'],
-
   // ─── Validations internes ────────────────────────────────
   'validations.internal':       ['super_admin', 'admin', 'validator'],
 
@@ -51,8 +46,7 @@ const PERMISSIONS = {
   'mediatheque.upload_client':  ['client_admin', 'client_contributor'],
 
   // ─── Dossiers (Folders) ──────────────────────────────────
-  'folders.create_root':        ['super_admin'],
-  'folders.create_subfolder':   ['super_admin', 'admin', 'contributor', 'client_admin', 'client_contributor'],
+  'folders.create':             ['super_admin', 'admin', 'contributor', 'client_admin', 'client_contributor'],
   'folders.edit':               ['super_admin', 'admin', 'contributor', 'client_admin', 'client_contributor'],
   'folders.delete':             ['super_admin', 'admin', 'client_admin'],
   'folders.view':               ['super_admin', 'admin', 'validator', 'contributor', 'reader', 'client_admin', 'client_validator', 'client_contributor', 'client_reader'],
@@ -61,10 +55,10 @@ const PERMISSIONS = {
   'publications.manage':        ['super_admin', 'admin', 'contributor'],
 
   // ─── Utilisateurs ────────────────────────────────────────
-  'users.list_members':         ['super_admin', 'admin', 'validator', 'contributor', 'reader'],
+  'users.list_members':         ['super_admin', 'admin', 'contributor'],
   'users.manage_internal':      ['super_admin'],
-  'users.manage_clients':       ['super_admin', 'admin'],
-  'users.manage_own_org':       ['client_admin'],
+  'users.manage_clients':       ['super_admin', 'admin', 'client_admin'],
+  'users.manage_own_org':       ['super_admin', 'client_admin'],
 
   // ─── Organisations ───────────────────────────────────────
   'organizations.manage':       ['super_admin'],
@@ -75,6 +69,9 @@ const PERMISSIONS = {
 
   // ─── Audit / Logs ────────────────────────────────────────
   'audit.view':                 ['super_admin', 'admin'],
+
+  // ─── Paramètres (agences, directions) ────────────────────
+  'settings.agencies_directions': ['super_admin', 'admin'],
 };
 
 module.exports = PERMISSIONS;

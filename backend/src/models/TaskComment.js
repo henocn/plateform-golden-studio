@@ -13,10 +13,6 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       allowNull: false,
     },
-    organization_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
     user_id: {
       type: DataTypes.UUID,
       allowNull: false,
@@ -39,7 +35,6 @@ module.exports = (sequelize) => {
 
   TaskComment.associate = (models) => {
     TaskComment.belongsTo(models.Task, { as: 'task', foreignKey: 'task_id' });
-    TaskComment.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
     TaskComment.belongsTo(models.User, { as: 'author', foreignKey: 'user_id' });
   };
 

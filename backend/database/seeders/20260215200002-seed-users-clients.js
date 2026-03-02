@@ -3,8 +3,6 @@
 // All client passwords: Client@1234
 // Hash: $2b$12$ZKqy/BKMt4VoV5lXJai8f.NohXqYbY0XjvnV1vqz4REU.3oMdR8pq
 
-const ORG_MIPISE = 'a1b2c3d4-0001-4000-8000-000000000001';
-const ORG_APIZF  = 'a1b2c3d4-0002-4000-8000-000000000002';
 const SUPER_ADMIN = 'b1b2c3d4-0001-4000-8000-000000000001';
 const CLIENT_HASH = '$2b$12$ZKqy/BKMt4VoV5lXJai8f.NohXqYbY0XjvnV1vqz4REU.3oMdR8pq';
 
@@ -23,7 +21,6 @@ module.exports = {
         last_name: 'Directrice',
         user_type: 'client',
         role: 'client_admin',
-        organization_id: ORG_MIPISE,
         job_title: 'Directrice Communication',
         avatar_path: null,
         is_active: true,
@@ -42,7 +39,6 @@ module.exports = {
         last_name: 'Validateur',
         user_type: 'client',
         role: 'client_validator',
-        organization_id: ORG_MIPISE,
         job_title: 'Responsable Validation',
         avatar_path: null,
         is_active: true,
@@ -61,7 +57,6 @@ module.exports = {
         last_name: 'Lectrice',
         user_type: 'client',
         role: 'client_reader',
-        organization_id: ORG_MIPISE,
         job_title: 'Chargée de Suivi',
         avatar_path: null,
         is_active: true,
@@ -82,7 +77,6 @@ module.exports = {
         last_name: 'Directeur',
         user_type: 'client',
         role: 'client_admin',
-        organization_id: ORG_APIZF,
         job_title: 'Directeur Général',
         avatar_path: null,
         is_active: true,
@@ -101,7 +95,6 @@ module.exports = {
         last_name: 'Contributrice',
         user_type: 'client',
         role: 'client_contributor',
-        organization_id: ORG_APIZF,
         job_title: 'Chargée de Communication',
         avatar_path: null,
         is_active: true,

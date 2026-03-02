@@ -1,13 +1,15 @@
 import {
   FileText, Download, Save, CheckCircle2, XCircle,
   RefreshCw, Hourglass, Paperclip, Clock, User,
+  FolderOpen, FolderPlus, ChevronRight,
 } from "lucide-react";
-import { Card, Badge, Avatar, Button, Textarea } from "../../components/ui";
-import { tasksAPI, proposalsAPI } from "../../api/services";
-import { useEffect, useState } from "react";
+import { Card, Badge, Avatar, Button, Textarea, Modal } from "../../components/ui";
+import { tasksAPI, proposalsAPI, foldersAPI } from "../../api/services";
+import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import { formatDate, formatDateTime, PROPOSAL_STATUS, formatErrorMessage } from "../../utils/helpers";
 import { usePermissions } from "../../hooks";
+import CreateFolderModal from "../media/CreateFolderModal";
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
@@ -106,18 +108,248 @@ function ValidationActions({ proposal, onRefresh }) {
 /* Statuts pour lesquels la décision (approuver / révision / rejeter) est encore possible */
 const AWAITING_DECISION_STATUSES = ["pending_client_validation", "submitted", "draft"];
 
+/* ─── Téléchargement (un fichier ou ZIP) avec nom depuis Content-Disposition ─ */
+async function downloadProposalFile(projectId, proposalId) {
+  const res = await proposalsAPI.download(projectId, proposalId);
+  const blob = res.data;
+  const cd = res.headers?.["content-disposition"];
+  const name = (cd && (cd.match(/filename\*?=(?:UTF-8'')?"?([^";\n]+)"?/)?.[1] || cd.match(/filename="?([^"]+)"?/)?.[1])) || "fichier";
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = decodeURIComponent(name.trim());
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function FileDownloadButton({ projectId, proposalId }) {
+  const [loading, setLoading] = useState(false);
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      await downloadProposalFile(projectId, proposalId);
+    } catch {
+      toast.error("Erreur lors du téléchargement");
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={loading}
+      className="inline-flex items-center gap-1.5 text-body-sm font-medium text-primary-600 hover:text-primary-700 hover:underline shrink-0 disabled:opacity-50"
+    >
+      <Download className="w-4 h-4" />
+      Télécharger
+    </button>
+  );
+}
+
+/* ─── Modale Sauvegarder dans la médiathèque (explorateur de dossiers) ────── */
+function SaveToMediaModal({ proposal, onClose, onSaved }) {
+  const { canCreateFolder } = usePermissions();
+  const projectId = proposal.project_id || proposal.project?.id;
+
+  const [breadcrumb, setBreadcrumb] = useState([]);
+  const [subfolders, setSubfolders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+
+  const currentFolderId = breadcrumb.length > 0 ? breadcrumb[breadcrumb.length - 1]?.id ?? null : null;
+  const isAtRoot = breadcrumb.length <= 1;
+  const selectedFolderId = currentFolderId;
+
+  const loadContent = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (!currentFolderId) {
+        const rootsRes = await foldersAPI.getRootFolders();
+        const rootsData = rootsRes?.data?.data ?? rootsRes?.data;
+        const roots = Array.isArray(rootsData) ? rootsData : [];
+        setSubfolders(roots);
+      } else {
+        const res = await foldersAPI.explore(currentFolderId);
+        const data = res?.data?.data ?? res?.data;
+        const result = data && typeof data === 'object' ? data : {};
+        setSubfolders(Array.isArray(result?.subfolders) ? result.subfolders : []);
+      }
+    } catch (err) {
+      toast.error("Impossible de charger les dossiers");
+      setSubfolders([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentFolderId]);
+
+  useEffect(() => {
+    loadContent();
+  }, [loadContent]);
+
+  useEffect(() => {
+    if (isAtRoot) {
+      setBreadcrumb([{ id: null, name: "Racine", isRoot: true }]);
+    }
+  }, [isAtRoot]);
+
+  const openFolder = (folder) => {
+    setBreadcrumb((prev) => {
+      const upToRoot = prev.findIndex((b) => b.isRoot);
+      const base = upToRoot >= 0 ? prev.slice(0, upToRoot + 1) : prev;
+      return [...base, { id: folder.id, name: folder.name, isRoot: false }];
+    });
+  };
+
+  const goToBreadcrumb = (index) => {
+    setBreadcrumb((prev) => prev.slice(0, index + 1));
+  };
+
+  const handleFolderCreated = () => {
+    setShowCreateFolder(false);
+    loadContent();
+  };
+
+  const handleSaveHere = async () => {
+    if (!selectedFolderId || !projectId) {
+      toast.error("Ouvrez un dossier ou créez-en un pour enregistrer les fichiers.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await proposalsAPI.saveToMedia(projectId, proposal.id, { folder_id: selectedFolderId });
+      toast.success("Fichier(s) enregistré(s) dans la médiathèque");
+      onSaved();
+    } catch (err) {
+      formatErrorMessage(err).forEach((m) => toast.error(m.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal open onClose={onClose} title="Sauvegarder dans la médiathèque" size="lg">
+      <div className="space-y-4">
+        <p className="text-body-sm text-ink-500">
+          Parcourez les dossiers, créez-en un si besoin, puis cliquez sur « Sauvegarder dans ce dossier ».
+        </p>
+
+        {/* Fil d'Ariane */}
+        <div className="flex items-center gap-2 flex-wrap rounded-lg bg-surface-50 border border-surface-200 px-3 py-2">
+          {breadcrumb.map((item, i) => (
+            <span key={i} className="flex items-center gap-2">
+              {i > 0 && <ChevronRight className="w-4 h-4 text-ink-300 shrink-0" />}
+              <button
+                type="button"
+                onClick={() => goToBreadcrumb(i)}
+                className={`text-body-sm font-medium transition-default ${
+                  i === breadcrumb.length - 1 ? "text-primary-600" : "text-ink-600 hover:text-primary-600"
+                }`}
+              >
+                {item.name}
+              </button>
+            </span>
+          ))}
+        </div>
+
+        {/* Actions + liste de dossiers */}
+        <div className="flex items-center justify-between gap-3 border-b border-surface-200 pb-3">
+          {canCreateFolder && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              icon={FolderPlus}
+              onClick={() => setShowCreateFolder(true)}
+            >
+              Nouveau dossier
+            </Button>
+          )}
+        </div>
+
+        <div className="min-h-[200px] max-h-[320px] overflow-y-auto rounded-xl border border-surface-200 bg-surface-50/50 p-3 space-y-2">
+          {loading ? (
+            <p className="text-body-sm text-ink-400 py-4">Chargement…</p>
+          ) : subfolders.length === 0 ? (
+            <p className="text-body-sm text-ink-500 py-4">
+              {isAtRoot
+                ? (canCreateFolder ? "Aucun dossier à la racine. Créez un dossier pour enregistrer les fichiers." : "Aucun dossier à la racine. Contactez un administrateur pour créer un dossier.")
+                : "Aucun sous-dossier. Vous pouvez sauvegarder ici ou créer un sous-dossier."}
+            </p>
+          ) : (
+            subfolders.map((folder) => (
+              <button
+                key={folder.id}
+                type="button"
+                onClick={() => openFolder(folder)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-surface-200 bg-white hover:bg-primary-50 hover:border-primary-200 transition-default text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center shrink-0">
+                  <FolderOpen className="w-5 h-5" />
+                </div>
+                <span className="text-body-md font-medium text-ink-700 flex-1 truncate">{folder.name}</span>
+                <ChevronRight className="w-4 h-4 text-ink-400 shrink-0" />
+              </button>
+            ))
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-surface-200">
+          <p className="text-body-sm text-ink-500">
+            {selectedFolderId
+              ? "Fichiers enregistrés dans le dossier affiché."
+              : "Ouvrez un dossier ou créez-en un pour choisir la destination."}
+          </p>
+          <div className="flex gap-2 shrink-0">
+            <Button variant="secondary" onClick={onClose}>Annuler</Button>
+            <Button
+              onClick={handleSaveHere}
+              loading={saving}
+              disabled={!selectedFolderId}
+              icon={Save}
+            >
+              Sauvegarder dans ce dossier
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {showCreateFolder && (
+        <CreateFolderModal
+          isRoot={isAtRoot}
+          parentId={currentFolderId}
+          parentName={breadcrumb[breadcrumb.length - 1]?.name}
+          onClose={() => setShowCreateFolder(false)}
+          onCreated={handleFolderCreated}
+        />
+      )}
+    </Modal>
+  );
+}
+
 /* ─── Carte "dernière version" ───────────────────────────────────────────── */
-function LatestProposalCard({ proposal, canValidate, onRefresh }) {
+export function LatestProposalCard({ proposal, canValidate, onRefresh }) {
+  const [downloading, setDownloading] = useState(false);
   const status = PROPOSAL_STATUS[proposal.status] ?? { label: proposal.status, color: "neutral" };
   const isApproved = proposal.status === "approved";
   const canDecide =
     canValidate && AWAITING_DECISION_STATUSES.includes(proposal.status);
 
-  const handleSave = () => {
-    if (proposal.file_path) {
-      window.open(proposal.file_path, "_blank");
+  const hasFile = Boolean(proposal.file_path) || (proposal.attachments && proposal.attachments.length > 0);
+  const projectId = proposal.project_id || proposal.project?.id;
+  const handleDownload = async () => {
+    if (!hasFile || !projectId) return;
+    setDownloading(true);
+    try {
+      await downloadProposalFile(projectId, proposal.id);
+    } catch {
+      toast.error("Erreur lors du téléchargement");
+    } finally {
+      setDownloading(false);
     }
   };
+  const [showSaveToMedia, setShowSaveToMedia] = useState(false);
 
   const comments = proposal.comments || [];
   const validations = proposal.validations || [];
@@ -171,24 +403,31 @@ function LatestProposalCard({ proposal, canValidate, onRefresh }) {
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-1">
-          {proposal.file_path && (
-            <a
-              href={proposal.file_path}
-              download
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-surface-300 text-body-sm text-ink-600 hover:bg-surface-100 transition-default"
+          {hasFile && (
+            <Button
+              size="sm"
+              variant="outline"
+              icon={Download}
+              loading={downloading}
+              disabled={!projectId}
+              onClick={handleDownload}
             >
-              <Download className="w-3.5 h-3.5" />
               Télécharger
-            </a>
+            </Button>
           )}
-          {isApproved && proposal.file_path && (
-            <Button size="sm" icon={Save} onClick={handleSave}>
+          {hasFile && (
+            <Button size="sm" variant="outline" icon={Save} onClick={() => setShowSaveToMedia(true)}>
               Sauvegarder
             </Button>
           )}
         </div>
+        {showSaveToMedia && (
+          <SaveToMediaModal
+            proposal={proposal}
+            onClose={() => setShowSaveToMedia(false)}
+            onSaved={() => { setShowSaveToMedia(false); onRefresh(); }}
+          />
+        )}
 
         {/* Commentaires de la proposition */}
         {comments.length > 0 && (
@@ -258,7 +497,7 @@ function LatestProposalCard({ proposal, canValidate, onRefresh }) {
 }
 
 /* ─── Entrée de la timeline (versions précédentes) ───────────────────────── */
-function TimelineEntry({ proposal, isLast }) {
+export function TimelineEntry({ proposal, isLast }) {
   const status = PROPOSAL_STATUS[proposal.status] ?? { label: proposal.status, color: "neutral" };
 
   const dotStyles = {
@@ -313,17 +552,11 @@ function TimelineEntry({ proposal, isLast }) {
             </div>
           </div>
 
-          {proposal.file_path && (
-            <a
-              href={proposal.file_path}
-              download
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-body-sm font-medium text-primary-600 hover:text-primary-700 hover:underline shrink-0"
-            >
-              <Download className="w-4 h-4" />
-              Fichier
-            </a>
+          {(proposal.file_path || (proposal.attachments && proposal.attachments.length > 0)) && (proposal.project_id || proposal.project?.id) && (
+            <FileDownloadButton
+              projectId={proposal.project_id || proposal.project?.id}
+              proposalId={proposal.id}
+            />
           )}
         </div>
 
@@ -373,17 +606,19 @@ function TimelineEntry({ proposal, isLast }) {
 }
 
 /* ─── Composant principal ────────────────────────────────────────────────── */
-export default function ProposalsTab({ taskId }) {
+export default function ProposalsTab({ taskId, onProposalsLoaded }) {
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
   const { canValidateProposal } = usePermissions();
 
   const fetchProposals = async () => {
     setLoading(true);
     try {
       const response = await tasksAPI.getProposals(taskId);
-      // L'ordre vient du backend : première entrée = dernière version
-      setProposals(Array.isArray(response.data.data) ? response.data.data : []);
+      const list = Array.isArray(response.data.data) ? response.data.data : [];
+      setProposals(list);
+      if (typeof onProposalsLoaded === "function") onProposalsLoaded(list.length);
     } catch {
       toast.error("Erreur lors du chargement des propositions");
     } finally {
@@ -425,13 +660,7 @@ export default function ProposalsTab({ taskId }) {
 
   return (
     <div className="space-y-4">
-      {/* Compteur */}
-      <p className="text-body-sm text-ink-400 px-1">
-        <span className="font-semibold text-ink-700">{proposals.length}</span>{" "}
-        proposition{proposals.length > 1 ? "s" : ""}
-      </p>
-
-      {/* Dernière version — hero */}
+      {/* Une seule carte : dernière version */}
       {latest && (
         <LatestProposalCard
           proposal={latest}
@@ -440,19 +669,38 @@ export default function ProposalsTab({ taskId }) {
         />
       )}
 
-      {/* Timeline versions précédentes */}
+      {/* Bouton pour afficher l'historique des versions */}
       {previous.length > 0 && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setShowHistory((v) => !v)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-surface-300 text-body-sm font-medium text-ink-600 hover:bg-surface-100 transition-default"
+          >
+            <Paperclip className="w-4 h-4 text-ink-400" />
+            {showHistory ? "Masquer l'historique" : "Voir l'historique des versions"}
+            <span className="bg-surface-200 text-ink-600 px-2 py-0.5 rounded-full text-xs">
+              {previous.length}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Historique (fil des versions) — visible au clic */}
+      {showHistory && previous.length > 0 && (
         <Card className="p-5">
           <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider mb-5">
             Historique des versions
           </p>
-          {previous.map((p, idx) => (
-            <TimelineEntry
-              key={p.id}
-              proposal={p}
-              isLast={idx === previous.length - 1}
-            />
-          ))}
+          <div className="space-y-4">
+            {previous.map((p, idx) => (
+              <TimelineEntry
+                key={p.id}
+                proposal={p}
+                isLast={idx === previous.length - 1}
+              />
+            ))}
+          </div>
         </Card>
       )}
     </div>

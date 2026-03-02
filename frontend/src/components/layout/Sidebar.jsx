@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   FolderKanban,
   CheckSquare,
   Calendar,
+  Megaphone,
   Image,
   BarChart3,
   Users,
@@ -14,18 +16,19 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { useOrganizationStore } from '../../store/organizationStore';
 
 const navItems = [
-  { label: 'Dashboard',      to: '/dashboard',      icon: LayoutDashboard },
-  { label: 'Organisations',  to: '/organizations',  icon: Building2, roles: ['super_admin', 'admin'], internal: true },
-  { label: 'Projets',        to: '/projects',       icon: FolderKanban },
-  { label: 'Tâches',         to: '/tasks',          icon: CheckSquare },
-  { label: 'Propositions',   to: '/proposals',      icon: FolderKanban },
-  { label: 'Calendrier',     to: '/calendar',       icon: Calendar },
-  { label: 'Médiathèque',    to: '/media',          icon: Image },
-  { label: 'Reporting',      to: '/reporting',       icon: BarChart3, roles: ['super_admin', 'admin', 'validator'], internal: true },
-  { label: 'Utilisateurs',   to: '/users',          icon: Users, roles: ['super_admin', 'admin', 'client_admin'] },
-  { label: 'Audit',          to: '/audit',          icon: Shield, roles: ['super_admin', 'admin'], internal: true },
+  { label: 'Dashboard',            to: '/dashboard',          icon: LayoutDashboard },
+  { label: 'Projets',              to: '/projects',           icon: FolderKanban },
+  { label: 'Tâches',               to: '/tasks',              icon: CheckSquare },
+  { label: 'Propositions',         to: '/proposals',          icon: FolderKanban },
+  { label: 'Calendrier éditorial', to: '/calendar/editorial', icon: Megaphone },
+  { label: 'Calendrier événements', to: '/calendar/events',   icon: Calendar },
+  { label: 'Médiathèque',          to: '/media',              icon: Image },
+  { label: 'Reporting',            to: '/reporting',          icon: BarChart3, roles: ['super_admin', 'admin', 'validator'], internal: true },
+  { label: 'Utilisateurs',         to: '/users',              icon: Users, roles: ['super_admin', 'admin', 'client_admin'] },
+  { label: 'Audit',                to: '/audit',              icon: Shield, roles: ['super_admin', 'admin'], internal: true },
 ];
 
 const bottomItems = [
@@ -34,9 +37,16 @@ const bottomItems = [
 
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }) {
   const { user } = useAuthStore();
+  const { current, fetchCurrent, logoUrl, displayName } = useOrganizationStore();
   const location = useLocation();
 
+  useEffect(() => {
+    fetchCurrent();
+  }, [fetchCurrent]);
+
   const isClient = user?.user_type === 'client';
+  const logoSrc = logoUrl();
+  const orgName = displayName();
 
   const filteredNav = navItems.filter((item) => {
     // Hide internal-only items from client users
@@ -87,17 +97,20 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}
     >
-      {/* ── Logo ──────────────────────── */}
-      <div className={`flex items-center h-16 px-4 border-b border-surface-200 shrink-0 ${collapsed ? 'justify-center' : 'gap-3'}`}>
-        <div className="w-9 h-9 rounded-xl bg-primary-500 flex items-center justify-center shrink-0">
-          <span className="text-white font-bold text-base">G</span>
+      {/* ── Logo Kidou (gauche) + Logo organisation backend (droite), justify-between ─────────── */}
+      <div className={`flex items-center justify-between border-b border-surface-200 shrink-0 gap-2 ${collapsed ? 'h-14 px-2' : 'h-20 px-4'}`}>
+        <img
+          src="/images/Qidoo white.jpeg"
+          alt=""
+          className={`object-contain shrink-0 ${collapsed ? 'h-9 w-auto max-w-11' : 'h-10 w-auto max-w-[140px]'}`}
+        />
+        <div className={`rounded-lg bg-surface-100 flex items-center justify-center overflow-hidden shrink-0 ${collapsed ? 'w-9 h-9' : 'w-11 h-11'}`}>
+          {logoSrc ? (
+            <img src={logoSrc} alt="" className="w-full h-full object-contain" />
+          ) : (
+            <span className="text-ink-400 font-bold text-sm">O</span>
+          )}
         </div>
-        {!collapsed && (
-          <div className="min-w-0">
-            <h1 className="text-sm font-bold text-ink-900 tracking-tight truncate">GovCom</h1>
-            <p className="text-[0.625rem] text-ink-400 truncate">Golden Studio</p>
-          </div>
-        )}
       </div>
 
       {/* ── Navigation ────────────────── */}

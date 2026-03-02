@@ -26,9 +26,6 @@ const createClientUserSchema = Joi.object({
   first_name: Joi.string().min(1).max(100).required(),
   last_name: Joi.string().min(1).max(100).required(),
   role: Joi.string().valid(...CLIENT_ROLES).required(),
-  organization_id: Joi.string().uuid().required().messages({
-    'any.required': 'Organization ID is required for client users',
-  }),
   job_title: Joi.string().max(100).optional().allow(null, ''),
 });
 
@@ -36,6 +33,7 @@ const updateUserSchema = Joi.object({
   first_name: Joi.string().min(1).max(100).optional(),
   last_name: Joi.string().min(1).max(100).optional(),
   job_title: Joi.string().max(100).optional().allow(null, ''),
+  phone: Joi.string().max(50).optional().allow(null, ''),
   avatar_path: Joi.string().max(500).optional().allow(null, ''),
 }).min(1);
 
@@ -53,7 +51,6 @@ const listUsersQuery = Joi.object({
   search: Joi.string().max(255).optional(),
   role: Joi.string().optional(),
   is_active: Joi.boolean().optional(),
-  organizationId: Joi.string().uuid().optional(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 });

@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -75,12 +76,14 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// ─── Static uploads (logos, media) ───────────────────────────
+app.use(`${env.API_PREFIX}/uploads`, express.static(path.resolve(env.UPLOAD_DIR)));
+
 // ─── API Routes ──────────────────────────────────────────────
 const authRoutes = require('./modules/auth/auth.routes');
 const orgRoutes = require('./modules/organizations/organization.routes');
 const userRoutes = require('./modules/users/user.routes');
 const projectRoutes = require('./modules/projects/project.routes');
-const briefRoutes = require('./modules/briefs/brief.routes');
 const taskRoutes = require('./modules/tasks/task.routes');
 const proposalRoutes = require('./modules/proposals/proposal.routes');
 const publicationRoutes = require('./modules/publications/publication.routes');
@@ -89,11 +92,13 @@ const mediaRoutes = require('./modules/media/media.routes');
 const folderRoutes = require('./modules/folder/folder.routes');
 const reportingRoutes = require('./modules/reporting/reporting.routes');
 const auditRoutes = require('./modules/audit/audit.routes');
+const notificationRoutes = require('./modules/notifications/notification.routes');
+const agencyRoutes = require('./modules/agencies/agency.routes');
+const directionRoutes = require('./modules/directions/direction.routes');
 require('./modules/auth/auth.swagger');
 require('./modules/organizations/organization.swagger');
 require('./modules/users/user.swagger');
 require('./modules/projects/project.swagger');
-require('./modules/briefs/brief.swagger');
 require('./modules/tasks/task.swagger');
 require('./modules/proposals/proposal.swagger');
 require('./modules/publications/publication.swagger');
@@ -106,7 +111,6 @@ app.use(`${env.API_PREFIX}/auth`, authRoutes);
 app.use(`${env.API_PREFIX}/organizations`, orgRoutes);
 app.use(`${env.API_PREFIX}/users`, userRoutes);
 app.use(`${env.API_PREFIX}/projects`, projectRoutes);
-app.use(`${env.API_PREFIX}/projects/:projectId/briefs`, briefRoutes);
 app.use(`${env.API_PREFIX}/tasks`, taskRoutes);
 app.use(`${env.API_PREFIX}/projects/:projectId/proposals`, proposalRoutes);
 app.use(`${env.API_PREFIX}/projects/:projectId/publications`, publicationRoutes);
@@ -115,6 +119,9 @@ app.use(`${env.API_PREFIX}/media`, mediaRoutes);
 app.use(`${env.API_PREFIX}/folders`, folderRoutes);
 app.use(`${env.API_PREFIX}/reporting`, reportingRoutes);
 app.use(`${env.API_PREFIX}/audit`, auditRoutes);
+app.use(`${env.API_PREFIX}/notifications`, notificationRoutes);
+app.use(`${env.API_PREFIX}/agencies`, agencyRoutes);
+app.use(`${env.API_PREFIX}/directions`, directionRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────
 app.use((_req, res) => {

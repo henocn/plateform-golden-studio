@@ -97,6 +97,7 @@ function CommentsSection({
   me,
   commentsEndRef,
   handleAddComment,
+  hideTitle,
 }) {
   const visibleComments = comments
     .slice()
@@ -108,9 +109,11 @@ function CommentsSection({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-label text-ink-400 uppercase tracking-wide text-xs">
-        Commentaires
-      </p>
+      {!hideTitle && (
+        <p className="text-label text-ink-400 uppercase tracking-wide text-xs">
+          Commentaires
+        </p>
+      )}
 
       {/* Liste */}
       <div
@@ -228,106 +231,103 @@ export default function TaskDetailsTab({
   commentsEndRef,
   handleAddComment,
 }) {
-  const { assignee, project, organization, creator } = task;
+  const { assignee, project, creator } = task;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Bloc infos générales */}
-      <Card className="p-5 space-y-5">
-        {/* Ligne meta */}
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-body-sm text-ink-400 border-b border-surface-100 pb-4">
-          <span>
-            Créée le{" "}
-            <b className="text-ink-600">{formatDate(task.createdAt)}</b>
-          </span>
-          {task.due_date && (
-            <>
-              <span>·</span>
-              <span>
-                Date limite :{" "}
-                <b className="text-ink-600">{formatDate(task.due_date)}</b>
-              </span>
-              <span>·</span>
-              <span>
-                Dans{" "}
-                <b className="text-ink-600">
-                  {deltaTime(task.createdAt, task.due_date)} jrs
-                </b>
-              </span>
-            </>
-          )}
+      <Card className="overflow-hidden">
+        <div className="px-5 py-4 border-b border-surface-200 bg-surface-50/50">
+          <h2 className="text-label font-semibold text-ink-800">Informations générales</h2>
         </div>
-
-        {/* Grille infos */}
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-          <div>
-            <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-0.5">
-              Projet
-            </p>
-            <p className="text-body-sm text-ink-800 font-medium">
-              {project?.title || "—"}
-            </p>
-          </div>
-          <div>
-            <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-0.5">
-              Organisation
-            </p>
-            <p className="text-body-sm text-ink-800 font-medium">
-              {organization?.name || "—"}
-            </p>
-          </div>
-          <div>
-            <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-0.5">
-              Priorité
-            </p>
-            <Badge color={PRIORITY[task.priority]?.color} size="sm">
-              {PRIORITY[task.priority]?.label}
-            </Badge>
-          </div>
-          <div>
-            <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-0.5">
-              Statut
-            </p>
-            <Badge color={TASK_STATUS[task.status]?.color} dot size="sm">
-              {TASK_STATUS[task.status]?.label}
-            </Badge>
-          </div>
-          <div>
-            <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-0.5">
-              Dernière soumission
-            </p>
-            <a className="text-blue-500" href="#">Dernière soumission de proposition</a>
-          </div>
-        </div>
-
-        {/* Description */}
-        <div>
-          <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-1 mt-6">
-            Description
-          </p>
-          <div className="rounded-xl bg-surface-50 border border-surface-100 px-4 py-2 text-body-sm text-ink-700 whitespace-pre-line min-h-[60px]">
-            {task.description || (
-              <span className="italic text-ink-300">Aucune description</span>
+        <div className="p-5 space-y-5">
+          {/* Ligne meta */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-body-sm text-ink-500 pb-4 border-b border-surface-100">
+            <span>
+              Créée le{" "}
+              <span className="font-medium text-ink-700">{formatDate(task.createdAt)}</span>
+            </span>
+            {task.due_date && (
+              <>
+                <span className="text-surface-400">|</span>
+                <span>
+                  Échéance :{" "}
+                  <span className="font-medium text-ink-700">{formatDate(task.due_date)}</span>
+                </span>
+                <span className="text-surface-400">|</span>
+                <span>
+                  Jours restants :{" "}
+                  <span className="font-medium text-ink-700">
+                    {deltaTime(task.createdAt, task.due_date)}
+                  </span>
+                </span>
+              </>
             )}
+          </div>
+
+          {/* Grille infos */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div>
+              <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-1">
+                Projet
+              </p>
+              <p className="text-body-md text-ink-800 font-medium">
+                {project?.title || "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-1">
+                Priorité
+              </p>
+              <Badge color={PRIORITY[task.priority]?.color} size="sm">
+                {PRIORITY[task.priority]?.label}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-1">
+                Statut
+              </p>
+              <Badge color={TASK_STATUS[task.status]?.color} dot size="sm">
+                {TASK_STATUS[task.status]?.label}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-2">
+              Description
+            </p>
+            <div className="rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-body-md text-ink-700 whitespace-pre-line min-h-[60px]">
+              {task.description || (
+                <span className="italic text-ink-400">Aucune description</span>
+              )}
+            </div>
           </div>
         </div>
       </Card>
 
       {/* Bloc intervenants */}
-      <Card className="p-5">
-        <p className="text-body-sm font-semibold text-ink-700 mb-4">
-          Intervenants
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <UserCard label="Créateur" user={creator} />
-          <UserCard label="Chargé de la tâche" user={assignee} />
-          <UserCard label="Superviseur" user={project.clientContact} />
+      <Card className="overflow-hidden">
+        <div className="px-5 py-4 border-b border-surface-200 bg-surface-50/50">
+          <h2 className="text-label font-semibold text-ink-800">Intervenants</h2>
+        </div>
+        <div className="p-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <UserCard label="Créateur" user={creator} />
+            <UserCard label="Chargé de la tâche" user={assignee} />
+            <UserCard label="Superviseur" user={project?.clientContact} />
+          </div>
         </div>
       </Card>
 
       {/* Bloc commentaires */}
-      <Card className="p-5">
-        <CommentsSection
+      <Card className="overflow-hidden">
+        <div className="px-5 py-4 border-b border-surface-200 bg-surface-50/50">
+          <h2 className="text-label font-semibold text-ink-800">Commentaires</h2>
+        </div>
+        <div className="p-5">
+          <CommentsSection
           comments={comments}
           commentLoading={commentLoading}
           commentContent={commentContent}
@@ -338,7 +338,9 @@ export default function TaskDetailsTab({
           me={me}
           commentsEndRef={commentsEndRef}
           handleAddComment={handleAddComment}
+          hideTitle
         />
+        </div>
       </Card>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   BarChart3, TrendingUp, Download, FileText, Calendar,
-  FolderKanban, CheckSquare, Users, Building2, ArrowUpRight, ArrowDownRight,
+  FolderKanban, CheckSquare, Users, ArrowUpRight, ArrowDownRight,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -164,42 +164,17 @@ export default function ReportingPage() {
       </div>
 
       {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Tasks by priority */}
-        <Card title="Tâches par priorité">
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={s.tasksByPriority || mockTasksByPriority} layout="vertical" barCategoryGap={12}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
-              <XAxis type="number" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis dataKey="name" type="category" fontSize={12} tickLine={false} axisLine={false} width={80} />
-              <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb' }} />
-              <Bar dataKey="count" name="Nombre" fill="#1E3A5F" radius={[0, 6, 6, 0]} barSize={24} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
-
-        {/* Top organizations */}
-        <Card title="Organisations les plus actives">
-          <div className="space-y-3">
-            {(s.topOrganizations || mockTopOrgs).map((org, idx) => (
-              <div key={idx} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0">
-                  <Building2 className="w-4 h-4 text-primary-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-body-sm font-medium text-ink-700 truncate">{org.name}</p>
-                    <span className="text-body-sm text-ink-400 shrink-0">{org.projects} projets</span>
-                  </div>
-                  <div className="h-1.5 bg-surface-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary-400 rounded-full" style={{ width: `${Math.min(100, (org.projects / Math.max(...(s.topOrganizations || mockTopOrgs).map(o => o.projects))) * 100)}%` }} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+      <Card title="Tâches par priorité">
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart data={s.tasksByPriority || mockTasksByPriority} layout="vertical" barCategoryGap={12}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+            <XAxis type="number" fontSize={12} tickLine={false} axisLine={false} />
+            <YAxis dataKey="name" type="category" fontSize={12} tickLine={false} axisLine={false} width={80} />
+            <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb' }} />
+            <Bar dataKey="count" name="Nombre" fill="#1E3A5F" radius={[0, 6, 6, 0]} barSize={24} />
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
     </div>
   );
 }
@@ -240,10 +215,3 @@ const mockTasksByPriority = [
   { name: 'Basse', count: 12 },
 ];
 
-const mockTopOrgs = [
-  { name: 'Ministère de l\'Intérieur', projects: 8 },
-  { name: 'Ministère de la Santé', projects: 6 },
-  { name: 'Ministère de l\'Éducation', projects: 5 },
-  { name: 'Primature', projects: 4 },
-  { name: 'Présidence', projects: 3 },
-];

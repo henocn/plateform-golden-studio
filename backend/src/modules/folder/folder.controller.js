@@ -14,22 +14,21 @@ const list = async (req, res, next) => {
       search: req.query.search,
       parent_id: req.query.parent_id,
       page, limit, offset,
-    }, req.user, req.tenantId);
+    });
     const meta = buildPaginationMeta(page, limit, total);
-    return ApiResponse.success(res, { data, meta }, 'Folders retrieved');
+    return ApiResponse.success(res, { data, meta }, 'Dossiers récupérés');
   } catch (error) {
     return next(error);
   }
 };
 
 /**
- * Récupère les dossiers racine d'une organisation
+ * Récupère tous les dossiers racine (visibles par tous ceux qui ont le droit)
  */
 const getRootFolders = async (req, res, next) => {
   try {
-    const organizationId = req.params.organizationId || req.query.organizationId || req.user.organization_id;
-    const folders = await folderService.getRootFolders(organizationId, req.user, req.tenantId);
-    return ApiResponse.success(res, folders, 'Root folders retrieved');
+    const folders = await folderService.getRootFolders();
+    return ApiResponse.success(res, folders, 'Dossiers racine récupérés');
   } catch (error) {
     return next(error);
   }
@@ -40,8 +39,8 @@ const getRootFolders = async (req, res, next) => {
  */
 const explore = async (req, res, next) => {
   try {
-    const result = await folderService.explore(req.params.id, req.user, req.tenantId);
-    return ApiResponse.success(res, result, 'Folder explored');
+    const result = await folderService.explore(req.params.id);
+    return ApiResponse.success(res, result, 'Dossier exploré');
   } catch (error) {
     return next(error);
   }
@@ -52,8 +51,8 @@ const explore = async (req, res, next) => {
  */
 const getById = async (req, res, next) => {
   try {
-    const folder = await folderService.getById(req.params.id, req.user, req.tenantId);
-    return ApiResponse.success(res, folder, 'Folder retrieved');
+    const folder = await folderService.getById(req.params.id);
+    return ApiResponse.success(res, folder, 'Dossier récupéré');
   } catch (error) {
     return next(error);
   }
@@ -64,8 +63,8 @@ const getById = async (req, res, next) => {
  */
 const create = async (req, res, next) => {
   try {
-    const folder = await folderService.create(req.body, req.user, req.tenantId);
-    return ApiResponse.created(res, folder, 'Folder created');
+    const folder = await folderService.create(req.body, req.user);
+    return ApiResponse.created(res, folder, 'Dossier créé');
   } catch (error) {
     return next(error);
   }
@@ -76,8 +75,8 @@ const create = async (req, res, next) => {
  */
 const update = async (req, res, next) => {
   try {
-    const folder = await folderService.update(req.params.id, req.body, req.user, req.tenantId);
-    return ApiResponse.success(res, folder, 'Folder updated');
+    const folder = await folderService.update(req.params.id, req.body);
+    return ApiResponse.success(res, folder, 'Dossier mis à jour');
   } catch (error) {
     return next(error);
   }
@@ -88,8 +87,8 @@ const update = async (req, res, next) => {
  */
 const deleteFolder = async (req, res, next) => {
   try {
-    await folderService.delete(req.params.id, req.user, req.tenantId);
-    return ApiResponse.success(res, null, 'Folder deleted');
+    await folderService.delete(req.params.id);
+    return ApiResponse.success(res, null, 'Dossier supprimé');
   } catch (error) {
     return next(error);
   }

@@ -3,13 +3,8 @@
 const { Organization, User, Project } = require("../../models");
 const { Op } = require("sequelize");
 
-/**
- * Organization Repository — CRUD with tenant filtering support
- */
 class OrganizationRepository {
-  /**
-   * Find all organizations with optional filters
-   */
+  /* Récupère toutes les organisations avec filtres */
   async findAll({
     type,
     is_active,
@@ -40,9 +35,23 @@ class OrganizationRepository {
     return { data: rows, total: count };
   }
 
-  /**
-   * Find one by ID
-   */
+  /* Récupère l'organisation courante (mode mono-organisation) */
+  async findCurrent(singleOrgId = null) {
+    if (singleOrgId) {
+      const org = await Organization.findOne({
+        where: { id: singleOrgId, is_active: true },
+        attributes: ['id', 'name', 'short_name', 'logo_path', 'contact_email', 'contact_phone', 'address', 'type'],
+      });
+      return org;
+    }
+    return Organization.findOne({
+      where: { is_active: true },
+      order: [['created_at', 'ASC']],
+      attributes: ['id', 'name', 'short_name', 'logo_path', 'contact_email', 'contact_phone', 'address', 'type'],
+    });
+  }
+
+  /* Récupère une organisation par son ID */
   async findById(id) {
     return Organization.findByPk(id, {
       include: [
@@ -54,37 +63,28 @@ class OrganizationRepository {
     });
   }
 
-  /**
-   * Create organization
-   */
+  /* Crée une organisation */
   async create(data) {
     return Organization.create(data);
   }
 
-  /**
-   * Update organization
-   */
+  /* Met à jour une organisation */
   async update(id, data) {
     const organization = await Organization.findByPk(id);
     if (!organization) return null;
     return organization.update(data);
   }
 
-  /**
-   * Toggle active status
-   */
+  /* Bascule le statut actif/inactif */
   async updateStatus(id, isActive) {
     const organization = await Organization.findByPk(id);
     if (!organization) return null;
     return organization.update({ is_active: isActive });
   }
 
-  /**
-   * Get users for an organization
-   */
-  async findUsers(organizationId, { page = 1, limit = 20, offset = 0 } = {}) {
+  /* Récupère les utilisateurs (sans filtre par organisation) */
+  async findUsers({ page = 1, limit = 20, offset = 0 } = {}) {
     const { rows, count } = await User.findAndCountAll({
-      where: { organization_id: organizationId },
       order: [["created_at", "DESC"]],
       limit,
       offset,
@@ -93,15 +93,9 @@ class OrganizationRepository {
     return { data: rows, total: count };
   }
 
-  /**
-   * Get projects for an organization
-   */
-  async findProjects(
-    organizationId,
-    { page = 1, limit = 20, offset = 0 } = {},
-  ) {
+  /* Récupère les projets (sans filtre par organisation) */
+  async findProjects({ page = 1, limit = 20, offset = 0 } = {}) {
     const { rows, count } = await Project.findAndCountAll({
-      where: { organization_id: organizationId },
       order: [["created_at", "DESC"]],
       limit,
       offset,
@@ -110,16 +104,13 @@ class OrganizationRepository {
     return { data: rows, total: count };
   }
 
-  /**
-   * Get stats for an organization
-   */
-  async getStats(organizationId) {
+  /* Statistiques globales */
+  async getStats() {
     const [usersCount, projectsCount, activeProjectsCount] = await Promise.all([
-      User.count({ where: { organization_id: organizationId } }),
-      Project.count({ where: { organization_id: organizationId } }),
+      User.count(),
+      Project.count(),
       Project.count({
         where: {
-          organization_id: organizationId,
           status: { [Op.in]: ["in_production", "in_validation"] },
         },
       }),
@@ -132,9 +123,7 @@ class OrganizationRepository {
     };
   }
 
-  /**
-   * Delete organization
-   */
+  /* Supprime une organisation */
   async remove(id) {
     const organization = await Organization.findByPk(id);
     if (!organization) return null;

@@ -9,16 +9,15 @@ const list = async (req, res, next) => {
   try {
     const { page, limit, offset } = parsePagination(req.query);
     const { data, total } = await mediaService.list({
-      tenantId: req.tenantId,
       type: req.query.type,
       isGlobal: req.query.is_global,
       search: req.query.search,
       tags: req.query.tags,
       folder_id: req.query.folder_id,
       page, limit, offset,
-    }, req.user);
+    });
     const meta = buildPaginationMeta(page, limit, total);
-    return ApiResponse.success(res, { data, meta }, 'Media retrieved');
+    return ApiResponse.success(res, { data, meta }, 'Médias récupérés');
   } catch (error) {
     return next(error);
   }
@@ -26,8 +25,8 @@ const list = async (req, res, next) => {
 
 const getById = async (req, res, next) => {
   try {
-    const media = await mediaService.getById(req.params.id, req.user);
-    return ApiResponse.success(res, media, 'Media retrieved');
+    const media = await mediaService.getById(req.params.id);
+    return ApiResponse.success(res, media, 'Média récupéré');
   } catch (error) {
     return next(error);
   }
@@ -42,7 +41,6 @@ const create = async (req, res, next) => {
     const metadata = {
       name: req.body.name,
       type: req.body.type,
-      organization_id: req.body.organization_id || null,
       tags: req.body.tags ? (Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags)) : [],
       is_global: req.body.is_global === 'true' || req.body.is_global === true,
       folder_id: req.body.folder_id || null,
@@ -74,7 +72,7 @@ const deleteMedia = async (req, res, next) => {
 
 const download = async (req, res, next) => {
   try {
-    const media = await mediaService.getDownload(req.params.id, req.user);
+    const media = await mediaService.getDownload(req.params.id);
     const filePath = path.resolve(media.file_path);
     return res.download(filePath, media.file_name);
   } catch (error) {

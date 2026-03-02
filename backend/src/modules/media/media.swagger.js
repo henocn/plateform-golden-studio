@@ -63,9 +63,6 @@
  *               type:
  *                 type: string
  *                 enum: [logo, graphic_charter, video, photo, template, document, other]
- *               organization_id:
- *                 type: string
- *                 format: uuid
  *               folder_id:
  *                 type: string
  *                 format: uuid

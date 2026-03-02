@@ -1,12 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, FolderKanban, FileText, CheckSquare, Send, History,
-  Calendar, Paperclip, Clock,
+  ArrowLeft,
+  FolderKanban,
+  FileText,
+  CheckSquare,
+  Calendar,
+  Clock,
+  Facebook,
+  Linkedin,
+  Instagram,
+  Youtube,
+  MessageCircle,
+  MessageSquare,
+  Music2,
+  Globe,
+  ExternalLink,
 } from 'lucide-react';
-import { Card, Badge, Tabs, Skeleton, EmptyState } from '../../components/ui';
-import { projectsAPI, briefsAPI, tasksAPI, proposalsAPI, publicationsAPI } from '../../api/services';
-import { formatDate, formatRelative, PROJECT_STATUS, PROPOSAL_STATUS, PRIORITY, extractList, formatErrorMessage } from '../../utils/helpers';
+import { Card, Badge, Tabs, Skeleton, EmptyState, Modal } from '../../components/ui';
+import { projectsAPI, tasksAPI, publicationsAPI } from '../../api/services';
+import { formatDate, PROJECT_STATUS, PRIORITY, extractList, formatErrorMessage } from '../../utils/helpers';
 import { usePermissions } from '../../hooks';
 import toast from 'react-hot-toast';
 
@@ -15,11 +28,9 @@ export default function ProjectDetailPage() {
   const navigate = useNavigate();
   const { isInternal, can } = usePermissions();
   const [project, setProject] = useState(null);
-  const [briefs, setBriefs] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [proposals, setProposals] = useState([]);
   const [publications, setPublications] = useState([]);
-  const [activeTab, setActiveTab] = useState('brief');
+  const [activeTab, setActiveTab] = useState('details');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadProject(); }, [id]);
@@ -27,23 +38,15 @@ export default function ProjectDetailPage() {
   const loadProject = async () => {
     setLoading(true);
     try {
-      const [projRes, briefRes, taskRes, propRes, pubRes] = await Promise.allSettled([
+      const [projRes, taskRes, pubRes] = await Promise.allSettled([
         projectsAPI.getById(id),
-        briefsAPI.list(id),
         tasksAPI.list({ project_id: id, limit: 50 }),
-        proposalsAPI.list(id),
         publicationsAPI.list(id),
       ]);
       if (projRes.status === 'fulfilled') setProject(projRes.value.data.data);
-      if (briefRes.status === 'fulfilled') setBriefs(extractList(briefRes.value.data.data).items);
       if (taskRes.status === 'fulfilled') {
-        // Filtrage strict côté client au cas où l'API ne filtre pas
         const allTasks = extractList(taskRes.value.data.data).items;
         setTasks(allTasks.filter(t => String(t.project_id) === String(id)));
-      }
-      if (propRes.status === 'fulfilled') {
-        const propData = propRes.value.data.data;
-        setProposals(Array.isArray(propData) ? propData : extractList(propData).items);
       }
       if (pubRes.status === 'fulfilled') setPublications(extractList(pubRes.value.data.data).items);
     } catch (err) {
@@ -70,10 +73,8 @@ export default function ProjectDetailPage() {
   const priority = PRIORITY[project.priority] || { label: project.priority, color: 'neutral' };
 
   const tabs = [
-    { id: 'brief', label: 'Brief', icon: FileText },
+    { id: 'details', label: 'Détails', icon: FileText },
     { id: 'tasks', label: 'Tâches', icon: CheckSquare, count: tasks.length },
-    { id: 'proposals', label: 'Propositions', icon: Send, count: proposals.length },
-    { id: 'validations', label: 'Validations', icon: History },
     { id: 'publications', label: 'Publications', icon: Calendar, count: publications.length },
   ];
 
@@ -83,7 +84,7 @@ export default function ProjectDetailPage() {
         <ArrowLeft className="w-4 h-4" /> Projets
       </button>
 
-      {/* Project Header */}
+      {/* Project Header (titre + statuts uniquement) */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 rounded-2xl bg-primary-50 flex items-center justify-center shrink-0">
@@ -94,13 +95,7 @@ export default function ProjectDetailPage() {
             <div className="flex flex-wrap items-center gap-2 mt-1.5">
               <Badge color={status.color} dot>{status.label}</Badge>
               <Badge color={priority.color}>{priority.label}</Badge>
-              <span className="text-body-sm text-ink-400">
-                {project.Organization?.name || '—'} • {project.agency_direction || ''}
-              </span>
             </div>
-            {project.description && (
-              <p className="text-body-md text-ink-500 mt-3 max-w-2xl">{project.description}</p>
-            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -108,27 +103,13 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Info bar */}
-      <div className="flex items-center gap-6 text-body-sm text-ink-500">
-        {project.target_date && (
-          <span className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-ink-400" /> Cible: {formatDate(project.target_date)}
-          </span>
-        )}
-        <span className="flex items-center gap-1.5">
-          <Calendar className="w-4 h-4 text-ink-400" /> Créé le {formatDate(project.createdAt)}
-        </span>
-      </div>
-
       {/* Tabs */}
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       {/* Tab Content */}
       <div className="animate-fade-in">
-        {activeTab === 'brief' && <BriefTab briefs={briefs} projectId={id} onRefresh={loadProject} />}
+        {activeTab === 'details' && <DetailsTab project={project} />}
         {activeTab === 'tasks' && <TasksTab tasks={tasks} onRefresh={loadProject} />}
-        {activeTab === 'proposals' && <ProposalsTab proposals={proposals} />}
-        {activeTab === 'validations' && <ValidationsTab proposals={proposals} />}
         {activeTab === 'publications' && <PublicationsTab publications={publications} />}
       </div>
     </div>
@@ -167,43 +148,96 @@ function StatusDropdown({ project, onUpdate }) {
   );
 }
 
-function BriefTab({ briefs }) {
-  if (briefs.length === 0) {
-    return <EmptyState icon={FileText} title="Aucun brief" description="Le brief initial n'a pas encore été soumis" />;
-  }
-
-  const brief = briefs[0];
+function DetailsTab({ project }) {
   return (
     <Card>
-      <div className="space-y-4">
-        {brief.description && <div><h4 className="text-label text-ink-500 mb-1">Description</h4><p className="text-body-md text-ink-700">{brief.description}</p></div>}
-        {brief.objective && <div><h4 className="text-label text-ink-500 mb-1">Objectif</h4><p className="text-body-md text-ink-700">{brief.objective}</p></div>}
-        {brief.target_audience && <div><h4 className="text-label text-ink-500 mb-1">Cible</h4><p className="text-body-md text-ink-700">{brief.target_audience}</p></div>}
-        {brief.key_message && <div><h4 className="text-label text-ink-500 mb-1">Message clé</h4><p className="text-body-md text-ink-700">{brief.key_message}</p></div>}
-        {brief.deadline && <div><h4 className="text-label text-ink-500 mb-1">Deadline</h4><p className="text-body-md text-ink-700">{formatDate(brief.deadline)}</p></div>}
-        {brief.Attachments?.length > 0 && (
-          <div>
-            <h4 className="text-label text-ink-500 mb-2">Pièces jointes</h4>
-            <div className="space-y-1">
-              {brief.Attachments.map((a) => (
-                <div key={a.id} className="flex items-center gap-2 px-3 py-2 bg-surface-100 rounded-lg text-body-sm">
-                  <Paperclip className="w-4 h-4 text-ink-400" />
-                  <span className="text-ink-700">{a.file_name}</span>
-                </div>
-              ))}
-            </div>
+      <div className="space-y-6">
+        {/* Identité projet */}
+        <div className="border-b border-surface-200 pb-4">
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Direction / Agence</h4>
+            <p className="text-body-md text-ink-900 font-medium">
+              {project?.direction?.name || '—'} / {project?.agency?.name || '—'}
+            </p>
+          </div>
+        </div>
+
+        {/* Description */}
+        {project.description && (
+          <div className="bg-surface-50 border border-surface-200 rounded-xl p-4 space-y-2">
+            <h4 className="text-label text-ink-500">Description du projet</h4>
+            <p className="text-body-md text-ink-700 whitespace-pre-line">
+              {project.description}
+            </p>
           </div>
         )}
+
+        {/* Dates & métadonnées */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Créé le</h4>
+            <p className="text-body-md text-ink-700 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-ink-400" />
+              {formatDate(project.createdAt)}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Date cible</h4>
+            <p className="text-body-md text-ink-700 flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-ink-400" />
+              {project.target_date ? formatDate(project.target_date) : '—'}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Créé par</h4>
+            <p className="text-body-md text-ink-700">
+              {project.creator
+                ? `${project.creator.first_name || ''} ${project.creator.last_name || ''}`.trim()
+                : '—'}
+            </p>
+          </div>
+        </div>
+
+        {/* Responsables */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-surface-50 border border-surface-200 rounded-xl p-4">
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Responsable interne</h4>
+            <p className="text-body-md text-ink-700">
+              {project.internalManager
+                ? `${project.internalManager.first_name || ''} ${project.internalManager.last_name || ''}`.trim()
+                : '—'}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-label text-ink-500">Responsable client</h4>
+            <p className="text-body-md text-ink-700">
+              {project.clientContact
+                ? `${project.clientContact.first_name || ''} ${project.clientContact.last_name || ''}`.trim()
+                : '—'}
+            </p>
+          </div>
+        </div>
       </div>
     </Card>
   );
 }
 
-
+const NETWORK_ICON_MAP = {
+  facebook: Facebook,
+  linkedin: Linkedin,
+  instagram: Instagram,
+  youtube: Youtube,
+  x: MessageSquare,
+  tiktok: Music2,
+  whatsapp: MessageCircle,
+  messenger: MessageSquare,
+  other: Globe,
+};
 
 function TasksTab({ tasks, onRefresh }) {
   const navigate = useNavigate();
   const [draggedTask, setDraggedTask] = useState(null);
+  const [showArchived, setShowArchived] = useState(false);
   const dragOverCol = useRef(null);
 
   const handleDragStart = (task) => setDraggedTask(task);
@@ -234,16 +268,32 @@ function TasksTab({ tasks, onRefresh }) {
     return <EmptyState icon={CheckSquare} title="Aucune tâche" description="Aucune tâche associée à ce projet" />;
   }
 
-  const columns = ['todo', 'in_production', 'done', 'blocked'];
+  const baseColumns = ['todo', 'in_production', 'done'];
+  const columns = showArchived ? [...baseColumns, 'cancelled'] : baseColumns;
   const colMap = {
     todo: { label: 'À faire', color: 'bg-surface-300' },
     in_production: { label: 'En cours', color: 'bg-info-500' },
     done: { label: 'Terminé', color: 'bg-success-500' },
-    blocked: { label: 'Bloqué', color: 'bg-danger-500' },
+    cancelled: { label: 'Archivé', color: 'bg-warning-500' },
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <span className="text-body-sm text-ink-500">Archivés</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showArchived}
+            onClick={() => setShowArchived((v) => !v)}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${showArchived ? 'bg-primary-500' : 'bg-surface-300'}`}
+          >
+            <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${showArchived ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+          </button>
+        </label>
+      </div>
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${showArchived ? 'xl:grid-cols-4' : 'xl:grid-cols-3'} gap-4`}>
       {columns.map((col) => {
         const colTasks = tasks.filter((t) => t.status === col);
         const info = colMap[col];
@@ -284,130 +334,159 @@ function TasksTab({ tasks, onRefresh }) {
           </div>
         );
       })}
+      </div>
     </div>
-  );
-}
-
-function ProposalsTab({ proposals }) {
-  if (proposals.length === 0) {
-    return <EmptyState icon={Send} title="Aucune proposition" description="Aucune proposition n'a été déposée" />;
-  }
-
-  return (
-    <div className="space-y-3">
-      {proposals.map((p) => {
-        const status = PROPOSAL_STATUS[p.status] || { label: p.status, color: 'neutral' };
-        return (
-          <Card key={p.id}>
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-body-lg font-medium text-ink-900">{p.title}</h4>
-                  <Badge color="neutral" size="xs">v{p.version_number}</Badge>
-                </div>
-                <p className="text-body-sm text-ink-400">{p.description}</p>
-                <div className="flex items-center gap-3 mt-2 text-body-sm text-ink-400">
-                  <span>Par {p.Author?.first_name || '—'} {p.Author?.last_name || ''}</span>
-                  <span>•</span>
-                  <span>{formatRelative(p.created_at)}</span>
-                </div>
-              </div>
-              <Badge color={status.color} dot>{status.label}</Badge>
-            </div>
-          </Card>
-        );
-      })}
-    </div>
-  );
-}
-
-function ValidationsTab({ proposals }) {
-  const [validations, setValidations] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const allVals = [];
-        for (const p of proposals) {
-          try {
-            const projectId = p.project_id || p.Project?.id;
-            if (!projectId) continue;
-            const { data } = await proposalsAPI.getValidations(projectId, p.id);
-            const vals = Array.isArray(data.data) ? data.data : extractList(data.data).items;
-            allVals.push(...vals.map((v) => ({ ...v, proposalTitle: p.title, version: p.version_number })));
-          } catch {}
-        }
-        setValidations(allVals);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [proposals]);
-
-  if (loading) return <Skeleton className="h-32 rounded-xl" />;
-
-  if (validations.length === 0) {
-    return <EmptyState icon={History} title="Aucune validation" description="L'historique de validation est vide" />;
-  }
-
-  return (
-    <Card padding={false}>
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-surface-200">
-            <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Proposition</th>
-            <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Validateur</th>
-            <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Décision</th>
-            <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Commentaire</th>
-            <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Date</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-surface-200">
-          {validations.map((v) => (
-            <tr key={v.id}>
-              <td className="px-5 py-3 text-body-sm text-ink-700">{v.proposalTitle} (v{v.version})</td>
-              <td className="px-5 py-3 text-body-sm text-ink-500">{v.Validator?.first_name || '—'} {v.Validator?.last_name || ''}</td>
-              <td className="px-5 py-3">
-                <Badge
-                  color={v.status === 'approved' ? 'success' : v.status === 'rejected' ? 'danger' : 'warning'}
-                  dot size="sm"
-                >
-                  {v.status === 'approved' ? 'Validé' : v.status === 'rejected' ? 'Refusé' : 'À modifier'}
-                </Badge>
-              </td>
-              <td className="px-5 py-3 text-body-sm text-ink-400 max-w-xs truncate">{v.comments || '—'}</td>
-              <td className="px-5 py-3 text-body-sm text-ink-400">{formatDate(v.validated_at || v.created_at)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </Card>
   );
 }
 
 function PublicationsTab({ publications }) {
+  const [selected, setSelected] = useState(null);
+
   if (publications.length === 0) {
     return <EmptyState icon={Calendar} title="Aucune publication" description="Aucune publication n'a été enregistrée" />;
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {publications.map((pub) => (
-        <Card key={pub.id}>
-          <div className="flex items-center gap-2 mb-2">
-            <Badge color="info" size="sm">{pub.channel}</Badge>
-            <span className="text-body-sm text-ink-400">{formatDate(pub.publication_date)}</span>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {publications.map((pub) => (
+          <Card
+            key={pub.id}
+            className="cursor-pointer hover:border-primary-300 hover:shadow-card-hover transition-default"
+            onClick={() => setSelected(pub)}
+          >
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Badge color="info" size="sm">
+                  {pub.channel || 'Publication'}
+                </Badge>
+                {pub.status && (
+                  <span className="text-body-xs text-ink-400 uppercase tracking-wide">
+                    {pub.status}
+                  </span>
+                )}
+              </div>
+              {pub.publication_date && (
+                <span className="text-body-sm text-ink-400 whitespace-nowrap">
+                  {formatDate(pub.publication_date)}
+                </span>
+              )}
+            </div>
+
+            <p className="text-body-md font-medium text-ink-900 mb-1 line-clamp-1">
+              {pub.task?.title || pub.notes || 'Publication éditoriale'}
+            </p>
+
+            <p className="text-body-sm text-ink-500 mb-2 line-clamp-2">
+              {(pub.networks || []).length
+                ? `Réseaux : ${(pub.networks || []).join(', ')}`
+                : 'Réseaux : —'}
+            </p>
+
+            {!!pub.link && (
+              <a
+                href={pub.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-body-sm text-primary-600 hover:text-primary-700 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span className="truncate max-w-[220px]">{pub.link}</span>
+              </a>
+            )}
+          </Card>
+        ))}
+      </div>
+
+      {selected && (
+        <Modal
+          open
+          onClose={() => setSelected(null)}
+          title="Détail publication éditoriale"
+          size="md"
+        >
+          <div className="space-y-3">
+            <p>
+              <span className="text-ink-400">Publicateur:</span>{' '}
+              <span className="text-ink-700">
+                {selected.publisher_name || '—'}
+              </span>
+            </p>
+            <p>
+              <span className="text-ink-400">Date de publication:</span>{' '}
+              <span className="text-ink-700">
+                {selected.publication_date
+                  ? formatDate(selected.publication_date)
+                  : '—'}
+              </span>
+            </p>
+            <p>
+              <span className="text-ink-400">Tâche publiée:</span>{' '}
+              <span className="text-ink-700">
+                {selected.task?.title || '—'}
+              </span>
+            </p>
+            <p>
+              <span className="text-ink-400">Réseaux:</span>{' '}
+              <span className="text-ink-700">
+                {(selected.networks || []).join(', ') || '—'}
+              </span>
+            </p>
+
+            <div>
+              <span className="text-ink-400">Liens réseaux:</span>
+              <div className="mt-2 space-y-2">
+                {Object.entries(selected.network_links || {}).length ? (
+                  Object.entries(selected.network_links || {}).map(
+                    ([network, link]) => (
+                      <a
+                        key={network}
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between gap-3 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 hover:border-primary-300 hover:bg-primary-50 transition-default"
+                      >
+                        <span className="flex items-center gap-2 min-w-0">
+                          {(() => {
+                            const Icon =
+                              NETWORK_ICON_MAP[
+                                String(network || '').toLowerCase()
+                              ] || Globe;
+                            return (
+                              <Icon className="w-4 h-4 text-primary-500 shrink-0" />
+                            );
+                          })()}
+                          <span className="text-body-sm font-medium text-ink-700 capitalize">
+                            {network}
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-1 text-primary-600 text-body-sm truncate">
+                          <span className="truncate max-w-[220px]">
+                            {link}
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                        </span>
+                      </a>
+                    ),
+                  )
+                ) : (
+                  <p className="text-ink-700">—</p>
+                )}
+              </div>
+            </div>
+
+            {selected.notes && (
+              <div className="pt-1">
+                <span className="text-ink-400 block mb-1">Notes:</span>
+                <p className="text-body-sm text-ink-700 whitespace-pre-line">
+                  {selected.notes}
+                </p>
+              </div>
+            )}
           </div>
-          {pub.link && (
-            <a href={pub.link} target="_blank" rel="noopener noreferrer"
-              className="text-body-sm text-primary-500 hover:underline truncate block">
-              {pub.link}
-            </a>
-          )}
-        </Card>
-      ))}
-    </div>
+        </Modal>
+      )}
+    </>
   );
 }

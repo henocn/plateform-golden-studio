@@ -151,9 +151,6 @@ export default function ProjectsPage() {
                     Projet
                   </th>
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">
-                    Organisation
-                  </th>
-                  <th className="text-left text-label text-ink-500 font-medium px-5 py-3">
                     Statut
                   </th>
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">
@@ -191,13 +188,10 @@ export default function ProjectsPage() {
                               {p.title}
                             </p>
                             <p className="text-body-sm text-ink-400">
-                              {p.agency_direction || "—"}
+                              {p?.direction?.name || "—"} / {p?.agency?.name || "—"}
                             </p>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-5 py-3 text-body-sm text-ink-500">
-                        {p.Organization?.name || p.organization?.name || "—"}
                       </td>
                       <td className="px-5 py-3">
                         <Badge color={status.color} dot size="sm">
@@ -213,7 +207,7 @@ export default function ProjectsPage() {
                         {formatDate(p.target_date)}
                       </td>
                       <td className="px-5 py-3">
-                        {can("projects.update") && (
+                        {can("projects.edit") && (
                           <ProjectActions
                             project={p}
                             onRefresh={loadProjects}

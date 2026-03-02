@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
@@ -81,10 +82,29 @@ const createUpload = ({ maxFileSize, maxFiles = 5, allowedMimes } = {}) => multe
 const uploadSingle = (fieldName = 'file', options = {}) => createUpload(options).single(fieldName);
 const uploadMultiple = (fieldName = 'files', maxCount = 5, options = {}) => createUpload({ ...options, maxFiles: maxCount }).array(fieldName, maxCount);
 
+/** Organization logo: saves under uploads/organizations/, images only, max 5MB */
+const storageOrganizations = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    const dir = path.join(env.UPLOAD_DIR, 'organizations');
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.png';
+    cb(null, `${crypto.randomUUID()}${ext}`);
+  },
+});
+const uploadOrganizationLogo = () => multer({
+  storage: storageOrganizations,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: fileFilter(ALLOWED_MIME_TYPES.images),
+}).single('logo');
+
 module.exports = {
   createUpload,
   uploadSingle,
   uploadMultiple,
+  uploadOrganizationLogo,
   ALLOWED_MIME_TYPES,
   ALL_ALLOWED_MIMES,
 };

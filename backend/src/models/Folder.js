@@ -17,15 +17,6 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       allowNull: true,
     },
-    organization_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
-    },
-    is_global: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-      allowNull: false,
-    },
     created_by: {
       type: DataTypes.UUID,
       allowNull: false,
@@ -37,7 +28,6 @@ module.exports = (sequelize) => {
   });
 
   Folder.associate = (models) => {
-    Folder.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
     Folder.belongsTo(models.User, { as: 'creator', foreignKey: 'created_by' });
     Folder.belongsTo(models.Folder, { as: 'parent', foreignKey: 'parent_id' });
     Folder.hasMany(models.Folder, { as: 'subfolders', foreignKey: 'parent_id' });
