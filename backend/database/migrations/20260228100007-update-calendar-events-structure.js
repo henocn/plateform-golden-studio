@@ -4,91 +4,69 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     // ─── Colonnes simples ─────────────────────────────────────────────
-    await queryInterface.removeColumn('calendar_events', 'project_id');
-    await queryInterface.removeColumn('calendar_events', 'type');
-    await queryInterface.removeColumn('calendar_events', 'visibility');
+    // Rendre la migration idempotente : ne supprimer les colonnes
+    // que si elles existent encore (en cas de run partiel précédent).
+    const table = await queryInterface.describeTable('calendar_events');
 
-    await queryInterface.addColumn('calendar_events', 'agency_id', {
-      type: Sequelize.UUID,
-      allowNull: true,
-      references: { model: 'agencies', key: 'id' },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
-    });
+    if (table.project_id) {
+      await queryInterface.removeColumn('calendar_events', 'project_id');
+    }
+    if (table.type) {
+      await queryInterface.removeColumn('calendar_events', 'type');
+    }
+    if (table.visibility) {
+      await queryInterface.removeColumn('calendar_events', 'visibility');
+    }
 
-    await queryInterface.addColumn('calendar_events', 'direction_id', {
-      type: Sequelize.UUID,
-      allowNull: true,
-      references: { model: 'directions', key: 'id' },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
-    });
+    if (!table.agency_id) {
+      await queryInterface.addColumn('calendar_events', 'agency_id', {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: { model: 'agencies', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      });
+    }
 
-    await queryInterface.addColumn('calendar_events', 'tasks', {
-      type: Sequelize.JSONB,
-      allowNull: false,
-      defaultValue: [],
-    });
+    if (!table.direction_id) {
+      await queryInterface.addColumn('calendar_events', 'direction_id', {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: { model: 'directions', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      });
+    }
 
-    // ─── Enum status : pending / in_progress / done / cancelled ──────
-    await queryInterface.sequelize.transaction(async (transaction) => {
-      // Retire le défaut actuel
-      await queryInterface.sequelize.query(
-        'ALTER TABLE "calendar_events" ALTER COLUMN "status" DROP DEFAULT;',
-        { transaction },
-      );
+    if (!table.tasks) {
+      await queryInterface.addColumn('calendar_events', 'tasks', {
+        type: Sequelize.JSONB,
+        allowNull: false,
+        defaultValue: [],
+      });
+    }
 
-      // Nouveau type enum
-      await queryInterface.sequelize.query(
-        'CREATE TYPE "enum_calendar_events_status_new" AS ENUM (\'pending\', \'in_progress\', \'done\', \'cancelled\');',
-        { transaction },
-      );
-
-      // Migration des anciennes valeurs vers le nouveau jeu
-      await queryInterface.sequelize.query(
-        `
-        UPDATE "calendar_events"
-        SET "status" = 'done'
-        WHERE "status" IN ('validated', 'scheduled', 'published');
-        `,
-        { transaction },
-      );
-
-      // Cast de la colonne vers le nouveau type
-      await queryInterface.sequelize.query(
-        `
-        ALTER TABLE "calendar_events"
-        ALTER COLUMN "status"
-        TYPE "enum_calendar_events_status_new"
-        USING "status"::text::"enum_calendar_events_status_new";
-        `,
-        { transaction },
-      );
-
-      // Suppression de l'ancien type puis renommage
-      await queryInterface.sequelize.query(
-        'DROP TYPE "enum_calendar_events_status";',
-        { transaction },
-      );
-
-      await queryInterface.sequelize.query(
-        'ALTER TYPE "enum_calendar_events_status_new" RENAME TO "enum_calendar_events_status";',
-        { transaction },
-      );
-
-      // Nouveau défaut
-      await queryInterface.sequelize.query(
-        `ALTER TABLE "calendar_events" ALTER COLUMN "status" SET DEFAULT 'pending';`,
-        { transaction },
-      );
-    });
-
-    // Nettoyage des anciens enums inutilisés
+    // ─── Enum status : ajout des nouvelles valeurs et migration ───────
+    // Ajoute les nouvelles valeurs au type enum existant (idempotent)
     await queryInterface.sequelize.query(
-      'DROP TYPE IF EXISTS "enum_calendar_events_type";',
+      'ALTER TYPE "enum_calendar_events_status" ADD VALUE IF NOT EXISTS \'in_progress\';',
     );
     await queryInterface.sequelize.query(
-      'DROP TYPE IF EXISTS "enum_calendar_events_visibility";',
+      'ALTER TYPE "enum_calendar_events_status" ADD VALUE IF NOT EXISTS \'done\';',
+    );
+
+    // Remappe les anciens statuts vers le nouveau jeu (validated/scheduled/published → done)
+    await queryInterface.sequelize.query(
+      `
+      UPDATE "calendar_events"
+      SET "status" = 'done'
+      WHERE "status" IN ('validated', 'scheduled', 'published');
+      `,
+    );
+
+    // Défaut sur pending pour les nouvelles lignes
+    await queryInterface.sequelize.query(
+      'ALTER TABLE "calendar_events" ALTER COLUMN "status" SET DEFAULT \'pending\';',
     );
   },
 
