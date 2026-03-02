@@ -16,6 +16,14 @@ const EVENT_HEADERS = [
   'Description',
 ];
 
+// Libellés lisibles pour les statuts d'événements dans l'export Excel
+const EVENT_STATUS_LABELS = {
+  pending: 'En attente',
+  in_progress: 'En cours',
+  done: 'Terminée',
+  cancelled: 'Annulée',
+};
+
 const parseNetworkLinksCell = (value) => {
   if (!value) return {};
   return String(value)
@@ -137,7 +145,7 @@ const buildEventsExport = async (items) => buildWorkbook({
     item.title || '',
     item.start_date || '',
     item.end_date || '',
-    item.status || '',
+    EVENT_STATUS_LABELS[item.status] || item.status || '',
     item.description || '',
   ]),
 });

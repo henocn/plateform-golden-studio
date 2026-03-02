@@ -61,6 +61,14 @@ router.post('/editorial',
   authorize('calendar.manage'),
   validate(createEditorialSchema),
   editorialController.create);
+// Routes spécifiques (import/export) avant les routes paramétrées
+router.post('/editorial/import',
+  authorize('calendar.manage'),
+  uploadSingle('file', { maxFileSize: 8 * 1024 * 1024 }),
+  editorialController.importExcel);
+router.get('/editorial/export',
+  authorize('calendar.manage', 'calendar.view'),
+  editorialController.exportExcel);
 router.get('/editorial/:id',
   authorize('calendar.manage', 'calendar.view'),
   editorialController.getById);
@@ -75,13 +83,6 @@ router.patch('/editorial/:id/assign-task',
   authorize('calendar.manage'),
   validate(assignEditorialTaskSchema),
   editorialController.assignTask);
-router.post('/editorial/import',
-  authorize('calendar.manage'),
-  uploadSingle('file', { maxFileSize: 8 * 1024 * 1024 }),
-  editorialController.importExcel);
-router.get('/editorial/export',
-  authorize('calendar.manage', 'calendar.view'),
-  editorialController.exportExcel);
 
 router.get('/:id',
   authorize('calendar.manage', 'calendar.view'),

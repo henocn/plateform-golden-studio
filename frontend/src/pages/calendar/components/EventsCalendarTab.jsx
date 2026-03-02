@@ -85,7 +85,8 @@ export default function EventsCalendarTab({ canCreateEvent }) {
 
   const handleExport = async () => {
     try {
-      const { data } = await calendarAPI.exportEventsExcel(typeFilter ? { type: typeFilter } : {});
+      const params = statusFilter ? { status: statusFilter } : {};
+      const { data } = await calendarAPI.exportEventsExcel(params);
       downloadBlob(data, "calendrier-evenements.xlsx");
     } catch {
       toast.error("Erreur lors de l'export du calendrier des événements");
@@ -114,9 +115,10 @@ export default function EventsCalendarTab({ canCreateEvent }) {
           <Button variant="secondary" icon={Upload} onClick={handleExport}>
             Export
           </Button>
-          <Button variant="secondary" icon={Download} onClick={() => importInputRef.current?.click()}>
+          {/* TODO: Uncomment this when the import feature is implemented */}
+          {/* <Button variant="secondary" icon={Download} onClick={() => importInputRef.current?.click()}>
             Import
-          </Button>
+          </Button> */}
           {canCreateEvent && (
             <Button icon={Plus} onClick={() => setShowCreate(true)}>
               Evénement
