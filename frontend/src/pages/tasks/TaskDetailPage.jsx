@@ -29,12 +29,12 @@ export default function TaskDetailPage() {
   const [commentLoading, setCommentLoading] = useState(true);
   const [commentContent, setCommentContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [isInternal, setIsInternal] = useState(false);
+  const [commentIsInternal, setCommentIsInternal] = useState(false);
   const [showCreateProposal, setShowCreateProposal] = useState(false);
   const [proposalsRefreshKey, setProposalsRefreshKey] = useState(0);
 
   const me = useAuthStore((state) => state.user);
-  const { canCreateProposal, can } = usePermissions();
+  const { canCreateProposal, can, isInternal } = usePermissions();
   const [showEditTask, setShowEditTask] = useState(false);
   const [proposalsCount, setProposalsCount] = useState(null);
   const intervalRef = useRef();
@@ -91,10 +91,10 @@ export default function TaskDetailPage() {
     try {
       await tasksAPI.addComment(id, {
         content: commentContent,
-        is_internal: Boolean(isInternal),
+        is_internal: Boolean(commentIsInternal),
       });
       setCommentContent("");
-      setIsInternal(false);
+      setCommentIsInternal(false);
       const { data } = await tasksAPI.getComments(id);
       setComments(data.data);
       toast.success("Commentaire ajouté");
@@ -211,8 +211,8 @@ export default function TaskDetailPage() {
             commentContent={commentContent}
             setCommentContent={setCommentContent}
             submitting={submitting}
-            isInternal={isInternal}
-            setIsInternal={setIsInternal}
+            isInternal={commentIsInternal}
+            setIsInternal={setCommentIsInternal}
             me={me}
             commentsEndRef={commentsEndRef}
             handleAddComment={handleAddComment}
@@ -252,6 +252,7 @@ export default function TaskDetailPage() {
       {showEditTask && (
         <EditTaskModal
           task={task}
+          isInternal={isInternal}
           onClose={() => setShowEditTask(false)}
           onSaved={refetchTask}
         />
