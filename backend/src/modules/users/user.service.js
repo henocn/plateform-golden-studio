@@ -91,16 +91,21 @@ class UserService {
   }
 
   /**
-   * Update user profile
-   */
-  /**
-   * Met à jour le profil utilisateur
+   * Met à jour le profil utilisateur. Le super_admin peut aussi modifier l'email.
    */
   async update(id, data, requestUser) {
     const user = await userRepository.findById(id);
     if (!user) throw ApiError.notFound('User');
 
     const { email, password, role, user_type, password_hash, ...safeData } = data;
+
+    if (requestUser.role === 'super_admin' && email != null && email !== '') {
+      const existing = await userRepository.findByEmail(email);
+      if (existing && existing.id !== id) {
+        throw ApiError.conflict('A user with this email already exists');
+      }
+      safeData.email = email.trim();
+    }
 
     return userRepository.update(id, safeData);
   }
