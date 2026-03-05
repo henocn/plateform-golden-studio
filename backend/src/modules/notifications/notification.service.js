@@ -4,6 +4,7 @@ const notificationRepository = require('./notification.repository');
 const ApiError = require('../../utils/ApiError');
 const PERMISSIONS = require('../../config/permissions');
 const logger = require('../../utils/logger');
+const sendEmail = require('../../utils/sendEmail');
 
 
 // ═══════════════════════════════════════════════════
@@ -34,7 +35,7 @@ class NotificationService {
     this.io.to(`user:${userId}`).emit('notification:unread_count', count);
   }
 
-  /* Crée et émet une notification à un utilisateur */
+  /* Crée et émet une notification à un utilisateur, et envoie un email */
   async notify({ userId, type, title, message, referenceId, referenceType, link }) {
     const notification = await notificationRepository.create({
       user_id: userId,
@@ -49,10 +50,14 @@ class NotificationService {
     this.emitToUser(userId, notification);
     this.emitUnreadCount(userId);
 
+    this._sendNotificationEmails([userId], { title, message, link }).catch((err) => {
+      logger.error('[Notification] Email non envoyé', { userId, error: err.message });
+    });
+
     return notification;
   }
 
-  /* Crée et émet des notifications pour plusieurs utilisateurs */
+  /* Crée et émet des notifications pour plusieurs utilisateurs, et envoie les emails */
   async notifyMany(userIds, { type, title, message, referenceId, referenceType, link }) {
     const uniqueIds = [...new Set(userIds)];
     const items = uniqueIds.map((uid) => ({
@@ -73,7 +78,32 @@ class NotificationService {
       this.emitUnreadCount(uid);
     }
 
+    this._sendNotificationEmails(uniqueIds, { title, message, link }).catch((err) => {
+      logger.error('[Notification] Emails non envoyés', { userIds: uniqueIds, error: err.message });
+    });
+
     return notifications;
+  }
+
+  /* Envoie un email par destinataire pour une notification (appelé en parallèle, ne bloque pas) */
+  async _sendNotificationEmails(userIds, { title, message, link }) {
+    const users = await notificationRepository.findEmailsByIds(userIds);
+    const env = require('../../config/env');
+    const baseUrl = env.FRONTEND_URL || 'http://localhost:5173';
+    const linkHtml = link ? `<p><a href="${baseUrl}${link}">Voir dans l'application</a></p>` : '';
+    const html = `<p>${(message || '').replace(/\n/g, '<br>')}</p>${linkHtml}`;
+    const text = message || '';
+
+    for (const user of users) {
+      if (user.email) {
+        await sendEmail({
+          to: user.email,
+          subject: title || 'Notification',
+          html,
+          text,
+        });
+      }
+    }
   }
 
   /* Liste les notifications d'un utilisateur */

@@ -1,17 +1,35 @@
-const transporter = require('../config/email');
+'use strict';
 
-const sendEmail = async ({ to, subject, html, text }) => {
+const { transporter, isEmailConfigured } = require('../config/email');
+const env = require('../config/env');
+const logger = require('./logger');
+
+/**
+ * Envoie un email. No-op si l'email n'est pas configuré (pas de throw).
+ * @param {{ to: string, subject: string, html?: string, text?: string }} options
+ * @returns {Promise<object|null>} info nodemailer ou null si non envoyé
+ */
+async function sendEmail({ to, subject, html, text }) {
+  if (!isEmailConfigured() || !env.EMAIL_FROM || !to) {
+    return null;
+  }
+
   const mailOptions = {
-    from: process.env.EMAIL_FROM,
-    to,
+    from: env.EMAIL_FROM,
+    to: Array.isArray(to) ? to.join(', ') : to,
     subject,
-    html,
-    text,
+    html: html || text || '',
+    text: text || (html && html.replace(/<[^>]+>/g, '').trim()) || '',
   };
 
-  const info = await transporter.sendMail(mailOptions);
-  console.log('Email envoyé :', info.messageId);
-  return info;
-};
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    logger.info('Email envoyé', { messageId: info.messageId, to: mailOptions.to });
+    return info;
+  } catch (err) {
+    logger.error('Erreur envoi email', { error: err.message, to: mailOptions.to });
+    return null;
+  }
+}
 
 module.exports = sendEmail;

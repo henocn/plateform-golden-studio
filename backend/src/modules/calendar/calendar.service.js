@@ -58,7 +58,7 @@ class CalendarService {
       const ids = recipients.map((u) => u.id);
       if (ids.length) {
         await notificationService.notifyMany(ids, {
-          type: 'task_deadline_warning', // type générique réutilisé pour éviter une migration supplémentaire
+          type: 'task_deadline_warning',
           title: `Nouvel événement : "${event.title}"`,
           message: `Un nouvel événement a été créé pour le ${event.start_date?.toISOString().slice(0, 10) || ''}.`,
           referenceId: event.id,
@@ -67,8 +67,6 @@ class CalendarService {
         });
       }
     } catch (err) {
-      // On logue mais on ne bloque pas la création en cas d'erreur de notification
-      // eslint-disable-next-line no-console
       console.error('Erreur lors de la notification de création d’événement', err);
     }
     return event;
