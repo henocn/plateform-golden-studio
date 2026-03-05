@@ -169,15 +169,14 @@ class ProposalService {
     return validation;
   }
 
-  /* Notifie le chargé de la tâche après une décision sur la proposition */
+  /* Notifie le chargé de la tâche et l'auteur de la proposition (si différents du validateur et entre eux) */
   async _notifyValidationResult(proposal, status, validator) {
     if (!proposal.task_id) return;
 
     const task = await Task.findByPk(proposal.task_id, {
       attributes: ['id', 'title', 'assigned_to'],
     });
-    if (!task || !task.assigned_to) return;
-    if (task.assigned_to === validator.id) return;
+    if (!task) return;
 
     const statusLabels = {
       approved: 'approuvée',
@@ -185,9 +184,18 @@ class ProposalService {
       rejected: 'refusée',
     };
     const label = statusLabels[status] || status;
+    const recipientIds = new Set();
 
-    await notificationService.notify({
-      userId: task.assigned_to,
+    if (task.assigned_to && task.assigned_to !== validator.id) {
+      recipientIds.add(task.assigned_to);
+    }
+    if (proposal.author_id && proposal.author_id !== validator.id) {
+      recipientIds.add(proposal.author_id);
+    }
+
+    if (recipientIds.size === 0) return;
+
+    await notificationService.notifyMany([...recipientIds], {
       type: 'task_pending_validation',
       title: `Proposition ${label} — "${task.title}"`,
       message: `La proposition (v${proposal.version_number}) pour la tâche "${task.title}" a été ${label}.`,

@@ -51,22 +51,22 @@ function ValidationActions({ proposal, onRefresh }) {
       value: "approved",
       label: "Approuver",
       icon: CheckCircle2,
-      active: "bg-success-50 border-success-400 text-success-700",
-      idle:   "border-surface-300 text-ink-500 hover:bg-success-50 hover:border-success-300 hover:text-success-600",
+      active: "bg-green-300 border-green-800 text-gray-800",
+      idle:   "border-gray-600 bg-gray-50 text-gray-600",
     },
     {
       value: "needs_revision",
       label: "Demander révision",
       icon: RefreshCw,
-      active: "bg-warning-50 border-warning-400 text-warning-700",
-      idle:   "border-surface-300 text-ink-600 hover:bg-warning-50 hover:border-warning-300 hover:text-warning-600",
+      active: "bg-yellow-300 border-yellow-800 text-gray-800",
+      idle:   "border-gray-600 bg-gray-50 text-gray-600",
     },
     {
       value: "rejected",
       label: "Rejeter",
       icon: XCircle,
-      active: "bg-danger-50 border-danger-400 text-danger-700",
-      idle:   "border-surface-300 text-ink-500 hover:bg-danger-50 hover:border-danger-300 hover:text-danger-600",
+      active: "bg-red-300 border-red-800 text-gray-800",
+      idle:   "border-gray-600 bg-gray-50 text-gray-600",
     },
   ];
 
@@ -402,7 +402,7 @@ export function LatestProposalCard({ proposal, canValidate, onRefresh }) {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 pt-1">
+        <div className="flex items-center p-2 gap-2 pt-1">
           {hasFile && (
             <Button
               size="sm"
@@ -411,12 +411,13 @@ export function LatestProposalCard({ proposal, canValidate, onRefresh }) {
               loading={downloading}
               disabled={!projectId}
               onClick={handleDownload}
+              className="border-1 border-gray-600 rounded-lg hover:bg-green-200"
             >
               Télécharger
             </Button>
           )}
           {hasFile && (
-            <Button size="sm" variant="outline" icon={Save} onClick={() => setShowSaveToMedia(true)}>
+            <Button size="sm" variant="outline" icon={Save} onClick={() => setShowSaveToMedia(true)} className="border-1 border-gray-600 rounded-lg hover:bg-yellow-200">
               Sauvegarder
             </Button>
           )}
