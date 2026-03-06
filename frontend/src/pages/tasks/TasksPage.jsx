@@ -103,12 +103,17 @@ export default function TasksPage() {
     cancelled: { label: "Archivé", accent: "bg-warning-500" },
   };
 
+  /* Normalise les anciens statuts: blocked → cancelled (archivé) */
+  const normalizeStatus = (statusValue) =>
+    statusValue === "blocked" ? "cancelled" : statusValue;
+
   const grouped = useMemo(() => {
     const allCols = ["todo", "in_production", "done", "cancelled"];
     const map = {};
     allCols.forEach((c) => (map[c] = []));
     (Array.isArray(tasks) ? tasks : []).forEach((t) => {
-      if (map[t.status]) map[t.status].push(t);
+      const s = normalizeStatus(t.status);
+      if (map[s]) map[s].push(t);
     });
     return map;
   }, [tasks]);
@@ -331,7 +336,8 @@ export default function TasksPage() {
                       new Date(a.created_at || a.updated_at || 0),
                   )
                   .map((t) => {
-                    const s = TASK_STATUS[t.status] || {
+                    const displayStatus = normalizeStatus(t.status);
+                    const s = TASK_STATUS[displayStatus] || {
                       label: t.status,
                       color: "neutral",
                     };

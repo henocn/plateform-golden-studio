@@ -295,7 +295,11 @@ function TasksTab({ tasks, onRefresh }) {
       </div>
       <div className={`grid grid-cols-1 md:grid-cols-2 ${showArchived ? 'xl:grid-cols-4' : 'xl:grid-cols-3'} gap-4`}>
       {columns.map((col) => {
-        const colTasks = tasks.filter((t) => t.status === col);
+        const colTasks = tasks.filter((t) =>
+          col === 'cancelled'
+            ? (t.status === 'cancelled' || t.status === 'blocked')
+            : t.status === col
+        );
         const info = colMap[col];
         return (
           <div
