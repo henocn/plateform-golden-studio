@@ -88,21 +88,32 @@ class TaskService {
     });
 
     const sendEmail = require('../../utils/sendEmail');
+    const { buildTaskReminderEmail } = require('../../utils/emailTemplates');
+    const env = require('../../config/env');
+    const baseUrl = env.FRONTEND_URL || 'http://localhost:5173';
 
     for (const task of tasks) {
-      // Récupère l'assigné et le superviseur
       const assignee = task.assignee;
       const supervisor = task.creator;
       const emails = [];
       if (assignee && assignee.email) emails.push(assignee.email);
-      if (supervisor && supervisor.email && supervisor.email !== assignee.email) emails.push(supervisor.email);
+      if (supervisor && supervisor.email && supervisor.email !== assignee?.email) emails.push(supervisor.email);
 
       if (emails.length > 0) {
+        const { html, text } = buildTaskReminderEmail(
+          {
+            taskTitle: task.title,
+            dueDate: task.due_date,
+            description: task.description || '',
+            link: `/tasks/${task.id}`,
+          },
+          baseUrl
+        );
         await sendEmail({
           to: emails.join(','),
-          subject: `Rappel : tâche "${task.title}" à rendre demain`,
-          html: `<p>La tâche <b>${task.title}</b> doit être rendue avant le <b>${task.due_date}</b>.</p><p>Description : ${task.description || ''}</p>`,
-          text: `La tâche ${task.title} doit être rendue avant le ${task.due_date}.`,
+          subject: `Rappel : tâche « ${task.title} » à rendre demain`,
+          html,
+          text,
         });
       }
     }

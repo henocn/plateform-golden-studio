@@ -5,6 +5,7 @@ const ApiError = require('../../utils/ApiError');
 const PERMISSIONS = require('../../config/permissions');
 const logger = require('../../utils/logger');
 const sendEmail = require('../../utils/sendEmail');
+const { buildNotificationEmail } = require('../../utils/emailTemplates');
 
 
 // ═══════════════════════════════════════════════════
@@ -85,14 +86,18 @@ class NotificationService {
     return notifications;
   }
 
-  /* Envoie un email par destinataire pour une notification (appelé en parallèle, ne bloque pas) */
+  /* Envoie un email par destinataire pour une notification (template enrichi et stylé) */
   async _sendNotificationEmails(userIds, { title, message, link }) {
     const users = await notificationRepository.findEmailsByIds(userIds);
     const env = require('../../config/env');
     const baseUrl = env.FRONTEND_URL || 'http://localhost:5173';
-    const linkHtml = link ? `<p><a href="${baseUrl}${link}">Voir dans l'application</a></p>` : '';
-    const html = `<p>${(message || '').replace(/\n/g, '<br>')}</p>${linkHtml}`;
-    const text = message || '';
+    const details = [
+      { label: 'Date', value: new Date().toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) },
+    ];
+    const { html, text } = buildNotificationEmail(
+      { title, message, link, details },
+      baseUrl
+    );
 
     for (const user of users) {
       if (user.email) {
