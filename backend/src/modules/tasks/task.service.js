@@ -59,6 +59,13 @@ class TaskService {
   async updateStatus(id, status) {
     const task = await taskRepository.updateStatus(id, status);
     if (!task) throw ApiError.notFound('Tâche');
+    if (status === 'done') {
+      const notificationService = require('../notifications/notification.service');
+      notificationService.onTaskPendingValidation(task).catch((err) => {
+        const logger = require('../../utils/logger');
+        logger.error('[Task] onTaskPendingValidation error', { taskId: id, error: err?.message });
+      });
+    }
     return task;
   }
 
