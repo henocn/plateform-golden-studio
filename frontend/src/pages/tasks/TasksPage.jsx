@@ -103,12 +103,17 @@ export default function TasksPage() {
     cancelled: { label: "Archivé", accent: "bg-warning-500" },
   };
 
+  /* Normalise les anciens statuts: blocked → cancelled (archivé) */
+  const normalizeStatus = (statusValue) =>
+    statusValue === "blocked" ? "cancelled" : statusValue;
+
   const grouped = useMemo(() => {
     const allCols = ["todo", "in_production", "done", "cancelled"];
     const map = {};
     allCols.forEach((c) => (map[c] = []));
     (Array.isArray(tasks) ? tasks : []).forEach((t) => {
-      if (map[t.status]) map[t.status].push(t);
+      const s = normalizeStatus(t.status);
+      if (map[s]) map[s].push(t);
     });
     return map;
   }, [tasks]);
@@ -331,7 +336,8 @@ export default function TasksPage() {
                       new Date(a.created_at || a.updated_at || 0),
                   )
                   .map((t) => {
-                    const s = TASK_STATUS[t.status] || {
+                    const displayStatus = normalizeStatus(t.status);
+                    const s = TASK_STATUS[displayStatus] || {
                       label: t.status,
                       color: "neutral",
                     };
@@ -379,6 +385,7 @@ export default function TasksPage() {
       {showCreate && (
         <CreateTaskModal
           projects={projects}
+          isInternal={isInternal}
           onClose={() => setShowCreate(false)}
           onCreated={() => {
             setShowCreate(false);
@@ -435,7 +442,7 @@ function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd }) {
   );
 }
 
-function CreateTaskModal({ projects, onClose, onCreated }) {
+function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -449,7 +456,9 @@ function CreateTaskModal({ projects, onClose, onCreated }) {
   const [users, setUsers] = useState([]);
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
+  /* Charge les utilisateurs internes uniquement pour les internes (les clients n'ont pas accès) */
   useEffect(() => {
+    if (!isInternal) return;
     const loadUsers = async () => {
       try {
         const { data } = await usersAPI.listInternal({ limit: 100 });
@@ -457,7 +466,7 @@ function CreateTaskModal({ projects, onClose, onCreated }) {
       } catch {}
     };
     loadUsers();
-  }, []);
+  }, [isInternal]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -494,25 +503,27 @@ function CreateTaskModal({ projects, onClose, onCreated }) {
           onChange={(e) => set("description", e.target.value)}
           rows={3}
         />
-        <div className="grid grid-cols-2 gap-4">
+        <div className={isInternal ? "grid grid-cols-2 gap-4" : ""}>
           <Autocomplete
             label="Projet *"
             value={form.project_id}
             onChange={(v) => set("project_id", v)}
             options={projects.map((p) => ({ value: p.id, label: p.title }))}
           />
-          <Select
-            label="Assignation"
-            value={form.assigned_to}
-            onChange={(e) => set("assigned_to", e.target.value)}
-            options={[
-              { value: "", label: "Non assigné" },
-              ...users.map((u) => ({
-                value: u.id,
-                label: `${u.first_name} ${u.last_name}`,
-              })),
-            ]}
-          />
+          {isInternal && (
+            <Select
+              label="Assignation"
+              value={form.assigned_to}
+              onChange={(e) => set("assigned_to", e.target.value)}
+              options={[
+                { value: "", label: "Non assigné" },
+                ...users.map((u) => ({
+                  value: u.id,
+                  label: `${u.first_name} ${u.last_name}`,
+                })),
+              ]}
+            />
+          )}
         </div>
         <div className="grid grid-cols-3 gap-4">
           <Select

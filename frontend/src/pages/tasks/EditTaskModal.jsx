@@ -20,7 +20,7 @@ const PRIORITY_OPTIONS = Object.entries(PRIORITY).map(([value, { label }]) => ({
   label,
 }));
 
-export default function EditTaskModal({ task, onClose, onSaved }) {
+export default function EditTaskModal({ task, isInternal, onClose, onSaved }) {
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -46,7 +46,9 @@ export default function EditTaskModal({ task, onClose, onSaved }) {
     });
   }, [task]);
 
+  /* Charge les utilisateurs internes uniquement pour les internes (les clients n'ont pas accès) */
   useEffect(() => {
+    if (!isInternal) return;
     const loadUsers = async () => {
       try {
         const { data } = await usersAPI.listInternal({ limit: 100 });
@@ -54,7 +56,7 @@ export default function EditTaskModal({ task, onClose, onSaved }) {
       } catch {}
     };
     loadUsers();
-  }, []);
+  }, [isInternal]);
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -70,8 +72,10 @@ export default function EditTaskModal({ task, onClose, onSaved }) {
         priority: form.priority,
         visibility: form.visibility,
       };
-      if (form.assigned_to) payload.assigned_to = form.assigned_to;
-      else payload.assigned_to = null;
+      if (isInternal) {
+        if (form.assigned_to) payload.assigned_to = form.assigned_to;
+        else payload.assigned_to = null;
+      }
 
       await tasksAPI.update(task.id, payload);
       if (form.status !== task.status) {
@@ -105,19 +109,21 @@ export default function EditTaskModal({ task, onClose, onSaved }) {
           onChange={(e) => set("description", e.target.value)}
           rows={3}
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Select
-            label="Assigné à"
-            value={form.assigned_to}
-            onChange={(e) => set("assigned_to", e.target.value)}
-            options={[
-              { value: "", label: "Non assigné" },
-              ...users.map((u) => ({
-                value: u.id,
-                label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
-              })),
-            ]}
-          />
+        <div className={isInternal ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : ""}>
+          {isInternal && (
+            <Select
+              label="Assigné à"
+              value={form.assigned_to}
+              onChange={(e) => set("assigned_to", e.target.value)}
+              options={[
+                { value: "", label: "Non assigné" },
+                ...users.map((u) => ({
+                  value: u.id,
+                  label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+                })),
+              ]}
+            />
+          )}
           <Select
             label="Statut"
             value={form.status}

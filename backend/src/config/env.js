@@ -53,6 +53,18 @@ const env = cleanEnv(process.env, {
   NOTIF_TASK_FIRST_WARNING_DAYS: num({ default: 3 }),
   NOTIF_TASK_LAST_WARNING_DAYS: num({ default: 1 }),
 
+  // Email (optionnel — si non renseigné, les envois sont ignorés)
+  EMAIL_BRAND_NAME: str({ default: 'Qidoo' }),
+  EMAIL_HOST: str({ default: '' }),
+  EMAIL_PORT: num({ default: 587 }),
+  EMAIL_USER: str({ default: '' }),
+  EMAIL_APP_PASSWORD: str({ default: '' }),
+  EMAIL_FROM: str({ default: '' }),
+
+  // Lien frontend dans les emails (optionnel)
+  FRONTEND_URL: str({ default: 'http://localhost:5173' }),
+  // Alias optionnel (si vous préférez utiliser APP_URL au lieu de FRONTEND_URL)
+  APP_URL: str({ default: '' }),
 });
 
 module.exports = env;

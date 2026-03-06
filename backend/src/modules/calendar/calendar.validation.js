@@ -8,7 +8,9 @@ const EVENT_TASK_STATUS = ['pending', 'in_progress', 'done'];
 const taskSchema = Joi.object({
   title: Joi.string().min(1).max(255).required(),
   status: Joi.string().valid(...EVENT_TASK_STATUS).default('pending'),
-  responsible: Joi.string().max(255).optional().allow(null, ''),
+  // Utilisateur interne/client assigné à la tâche (optionnel)
+  // Vide côté frontend (\"\"), null ou UUID valide
+  responsible_user_id: Joi.string().uuid().optional().allow(null, ''),
 });
 
 const createEventSchema = Joi.object({

@@ -4,6 +4,8 @@ const notificationRepository = require('./notification.repository');
 const ApiError = require('../../utils/ApiError');
 const PERMISSIONS = require('../../config/permissions');
 const logger = require('../../utils/logger');
+const sendEmail = require('../../utils/sendEmail');
+const { buildNotificationEmail } = require('../../utils/emailTemplates');
 
 
 // ═══════════════════════════════════════════════════
@@ -34,7 +36,7 @@ class NotificationService {
     this.io.to(`user:${userId}`).emit('notification:unread_count', count);
   }
 
-  /* Crée et émet une notification à un utilisateur */
+  /* Crée et émet une notification à un utilisateur, et envoie un email */
   async notify({ userId, type, title, message, referenceId, referenceType, link }) {
     const notification = await notificationRepository.create({
       user_id: userId,
@@ -49,10 +51,14 @@ class NotificationService {
     this.emitToUser(userId, notification);
     this.emitUnreadCount(userId);
 
+    this._sendNotificationEmails([userId], { type, title, message, link, referenceId, referenceType }).catch((err) => {
+      logger.error('[Notification] Email non envoyé', { userId, error: err.message });
+    });
+
     return notification;
   }
 
-  /* Crée et émet des notifications pour plusieurs utilisateurs */
+  /* Crée et émet des notifications pour plusieurs utilisateurs, et envoie les emails */
   async notifyMany(userIds, { type, title, message, referenceId, referenceType, link }) {
     const uniqueIds = [...new Set(userIds)];
     const items = uniqueIds.map((uid) => ({
@@ -73,7 +79,90 @@ class NotificationService {
       this.emitUnreadCount(uid);
     }
 
+    this._sendNotificationEmails(uniqueIds, { type, title, message, link, referenceId, referenceType }).catch((err) => {
+      logger.error('[Notification] Emails non envoyés', { userIds: uniqueIds, error: err.message });
+    });
+
     return notifications;
+  }
+
+  /* Envoie un email par destinataire pour une notification (template enrichi et stylé) */
+  async _sendNotificationEmails(userIds, { type, title, message, link, referenceId, referenceType }) {
+    const users = await notificationRepository.findEmailsByIds(userIds);
+    const env = require('../../config/env');
+    const baseUrl = env.FRONTEND_URL || env.APP_URL || 'http://localhost:5173';
+
+    const details = await this._buildEmailDetails({ type, referenceId, referenceType });
+    const { html, text } = buildNotificationEmail({ title, message, link, details }, baseUrl);
+
+    for (const user of users) {
+      if (user.email) {
+        await sendEmail({
+          to: user.email,
+          subject: title || 'Notification',
+          html,
+          text,
+        });
+      }
+    }
+  }
+
+  /* Construit une liste de détails “raisonnables” selon le type de référence */
+  async _buildEmailDetails({ type, referenceId, referenceType }) {
+    const details = [];
+    details.push({
+      label: 'Créé le',
+      value: new Date().toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }),
+    });
+
+    if (!referenceId || !referenceType) return details;
+
+    try {
+      const { Task, CalendarEvent, Publication, Project } = require('../../models');
+
+      if (referenceType === 'calendar_event') {
+        const event = await CalendarEvent.findByPk(referenceId, {
+          attributes: ['id', 'title', 'description', 'start_date', 'end_date', 'status', 'created_at'],
+        });
+        if (event) {
+          if (event.title) details.push({ label: 'Titre', value: event.title });
+          if (event.start_date) details.push({ label: 'Début', value: new Date(event.start_date).toLocaleString('fr-FR') });
+          if (event.end_date) details.push({ label: 'Fin', value: new Date(event.end_date).toLocaleString('fr-FR') });
+          if (event.description) details.push({ label: 'Description', value: this._truncate(event.description, 280) });
+        }
+      } else if (referenceType === 'task') {
+        const task = await Task.findByPk(referenceId, {
+          attributes: ['id', 'title', 'description', 'due_date', 'status', 'created_at'],
+        });
+        if (task) {
+          if (task.title) details.push({ label: 'Tâche', value: task.title });
+          if (task.due_date) details.push({ label: 'Date limite', value: task.due_date });
+          if (task.description) details.push({ label: 'Description', value: this._truncate(task.description, 280) });
+        }
+      } else if (referenceType === 'publication') {
+        const pub = await Publication.findByPk(referenceId, {
+          attributes: ['id', 'publication_title', 'notes', 'publication_date', 'status', 'created_at'],
+        });
+        if (pub) {
+          if (pub.publication_title) details.push({ label: 'Titre', value: pub.publication_title });
+          if (pub.publication_date) details.push({ label: 'Date de publication', value: pub.publication_date });
+          if (pub.notes) details.push({ label: 'Notes', value: this._truncate(pub.notes, 280) });
+        }
+      } else if (referenceType === 'project') {
+        const project = await Project.findByPk(referenceId, { attributes: ['id', 'title', 'created_at'] });
+        if (project?.title) details.push({ label: 'Projet', value: project.title });
+      }
+    } catch (err) {
+      logger.error('[Notification] buildEmailDetails error', { type, referenceType, referenceId, error: err?.message });
+    }
+
+    return details;
+  }
+
+  _truncate(str, max) {
+    const s = String(str || '');
+    if (s.length <= max) return s;
+    return `${s.slice(0, max - 1)}…`;
   }
 
   /* Liste les notifications d'un utilisateur */

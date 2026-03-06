@@ -32,6 +32,7 @@ const createClientUserSchema = Joi.object({
 const updateUserSchema = Joi.object({
   first_name: Joi.string().min(1).max(100).optional(),
   last_name: Joi.string().min(1).max(100).optional(),
+  email: Joi.string().email().optional().allow(null, ''),
   job_title: Joi.string().max(100).optional().allow(null, ''),
   phone: Joi.string().max(50).optional().allow(null, ''),
   avatar_path: Joi.string().max(500).optional().allow(null, ''),

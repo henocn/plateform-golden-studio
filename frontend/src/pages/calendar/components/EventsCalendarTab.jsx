@@ -3,9 +3,10 @@ import { ChevronLeft, ChevronRight, Plus, Upload, Download, Trash2, Edit3, X } f
 import { addMonths, subMonths, format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Card, Button, Modal, Input, Select, Textarea, Skeleton, Badge } from "../../../components/ui";
-import { calendarAPI, agenciesAPI, directionsAPI } from "../../../api/services";
+import { calendarAPI, agenciesAPI, directionsAPI, usersAPI } from "../../../api/services";
 import { extractList, formatDate, formatErrorMessage, downloadBlob } from "../../../utils/helpers";
 import { BigCalendar, localizer, calendarMessages, eventStyleGetter, toCalendarItems } from "./calendarShared";
+import { usePermissions } from "../../../hooks";
 import toast from "react-hot-toast";
 
 const EVENT_STATUS_CONFIG = {
@@ -45,6 +46,33 @@ export default function EventsCalendarTab({ canCreateEvent }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const importInputRef = useRef(null);
+  const [assignableUsers, setAssignableUsers] = useState([]);
+  const { userType } = usePermissions();
+  const isInternal = userType === "internal";
+
+  useEffect(() => {
+    // Charge les utilisateurs disponibles pour l'assignation des tâches
+    const loadUsers = async () => {
+      try {
+        if (isInternal) {
+          const [internalRes, clientRes] = await Promise.all([
+            usersAPI.listMembers({ type: "internal", page: 1, limit: 100 }),
+            usersAPI.listClients({ page: 1, limit: 100 }),
+          ]);
+          const internalItems = extractList(internalRes.data.data).items || [];
+          const clientItems = extractList(clientRes.data.data).items || [];
+          setAssignableUsers([...internalItems, ...clientItems]);
+        } else {
+          const { data } = await usersAPI.listClients({ page: 1, limit: 100 });
+          const clientItems = extractList(data.data).items || [];
+          setAssignableUsers(clientItems);
+        }
+      } catch {
+        setAssignableUsers([]);
+      }
+    };
+    loadUsers();
+  }, [isInternal]);
 
   useEffect(() => {
     loadEvents();
@@ -181,6 +209,7 @@ export default function EventsCalendarTab({ canCreateEvent }) {
         <EventDetailModal
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
+          assignableUsers={assignableUsers}
           onUpdated={() => {
             setSelectedEvent(null);
             loadEvents();
@@ -193,6 +222,7 @@ export default function EventsCalendarTab({ canCreateEvent }) {
       )}
       {showCreate && (
         <CreateEventModal
+          assignableUsers={assignableUsers}
           onClose={() => setShowCreate(false)}
           onCreated={() => {
             setShowCreate(false);
@@ -206,20 +236,30 @@ export default function EventsCalendarTab({ canCreateEvent }) {
 
 function EventStatusBadge({ event }) {
   const statusConfig = EVENT_STATUS_CONFIG[event.status] || EVENT_STATUS_CONFIG.pending;
+  const accentColors = {
+    pending: "#F59E0B",
+    in_progress: "#3B82F6",
+    done: "#10B981",
+    cancelled: "#EF4444",
+  };
+  const accent = accentColors[event.status] || "#6B7280";
+
   return (
     <div
-      className="px-2 py-1 rounded text-xs font-medium truncate flex items-center gap-2 shadow-sm bg-surface-900/70 border border-surface-700"
+      className="px-2 py-1 rounded text-xs font-medium truncate flex items-center gap-2 shadow-sm bg-gray-800/90 border border-gray-900 border-l-4"
+      style={{ borderLeftColor: accent }}
       title={event.title}
     >
       <span
-        className={`inline-flex h-2.5 w-2.5 rounded-full bg-${statusConfig.color}-500`}
+        className="inline-flex h-2.5 w-2.5 rounded-full"
+        style={{ backgroundColor: accent }}
       />
       <span className="truncate text-white">{event.title}</span>
     </div>
   );
 }
 
-function CreateEventModal({ onClose, onCreated }) {
+function CreateEventModal({ onClose, onCreated, assignableUsers }) {
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -268,7 +308,7 @@ function CreateEventModal({ onClose, onCreated }) {
   const handleAddTask = () => {
     setForm((prev) => ({
       ...prev,
-      tasks: [...prev.tasks, { title: "", status: "pending", responsible: "" }],
+      tasks: [...prev.tasks, { title: "", status: "pending", responsible_user_id: "" }],
     }));
   };
 
@@ -372,11 +412,17 @@ function CreateEventModal({ onClose, onCreated }) {
                 onChange={(e) => handleTaskChange(index, "status", e.target.value)}
                 options={TASK_STATUS_OPTIONS}
               />
-              <Input
+              <Select
                 label={index === 0 ? "Responsable" : undefined}
-                value={task.responsible || ""}
-                onChange={(e) => handleTaskChange(index, "responsible", e.target.value)}
-                placeholder="Personne ou institution en charge"
+                value={task.responsible_user_id || ""}
+                onChange={(e) => handleTaskChange(index, "responsible_user_id", e.target.value)}
+                options={[
+                  { value: "", label: "Aucun responsable" },
+                  ...assignableUsers.map((u) => ({
+                    value: u.id,
+                    label: `${u.first_name} ${u.last_name}`,
+                  })),
+                ]}
               />
               <button
                 type="button"
@@ -399,7 +445,7 @@ function CreateEventModal({ onClose, onCreated }) {
   );
 }
 
-function EventDetailModal({ event, onClose, onUpdated, onDeleted }) {
+function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUsers }) {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [current, setCurrent] = useState(event);
@@ -481,7 +527,7 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted }) {
   const handleAddTask = () => {
     setForm((prev) => ({
       ...prev,
-      tasks: [...(prev.tasks || []), { title: "", status: "pending", responsible: "" }],
+      tasks: [...(prev.tasks || []), { title: "", status: "pending", responsible_user_id: "" }],
     }));
   };
 
@@ -638,34 +684,42 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted }) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-label text-ink-500">Tâches liées</p>
-            </div>
-            {!(displayed.tasks && displayed.tasks.length) && (
-              <p className="text-body-sm text-ink-400">
-                Aucune tâche renseignée pour cet événement.
-              </p>
-            )}
             <div className="space-y-2">
-              {(displayed.tasks || []).map((task, index) => (
-                <div
-                  key={index}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2"
-                >
-                  <div className="flex-1">
-                    <p className="text-body-md font-medium text-ink-900">{task.title}</p>
-                    <p className="text-body-sm text-ink-500 mt-0.5">
-                      Responsable : {task.responsible || "—"}
-                    </p>
-                  </div>
-                  <Badge color={getEventStatusColor(task.status)} size="sm">
-                    {getEventStatusLabel(task.status)}
-                  </Badge>
-                </div>
-              ))}
+              <div className="flex items-center justify-between">
+                <p className="text-label text-ink-500">Tâches liées</p>
+              </div>
+              {!(displayed.tasks && displayed.tasks.length) && (
+                <p className="text-body-sm text-ink-400">
+                  Aucune tâche renseignée pour cet événement.
+                </p>
+              )}
+              <div className="space-y-2">
+                {(displayed.tasks || []).map((task, index) => {
+                  const user =
+                    task.responsible_user_id &&
+                    assignableUsers.find((u) => u.id === task.responsible_user_id);
+                  const responsibleLabel = user
+                    ? `${user.first_name} ${user.last_name}`
+                    : "—";
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-start justify-between gap-3 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2"
+                    >
+                      <div className="flex-1">
+                        <p className="text-body-md font-medium text-ink-900">{task.title}</p>
+                        <p className="text-body-sm text-ink-500 mt-0.5">
+                          Responsable : {responsibleLabel}
+                        </p>
+                      </div>
+                      <Badge color={getEventStatusColor(task.status)} size="sm">
+                        {getEventStatusLabel(task.status)}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
         </div>
       )}
 
@@ -755,11 +809,17 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted }) {
                   onChange={(e) => handleTaskChange(index, "status", e.target.value)}
                   options={TASK_STATUS_OPTIONS}
                 />
-                <Input
+                <Select
                   label={index === 0 ? "Responsable" : undefined}
-                  value={task.responsible || ""}
-                  onChange={(e) => handleTaskChange(index, "responsible", e.target.value)}
-                  placeholder="Personne ou institution en charge"
+                  value={task.responsible_user_id || ""}
+                  onChange={(e) => handleTaskChange(index, "responsible_user_id", e.target.value)}
+                  options={[
+                    { value: "", label: "Aucun responsable" },
+                    ...assignableUsers.map((u) => ({
+                      value: u.id,
+                      label: `${u.first_name} ${u.last_name}`,
+                    })),
+                  ]}
                 />
                 <button
                   type="button"

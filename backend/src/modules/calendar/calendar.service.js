@@ -3,6 +3,8 @@
 const calendarRepository = require('./calendar.repository');
 const ApiError = require('../../utils/ApiError');
 const { parseEventsImport, buildEventsExport } = require('./calendar.excel.utils');
+const notificationRepository = require('../notifications/notification.repository');
+const notificationService = require('../notifications/notification.service');
 
 // Alias pour les statuts d'événements dans les imports Excel
 const EVENT_STATUS_ALIASES = {
@@ -45,10 +47,29 @@ class CalendarService {
    * Crée un événement
    */
   async create(data, user) {
-    return calendarRepository.create({
+    const event = await calendarRepository.create({
       ...data,
       created_by: user.id,
     });
+    // Notifie super_admin, admin et client_admin à la création d'un événement
+    try {
+      const rolesToNotify = ['super_admin', 'admin', 'client_admin'];
+      const recipients = await notificationRepository.findUsersByRoles(rolesToNotify);
+      const ids = recipients.map((u) => u.id);
+      if (ids.length) {
+        await notificationService.notifyMany(ids, {
+          type: 'task_deadline_warning',
+          title: `Nouvel événement : "${event.title}"`,
+          message: `Un nouvel événement a été créé pour le ${event.start_date?.toISOString().slice(0, 10) || ''}.`,
+          referenceId: event.id,
+          referenceType: 'calendar_event',
+          link: '/calendar/events',
+        });
+      }
+    } catch (err) {
+      console.error('Erreur lors de la notification de création d’événement', err);
+    }
+    return event;
   }
 
   async update(id, data) {

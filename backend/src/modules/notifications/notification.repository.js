@@ -87,6 +87,16 @@ class NotificationRepository {
       attributes: ['id', 'first_name', 'last_name', 'email', 'role'],
     });
   }
+
+  /* Récupère les emails des utilisateurs par leurs IDs (pour envoi email) */
+  async findEmailsByIds(userIds) {
+    if (!userIds?.length) return [];
+    const users = await User.findAll({
+      where: { id: { [Op.in]: [...new Set(userIds)] } },
+      attributes: ['id', 'email'],
+    });
+    return users.filter((u) => u.email);
+  }
 }
 
 module.exports = new NotificationRepository();

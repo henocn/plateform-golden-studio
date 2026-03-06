@@ -30,11 +30,12 @@ const clientRolesOrg = [
  * Met à jour profil (nom, prénom, poste), rôle et statut actif/inactif.
  */
 export default function EditUserModal({ open, onClose, onSaved, user, userType }) {
-  const { isClientAdmin } = usePermissions();
+  const { isClientAdmin, isSuperAdmin } = usePermissions();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
+    email: '',
     job_title: '',
     role: '',
     is_active: true,
@@ -45,6 +46,7 @@ export default function EditUserModal({ open, onClose, onSaved, user, userType }
       setForm({
         first_name: user.first_name ?? '',
         last_name: user.last_name ?? '',
+        email: user.email ?? '',
         job_title: user.job_title ?? '',
         role: user.role ?? '',
         is_active: user.is_active ?? true,
@@ -59,11 +61,15 @@ export default function EditUserModal({ open, onClose, onSaved, user, userType }
     if (!user?.id) return;
     setLoading(true);
     try {
-      await usersAPI.update(user.id, {
+      const updatePayload = {
         first_name: form.first_name,
         last_name: form.last_name,
         job_title: form.job_title || null,
-      });
+      };
+      if (isSuperAdmin && form.email?.trim()) {
+        updatePayload.email = form.email.trim();
+      }
+      await usersAPI.update(user.id, updatePayload);
       const type = userType === 'internal' ? 'internal' : 'clients';
       await usersAPI.patchRole(type, user.id, { role: form.role });
       await usersAPI.patchStatus(user.id, { is_active: form.is_active });
@@ -106,7 +112,13 @@ export default function EditUserModal({ open, onClose, onSaved, user, userType }
             onChange={(e) => setForm({ ...form, last_name: e.target.value })}
           />
         </div>
-        <Input label="Email" value={user?.email ?? ''} disabled />
+        <Input
+          label="Email"
+          type="email"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          disabled={!isSuperAdmin}
+        />
         <Input
           label="Poste"
           value={form.job_title}
