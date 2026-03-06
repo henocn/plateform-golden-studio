@@ -2,23 +2,23 @@
 
 const env = require('../config/env');
 
-const APP_NAME = env.TWO_FACTOR_APP_NAME || 'GovCom Platform';
+const APP_NAME = env.EMAIL_BRAND_NAME || 'Qidoo';
 
 /* Styles inline pour compatibilité clients email */
 const styles = {
-  wrapper: 'margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:15px;line-height:1.6;color:#334155;',
+  wrapper: 'margin:0;padding:0;background-color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:15px;line-height:1.6;color:#0f172a;',
   container: 'max-width:560px;margin:0 auto;padding:24px 16px;',
-  card: 'background:#ffffff;border-radius:12px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.08),0 2px 4px -2px rgba(0,0,0,0.06);overflow:hidden;',
-  header: 'background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);color:#ffffff;padding:20px 24px;text-align:center;',
-  headerTitle: 'margin:0;font-size:18px;font-weight:600;letter-spacing:0.02em;',
+  card: 'background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;',
+  header: 'background:#ffffff;color:#0f172a;padding:18px 24px;text-align:center;border-bottom:1px solid #e2e8f0;',
+  headerTitle: 'margin:0;font-size:18px;font-weight:700;letter-spacing:0.02em;',
   body: 'padding:24px;',
-  title: 'margin:0 0 12px 0;font-size:17px;font-weight:600;color:#0f172a;',
-  message: 'margin:0 0 20px 0;color:#475569;white-space:pre-wrap;',
-  detailRow: 'margin:8px 0;padding:10px 12px;background:#f8fafc;border-radius:8px;border-left:3px solid #2563eb;font-size:14px;color:#475569;',
+  title: 'margin:0 0 12px 0;font-size:17px;font-weight:700;color:#0f172a;',
+  message: 'margin:0 0 20px 0;color:#334155;white-space:pre-wrap;',
+  detailRow: 'margin:8px 0;padding:10px 12px;background:#ffffff;border-radius:10px;border:1px solid #e2e8f0;font-size:14px;color:#334155;',
   buttonWrap: 'margin:20px 0 0 0;text-align:center;',
-  button: 'display:inline-block;padding:12px 24px;background:#2563eb;color:#ffffff !important;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;',
-  footer: 'margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:center;font-size:12px;color:#94a3b8;',
-  footerLink: 'color:#2563eb;text-decoration:none;',
+  button: 'display:inline-block;padding:12px 18px;background:transparent;color:#0f172a !important;text-decoration:none;border-radius:10px;border:1px solid #0f172a;font-weight:700;font-size:14px;',
+  footer: 'margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:center;font-size:12px;color:#64748b;',
+  footerLink: 'color:#0f172a;text-decoration:none;',
 };
 
 /**
@@ -101,7 +101,6 @@ function buildNotificationEmail(options, baseUrl = '') {
  */
 function buildTaskReminderEmail(options, baseUrl = '') {
   const { taskTitle, dueDate, description = '', link } = options;
-  const fullLink = link ? `${baseUrl.replace(/\/$/, '')}${link.startsWith('/') ? link : `/${link}`}` : '';
 
   const details = [{ label: 'Date limite', value: dueDate }];
   if (description) details.push({ label: 'Description', value: description });
@@ -110,7 +109,7 @@ function buildTaskReminderEmail(options, baseUrl = '') {
     {
       title: `Rappel : tâche à rendre — ${taskTitle}`,
       message: `La tâche « ${taskTitle} » doit être rendue avant la date limite indiquée ci-dessous.`,
-      link: fullLink ? link : undefined,
+      link,
       linkLabel: 'Ouvrir la tâche',
       details,
     },

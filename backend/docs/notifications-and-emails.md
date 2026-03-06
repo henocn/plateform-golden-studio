@@ -18,6 +18,7 @@ Ce document décrit **où** et **quand** sont envoyées les notifications (cloch
 
 - **Notification in-app** : enregistrement en base + push temps réel (Socket.IO) vers le client.
 - **Email** : envoi via le transport configuré (`config/email.js`, `utils/sendEmail.js`), avec template HTML (`utils/emailTemplates.js`). Si l’email n’est pas configuré (`.env`), l’envoi est ignoré sans erreur.
+- **Branding email** : le nom affiché dans les emails est configurable via `EMAIL_BRAND_NAME` (défaut : `Qidoo`).
 
 ---
 
@@ -66,6 +67,7 @@ Les seuils **J‑3** et **J‑1** sont configurables dans le `.env` :
 - **En développement / production** : lancer le serveur comme d’habitude (`npm run dev` ou `npm start`). Le cron est actif ; à 08:00 chaque jour, les vérifications de deadlines s’exécutent et envoient notifications + emails selon la config.
 - **Changer l’horaire** : modifier l’expression dans `src/config/cron.js` (ex. `0 9 * * *` pour 09:00).
 - **Logs** : les exécutions et erreurs sont loguées (`[CRON] Vérification des deadlines…` / `[CRON] Erreur…`).
+- **URL de l'application dans les emails** : définir `FRONTEND_URL` (ou `APP_URL`) vers le domaine hébergé (ex. `https://qidoo.tld`). C’est ce domaine qui est utilisé pour les liens “Voir dans l’application”.
 
 ---
 
