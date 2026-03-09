@@ -14,6 +14,11 @@ const {
   patchEventStatusSchema,
   listEventQuery,
 } = require('./calendar.validation');
+const eventTemplateController = require('./eventTemplate.controller');
+const {
+  createEventTemplateSchema,
+  updateEventTemplateSchema,
+} = require('./eventTemplate.validation');
 const {
   createEditorialSchema,
   updateEditorialSchema,
@@ -24,6 +29,30 @@ const {
 const router = Router();
 
 router.use(authenticate, tenantMiddleware);
+
+// ─── Templates d'événements ─────────────────────────────────
+router.get(
+  '/events/templates',
+  authorize('calendar.manage'),
+  eventTemplateController.list,
+);
+router.post(
+  '/events/templates',
+  authorize('calendar.manage'),
+  validate(createEventTemplateSchema),
+  eventTemplateController.create,
+);
+router.put(
+  '/events/templates/:id',
+  authorize('calendar.manage'),
+  validate(updateEventTemplateSchema),
+  eventTemplateController.update,
+);
+router.delete(
+  '/events/templates/:id',
+  authorize('calendar.manage'),
+  eventTemplateController.remove,
+);
 
 router.get('/',
   authorize('calendar.manage', 'calendar.view'),

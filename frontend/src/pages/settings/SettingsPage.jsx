@@ -10,17 +10,17 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
-import { Card, Button, Input, Select, Badge, Modal } from '../../components/ui';
+import { Card, Button, Input, Select, Badge, Modal, Textarea } from '../../components/ui';
 import { useAuthStore } from '../../store/authStore';
 import { useOrganizationStore } from '../../store/organizationStore';
 import { usePermissions } from '../../hooks';
-import { organizationsAPI, agenciesAPI, directionsAPI, uploadsUrl } from '../../api/services';
+import { organizationsAPI, agenciesAPI, directionsAPI, uploadsUrl, calendarAPI, usersAPI } from '../../api/services';
 import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
   const { current, fetchCurrent, setCurrent } = useOrganizationStore();
-  const { can } = usePermissions();
+  const { can, userType } = usePermissions();
 
   const canManageAgenciesDirections = can('settings.agencies_directions');
   const isPlatformAdmin = user?.role === 'super_admin' || user?.role === 'admin';
@@ -253,6 +253,9 @@ export default function SettingsPage() {
         </>
       )}
 
+      {/* Templates d'événements (type + tâches pré-remplies) */}
+      {can('calendar.manage') && <EventTemplatesSection userType={userType} />}
+
       {/* Notifications */}
       <Card title="Notifications" action={<Badge color="info" size="sm"><Bell className="w-3 h-3 inline mr-1" />Préférences</Badge>}>
         <div className="space-y-4">
@@ -405,6 +408,298 @@ function AgenciesSection() {
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Annuler</Button>
             <Button type="submit" loading={saving}>Enregistrer</Button>
+          </div>
+        </form>
+      </Modal>
+    </Card>
+  );
+}
+
+function EventTemplatesSection({ userType }) {
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [assignableUsers, setAssignableUsers] = useState([]);
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    tasks: [],
+  });
+
+  // Commentaire: charge les templates existants
+  const loadTemplates = async () => {
+    setLoading(true);
+    try {
+      const { data } = await calendarAPI.listEventTemplates();
+      const items = Array.isArray(data?.data) ? data.data : data || [];
+      setTemplates(items);
+    } catch {
+      toast.error('Erreur chargement des templates d’événement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
+  // Commentaire: charge les utilisateurs assignables pour les tâches des templates
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        // En settings, on autorise les internes à voir internes + clients
+        if (userType === 'internal') {
+          const [internalRes, clientRes] = await Promise.all([
+            usersAPI.listMembers({ type: 'internal', page: 1, limit: 100 }),
+            usersAPI.listClients({ page: 1, limit: 100 }),
+          ]);
+          const internalItems = extractList(internalRes.data.data).items || [];
+          const clientItems = extractList(clientRes.data.data).items || [];
+          setAssignableUsers([...internalItems, ...clientItems]);
+        } else {
+          const { data } = await usersAPI.listClients({ page: 1, limit: 100 });
+          const clientItems = extractList(data.data).items || [];
+          setAssignableUsers(clientItems);
+        }
+      } catch {
+        setAssignableUsers([]);
+      }
+    };
+    loadUsers();
+  }, [userType]);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ name: '', description: '', tasks: [] });
+    setModalOpen(true);
+  };
+
+  const openEdit = (tpl) => {
+    setEditing(tpl);
+    setForm({
+      name: tpl.name || '',
+      description: tpl.description || '',
+      tasks: Array.isArray(tpl.tasks) ? tpl.tasks : [],
+    });
+    setModalOpen(true);
+  };
+
+  const handleAddTask = () => {
+    setForm((prev) => ({
+      ...prev,
+      tasks: [...(prev.tasks || []), { title: '', status: 'pending', responsible_user_id: '' }],
+    }));
+  };
+
+  const handleTaskChange = (index, key, value) => {
+    setForm((prev) => {
+      const tasks = (prev.tasks || []).slice();
+      tasks[index] = { ...tasks[index], [key]: value };
+      return { ...prev, tasks };
+    });
+  };
+
+  const handleRemoveTask = (index) => {
+    setForm((prev) => {
+      const tasks = (prev.tasks || []).slice();
+      tasks.splice(index, 1);
+      return { ...prev, tasks };
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name?.trim()) {
+      toast.error('Nom du template requis');
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        name: form.name.trim(),
+        description: form.description || null,
+        tasks: (form.tasks || []).filter((t) => t.title?.trim()),
+      };
+      if (editing) {
+        await calendarAPI.updateEventTemplate(editing.id, payload);
+        toast.success('Template d’événement mis à jour');
+      } else {
+        await calendarAPI.createEventTemplate(payload);
+        toast.success('Template d’événement créé');
+      }
+      setModalOpen(false);
+      loadTemplates();
+    } catch (err) {
+      const details = formatErrorMessage(err);
+      details.forEach((d) => toast.error(d.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (tpl) => {
+    if (!window.confirm('Supprimer ce template d’événement ?')) return;
+    try {
+      await calendarAPI.removeEventTemplate(tpl.id);
+      toast.success('Template supprimé');
+      loadTemplates();
+    } catch (err) {
+      const details = formatErrorMessage(err);
+      details.forEach((d) => toast.error(d.message));
+    }
+  };
+
+  return (
+    <Card
+      title="Templates d’événements"
+      action={
+        <Button variant="ghost" size="sm" icon={Plus} onClick={openCreate}>
+          Nouveau template
+        </Button>
+      }
+    >
+      {loading ? (
+        <div className="space-y-2">
+          <div className="h-5 w-1/3 bg-surface-200 rounded" />
+          <div className="h-24 w-full bg-surface-100 rounded" />
+        </div>
+      ) : templates.length === 0 ? (
+        <p className="text-body-sm text-ink-400">
+          Aucun template pour l’instant. Créez un type d’événement avec des tâches pré-remplies afin de gagner du temps lors de la création d’un événement.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {templates.map((tpl) => (
+            <div
+              key={tpl.id}
+              className="flex items-start justify-between gap-3 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2"
+            >
+              <div className="flex-1">
+                <p className="text-body-md font-medium text-ink-900">{tpl.name}</p>
+                {tpl.description && (
+                  <p className="text-body-sm text-ink-500 mt-0.5">{tpl.description}</p>
+                )}
+                {Array.isArray(tpl.tasks) && tpl.tasks.length > 0 && (
+                  <p className="text-body-xs text-ink-400 mt-1">
+                    {tpl.tasks.length} tâche{tpl.tasks.length > 1 ? 's' : ''} pré-configurée{tpl.tasks.length > 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  icon={Pencil}
+                  onClick={() => openEdit(tpl)}
+                >
+                  Modifier
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  icon={Trash2}
+                  onClick={() => handleDelete(tpl)}
+                >
+                  Supprimer
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? 'Modifier le template' : 'Nouveau template d’événement'}
+        size="lg"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
+              Annuler
+            </Button>
+            <Button type="submit" form="event-template-form" loading={saving}>
+              Enregistrer
+            </Button>
+          </div>
+        }
+      >
+        <form id="event-template-form" onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Nom du template *"
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            placeholder="Ex. Conférence de presse, Couverture d’événement…"
+          />
+          <Textarea
+            label="Description"
+            value={form.description}
+            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            rows={3}
+          />
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-label text-ink-700">Tâches du template</p>
+              <Button type="button" variant="ghost" size="sm" onClick={handleAddTask}>
+                Ajouter une tâche
+              </Button>
+            </div>
+            {(!form.tasks || form.tasks.length === 0) && (
+              <p className="text-body-sm text-ink-400">
+                Ajoutez quelques tâches types qui seront pré-remplies lors de la création d’un événement.
+              </p>
+            )}
+            {(form.tasks || []).map((task, index) => (
+              <div
+                key={index}
+                className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_auto] gap-2 items-center"
+              >
+                <Input
+                  label={index === 0 ? 'Titre' : undefined}
+                  value={task.title}
+                  onChange={(e) => handleTaskChange(index, 'title', e.target.value)}
+                  placeholder="Intitulé de la tâche"
+                />
+                <Select
+                  label={index === 0 ? 'Statut' : undefined}
+                  value={task.status || 'pending'}
+                  onChange={(e) => handleTaskChange(index, 'status', e.target.value)}
+                  options={[
+                    { value: 'pending', label: 'En attente' },
+                    { value: 'in_progress', label: 'En cours' },
+                    { value: 'done', label: 'Terminée' },
+                  ]}
+                />
+                <Select
+                  label={index === 0 ? 'Responsable' : undefined}
+                  value={task.responsible_user_id || ''}
+                  onChange={(e) =>
+                    handleTaskChange(index, 'responsible_user_id', e.target.value)
+                  }
+                  options={[
+                    { value: '', label: 'Aucun responsable' },
+                    ...assignableUsers.map((u) => ({
+                      value: u.id,
+                      label: `${u.first_name} ${u.last_name}`,
+                    })),
+                  ]}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTask(index)}
+                  className="mt-4 p-2 rounded-lg text-ink-400 hover:bg-surface-200"
+                  aria-label="Supprimer la tâche"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
           </div>
         </form>
       </Modal>

@@ -47,6 +47,7 @@ export default function EventsCalendarTab({ canCreateEvent }) {
   const [showCreate, setShowCreate] = useState(false);
   const importInputRef = useRef(null);
   const [assignableUsers, setAssignableUsers] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const { userType } = usePermissions();
   const isInternal = userType === "internal";
 
@@ -73,6 +74,20 @@ export default function EventsCalendarTab({ canCreateEvent }) {
     };
     loadUsers();
   }, [isInternal]);
+
+  useEffect(() => {
+    // Charge les templates d'événements pour la création rapide
+    const loadTemplates = async () => {
+      try {
+        const { data } = await calendarAPI.listEventTemplates();
+        const items = Array.isArray(data?.data) ? data.data : data || [];
+        setTemplates(items);
+      } catch {
+        setTemplates([]);
+      }
+    };
+    loadTemplates();
+  }, []);
 
   useEffect(() => {
     loadEvents();
@@ -222,6 +237,7 @@ export default function EventsCalendarTab({ canCreateEvent }) {
       )}
       {showCreate && (
         <CreateEventModal
+          templates={templates}
           assignableUsers={assignableUsers}
           onClose={() => setShowCreate(false)}
           onCreated={() => {
@@ -259,7 +275,7 @@ function EventStatusBadge({ event }) {
   );
 }
 
-function CreateEventModal({ onClose, onCreated, assignableUsers }) {
+function CreateEventModal({ onClose, onCreated, assignableUsers, templates }) {
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -274,6 +290,7 @@ function CreateEventModal({ onClose, onCreated, assignableUsers }) {
   const [directions, setDirections] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const agencyIdRef = useRef("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
 
   useEffect(() => {
     agenciesAPI
@@ -351,6 +368,33 @@ function CreateEventModal({ onClose, onCreated, assignableUsers }) {
   return (
     <Modal open onClose={onClose} title="Nouvel événement" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {Array.isArray(templates) && templates.length > 0 && (
+          <Select
+            label="Type d’événement (template)"
+            value={selectedTemplateId}
+            onChange={(e) => {
+              const id = e.target.value;
+              setSelectedTemplateId(id);
+              const tpl = templates.find((t) => t.id === id);
+              if (tpl && Array.isArray(tpl.tasks)) {
+                setField(
+                  "tasks",
+                  tpl.tasks.map((t) => ({
+                    title: t.title || "",
+                    status: t.status || "pending",
+                    responsible_user_id: t.responsible_user_id || "",
+                  })),
+                );
+              } else {
+                setField("tasks", []);
+              }
+            }}
+            options={[
+              { value: "", label: "Aucun template" },
+              ...templates.map((t) => ({ value: t.id, label: t.name })),
+            ]}
+          />
+        )}
         <Input label="Titre *" value={form.title} onChange={(e) => setField("title", e.target.value)} />
         <Textarea label="Description" value={form.description} onChange={(e) => setField("description", e.target.value)} rows={2} />
         <div className="grid grid-cols-2 gap-4">

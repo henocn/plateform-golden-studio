@@ -121,6 +121,12 @@ export const calendarAPI = {
   importEventsExcel: (formData) => api.post('/calendar/events/import', formData),
   exportEventsExcel: (params) => api.get('/calendar/events/export', { params, responseType: 'blob' }),
 
+  // Event templates
+  listEventTemplates: () => api.get('/calendar/events/templates'),
+  createEventTemplate: (data) => api.post('/calendar/events/templates', data),
+  updateEventTemplate: (id, data) => api.put(`/calendar/events/templates/${id}`, data),
+  removeEventTemplate: (id) => api.delete(`/calendar/events/templates/${id}`),
+
   // Editorial calendar
   listEditorial: (params) => api.get('/calendar/editorial', { params }),
   createEditorial: (data) => api.post('/calendar/editorial', data),
