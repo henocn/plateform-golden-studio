@@ -281,7 +281,6 @@ function CreateEventModal({ onClose, onCreated, assignableUsers, templates }) {
     description: "",
     start_date: "",
     end_date: "",
-    status: "pending",
     agency_id: "",
     direction_id: "",
     tasks: [],
@@ -353,6 +352,8 @@ function CreateEventModal({ onClose, onCreated, assignableUsers, templates }) {
       if (!payload.end_date) payload.end_date = null;
       if (!payload.agency_id) delete payload.agency_id;
       if (!payload.direction_id) delete payload.direction_id;
+      // Le statut est géré par défaut côté modèle (pending)
+      delete payload.status;
       payload.tasks = (payload.tasks || []).filter((t) => t.title?.trim());
       await calendarAPI.createEvent(payload);
       toast.success("Événement créé");
@@ -401,12 +402,6 @@ function CreateEventModal({ onClose, onCreated, assignableUsers, templates }) {
           <Input label="Date de début *" type="date" value={form.start_date} onChange={(e) => setField("start_date", e.target.value)} />
           <Input label="Date de fin" type="date" value={form.end_date} onChange={(e) => setField("end_date", e.target.value)} />
         </div>
-        <Select
-          label="Statut"
-          value={form.status}
-          onChange={(e) => setField("status", e.target.value)}
-          options={EVENT_STATUS_OPTIONS.filter((opt) => opt.value)}
-        />
         <div className="grid grid-cols-2 gap-4">
           <Select
             label="Agence"
@@ -430,55 +425,7 @@ function CreateEventModal({ onClose, onCreated, assignableUsers, templates }) {
           />
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-label text-ink-700">Tâches liées</p>
-            <Button type="button" variant="ghost" size="sm" onClick={handleAddTask}>
-              Ajouter une tâche
-            </Button>
-          </div>
-          {form.tasks.length === 0 && (
-            <p className="text-body-sm text-ink-400">
-              Aucune tâche définie. Vous pouvez en ajouter pour détailler les actions liées à l'événement.
-            </p>
-          )}
-          {form.tasks.map((task, index) => (
-            <div key={index} className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_auto] gap-2 items-center">
-              <Input
-                label={index === 0 ? "Titre" : undefined}
-                value={task.title}
-                onChange={(e) => handleTaskChange(index, "title", e.target.value)}
-                placeholder="Intitulé de la tâche"
-              />
-              <Select
-                label={index === 0 ? "Statut" : undefined}
-                value={task.status}
-                onChange={(e) => handleTaskChange(index, "status", e.target.value)}
-                options={TASK_STATUS_OPTIONS}
-              />
-              <Select
-                label={index === 0 ? "Responsable" : undefined}
-                value={task.responsible_user_id || ""}
-                onChange={(e) => handleTaskChange(index, "responsible_user_id", e.target.value)}
-                options={[
-                  { value: "", label: "Aucun responsable" },
-                  ...assignableUsers.map((u) => ({
-                    value: u.id,
-                    label: `${u.first_name} ${u.last_name}`,
-                  })),
-                ]}
-              />
-              <button
-                type="button"
-                onClick={() => handleRemoveTask(index)}
-                className="mt-4 p-2 rounded-lg text-ink-400 hover:bg-surface-200"
-                aria-label="Supprimer la tâche"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
+        {/* Les tâches liées sont gérées automatiquement via le template et modifiables dans le modal de détail */}
 
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" type="button" onClick={onClose}>Annuler</Button>

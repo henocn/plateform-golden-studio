@@ -14,10 +14,6 @@ module.exports = (sequelize) => {
       allowNull: false,
       validate: { notEmpty: true },
     },
-    description: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
     tasks: {
       type: DataTypes.JSONB,
       allowNull: false,

@@ -20,7 +20,7 @@ import toast from 'react-hot-toast';
 export default function SettingsPage() {
   const { user } = useAuthStore();
   const { current, fetchCurrent, setCurrent } = useOrganizationStore();
-  const { can, userType } = usePermissions();
+  const { can, userType, isAdmin } = usePermissions();
 
   const canManageAgenciesDirections = can('settings.agencies_directions');
   const isPlatformAdmin = user?.role === 'super_admin' || user?.role === 'admin';
@@ -253,8 +253,8 @@ export default function SettingsPage() {
         </>
       )}
 
-      {/* Templates d'événements (type + tâches pré-remplies) */}
-      {can('calendar.manage') && <EventTemplatesSection userType={userType} />}
+      {/* Templates d'événements (type + tâches pré-remplies) — uniquement super admin / admin */}
+      {isAdmin && <EventTemplatesSection userType={userType} />}
 
       {/* Notifications */}
       <Card title="Notifications" action={<Badge color="info" size="sm"><Bell className="w-3 h-3 inline mr-1" />Préférences</Badge>}>
@@ -424,7 +424,6 @@ function EventTemplatesSection({ userType }) {
   const [assignableUsers, setAssignableUsers] = useState([]);
   const [form, setForm] = useState({
     name: '',
-    description: '',
     tasks: [],
   });
 
@@ -473,7 +472,7 @@ function EventTemplatesSection({ userType }) {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', description: '', tasks: [] });
+    setForm({ name: '', tasks: [] });
     setModalOpen(true);
   };
 
@@ -481,7 +480,6 @@ function EventTemplatesSection({ userType }) {
     setEditing(tpl);
     setForm({
       name: tpl.name || '',
-      description: tpl.description || '',
       tasks: Array.isArray(tpl.tasks) ? tpl.tasks : [],
     });
     setModalOpen(true);
@@ -520,7 +518,6 @@ function EventTemplatesSection({ userType }) {
     try {
       const payload = {
         name: form.name.trim(),
-        description: form.description || null,
         tasks: (form.tasks || []).filter((t) => t.title?.trim()),
       };
       if (editing) {
@@ -579,9 +576,6 @@ function EventTemplatesSection({ userType }) {
             >
               <div className="flex-1">
                 <p className="text-body-md font-medium text-ink-900">{tpl.name}</p>
-                {tpl.description && (
-                  <p className="text-body-sm text-ink-500 mt-0.5">{tpl.description}</p>
-                )}
                 {Array.isArray(tpl.tasks) && tpl.tasks.length > 0 && (
                   <p className="text-body-xs text-ink-400 mt-1">
                     {tpl.tasks.length} tâche{tpl.tasks.length > 1 ? 's' : ''} pré-configurée{tpl.tasks.length > 1 ? 's' : ''}
@@ -636,13 +630,6 @@ function EventTemplatesSection({ userType }) {
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             placeholder="Ex. Conférence de presse, Couverture d’événement…"
           />
-          <Textarea
-            label="Description"
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            rows={3}
-          />
-
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-label text-ink-700">Tâches du template</p>

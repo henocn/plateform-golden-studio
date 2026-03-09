@@ -12,17 +12,15 @@ const templateTaskSchema = Joi.object({
   responsible_user_id: Joi.string().uuid().optional().allow(null, ''),
 });
 
-// Commentaire: schéma de création de template d'événement
+// Commentaire: schéma de création de template d'événement (sans description)
 const createEventTemplateSchema = Joi.object({
   name: Joi.string().min(2).max(255).required(),
-  description: Joi.string().max(5000).optional().allow(null, ''),
   tasks: Joi.array().items(templateTaskSchema).optional().default([]),
 });
 
 // Commentaire: schéma de mise à jour de template d'événement
 const updateEventTemplateSchema = Joi.object({
   name: Joi.string().min(2).max(255).optional(),
-  description: Joi.string().max(5000).optional().allow(null, ''),
   tasks: Joi.array().items(templateTaskSchema).optional(),
 }).min(1);
 

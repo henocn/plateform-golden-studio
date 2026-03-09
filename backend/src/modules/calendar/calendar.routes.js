@@ -33,24 +33,24 @@ router.use(authenticate, tenantMiddleware);
 // ─── Templates d'événements ─────────────────────────────────
 router.get(
   '/events/templates',
-  authorize('calendar.manage'),
+  authorize('calendar.templates'),
   eventTemplateController.list,
 );
 router.post(
   '/events/templates',
-  authorize('calendar.manage'),
+  authorize('calendar.templates'),
   validate(createEventTemplateSchema),
   eventTemplateController.create,
 );
 router.put(
   '/events/templates/:id',
-  authorize('calendar.manage'),
+  authorize('calendar.templates'),
   validate(updateEventTemplateSchema),
   eventTemplateController.update,
 );
 router.delete(
   '/events/templates/:id',
-  authorize('calendar.manage'),
+  authorize('calendar.templates'),
   eventTemplateController.remove,
 );
 
