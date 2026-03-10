@@ -353,7 +353,18 @@ export default function TasksPage() {
                         onClick={() => navigate(`/tasks/${t.id}`)}
                       >
                         <td className="px-5 py-3 text-body-sm font-medium text-ink-900">
-                          {t.title}
+                          <div className="flex items-center gap-2">
+                            <span>{t.title}</span>
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                                t.context === "event"
+                                  ? "bg-info-50 text-info-700 border border-info-100"
+                                  : "bg-surface-50 text-ink-600 border border-surface-200"
+                              }`}
+                            >
+                              {t.context === "event" ? "Événement" : "Projet"}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-5 py-3">
                           <Badge color={s.color} dot size="sm">
@@ -400,13 +411,15 @@ export default function TasksPage() {
 function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd }) {
   return (
     <div
-      className={`bg-white rounded-xl border p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${isOverdue ? "border-danger-300 bg-danger-50/30" : "border-surface-300"}`}
+      className={`bg-white rounded-xl border border-1.5 p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${isOverdue ? "border-red-500" : "border-green-600"} ${t.context === "event" ? "bg-blue-500/20" : "bg-yellow-200/20"}`}
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       style={draggable ? { cursor: "grab" } : {}}
     >
-      <p className="text-body-md font-medium text-ink-900 mb-1">{t.title}</p>
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-body-md font-medium text-ink-900">{t.title}</p>
+      </div>
       {t.description && (
         <p className="text-body-sm text-ink-400 line-clamp-2 mb-2.5">
           {t.description}
@@ -447,36 +460,72 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
     title: "",
     description: "",
     project_id: "",
+    context: "project",
+    event_id: "",
     priority: "normal",
     due_date: "",
     assigned_to: "",
-    visibility: "client_visible",
+    supervisor_id: "",
+    publication_date: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [users, setUsers] = useState([]);
+  const [validators, setValidators] = useState([]);
+  const [events, setEvents] = useState([]);
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-  /* Charge les utilisateurs internes uniquement pour les internes (les clients n'ont pas accès) */
+  /* Charge les utilisateurs internes (assignation) + validateurs clients (superviseurs) */
   useEffect(() => {
     if (!isInternal) return;
     const loadUsers = async () => {
       try {
-        const { data } = await usersAPI.listInternal({ limit: 100 });
-        setUsers(extractList(data.data).items);
-      } catch {}
+        const [internalRes, clientValidatorsRes] = await Promise.all([
+          usersAPI.listInternal({ limit: 100 }),
+          usersAPI.listClients({ limit: 100, role: "client_validator" }),
+        ]);
+        setUsers(extractList(internalRes.data.data).items);
+        setValidators(extractList(clientValidatorsRes.data.data).items);
+      } catch {
+        setUsers([]);
+        setValidators([]);
+      }
     };
     loadUsers();
   }, [isInternal]);
 
+  // Charge une liste d'événements pour les tâches de type "événement"
+  useEffect(() => {
+    const loadEvents = async () => {
+      try {
+        const { data } = await calendarAPI.listEvents({ page: 1, limit: 100 });
+        const { items } = extractList(data.data);
+        setEvents(items || []);
+      } catch {
+        setEvents([]);
+      }
+    };
+    loadEvents();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.project_id)
-      return toast.error("Titre et projet requis");
+    if (!form.title) {
+      return toast.error("Titre requis");
+    }
+    if (form.context === "project" && !form.project_id) {
+      return toast.error("Projet requis pour une tâche de projet");
+    }
+    if (form.context === "event" && !form.event_id) {
+      return toast.error("Événement requis pour une tâche d’événement");
+    }
     setSubmitting(true);
     try {
       const payload = { ...form };
       if (!payload.assigned_to) delete payload.assigned_to;
       if (!payload.due_date) delete payload.due_date;
+      if (!payload.supervisor_id) delete payload.supervisor_id;
+      if (!payload.publication_date) delete payload.publication_date;
+      if (!payload.event_id) delete payload.event_id;
       await tasksAPI.create(payload);
       toast.success("Tâche créée");
       onCreated();
@@ -503,12 +552,29 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
           onChange={(e) => set("description", e.target.value)}
           rows={3}
         />
-        <div className={isInternal ? "grid grid-cols-2 gap-4" : ""}>
-          <Autocomplete
-            label="Projet *"
-            value={form.project_id}
-            onChange={(v) => set("project_id", v)}
-            options={projects.map((p) => ({ value: p.id, label: p.title }))}
+        <div className="grid grid-cols-3 gap-4">
+          <Select
+            label="Type de tâche"
+            value={form.context}
+            onChange={(e) => set("context", e.target.value)}
+            options={[
+              { value: "project", label: "Pour un projet" },
+              { value: "event", label: "Pour un événement" },
+            ]}
+          />
+          <Select
+            label={form.context === "project" ? "Projet *" : "Événement *"}
+            value={form.context === "project" ? form.project_id : form.event_id}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (form.context === "project") set("project_id", value);
+              else set("event_id", value);
+            }}
+            options={
+              form.context === "project"
+                ? [{ value: "", label: "Sélectionner un projet" }, ...projects.map((p) => ({ value: p.id, label: p.title }))]
+                : [{ value: "", label: "Sélectionner un événement" }, ...events.map((ev) => ({ value: ev.id, label: ev.title }))]
+            }
           />
           {isInternal && (
             <Select
@@ -541,16 +607,29 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
             value={form.due_date}
             onChange={(e) => set("due_date", e.target.value)}
           />
-          <Select
-            label="Visibilité"
-            value={form.visibility}
-            onChange={(e) => set("visibility", e.target.value)}
-            options={[
-              { value: "client_visible", label: "Visible client" },
-              { value: "internal_only", label: "Interne uniquement" },
-            ]}
+          <Input
+            label="Date de publication"
+            type="date"
+            value={form.publication_date}
+            onChange={(e) => set("publication_date", e.target.value)}
           />
         </div>
+        {isInternal && (
+          <div className="grid grid-cols-3 gap-4">
+            <Select
+              label="Superviseur (validateur client)"
+              value={form.supervisor_id}
+              onChange={(e) => set("supervisor_id", e.target.value)}
+              options={[
+                { value: "", label: "Aucun superviseur" },
+                ...validators.map((u) => ({
+                  value: u.id,
+                  label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+                })),
+              ]}
+            />
+          </div>
+        )}
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" onClick={onClose}>
             Annuler

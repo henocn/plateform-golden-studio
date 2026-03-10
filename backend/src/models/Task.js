@@ -13,6 +13,10 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       allowNull: false,
     },
+    event_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
     title: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -39,11 +43,6 @@ module.exports = (sequelize) => {
       type: DataTypes.ENUM('low', 'normal', 'high', 'urgent'),
       allowNull: false,
       defaultValue: 'normal',
-    },
-    visibility: {
-      type: DataTypes.ENUM('internal_only', 'client_visible'),
-      allowNull: false,
-      defaultValue: 'client_visible',
     },
     created_by: {
       type: DataTypes.UUID,
@@ -73,6 +72,7 @@ module.exports = (sequelize) => {
     Task.belongsTo(models.User, { as: 'assignee', foreignKey: 'assigned_to' });
     Task.belongsTo(models.User, { as: 'creator', foreignKey: 'created_by' });
     Task.belongsTo(models.User, { as: 'supervisor', foreignKey: 'supervisor_id' });
+    Task.belongsTo(models.CalendarEvent, { as: 'event', foreignKey: 'event_id' });
     Task.hasMany(models.TaskComment, { as: 'comments', foreignKey: 'task_id' });
     Task.hasMany(models.Proposal, { as: 'proposals', foreignKey: 'task_id' });
   };

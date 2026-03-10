@@ -231,7 +231,7 @@ export default function TaskDetailsTab({
   commentsEndRef,
   handleAddComment,
 }) {
-  const { assignee, project, creator } = task;
+  const { assignee, project, creator, supervisor } = task;
 
   return (
     <div className="space-y-6">
@@ -263,6 +263,24 @@ export default function TaskDetailsTab({
                 </span>
               </>
             )}
+            {task.publication_date && (
+              <>
+                <span className="text-surface-400">|</span>
+                <span>
+                  Date de publication :{" "}
+                  <span className="font-medium text-ink-700">
+                    {formatDate(task.publication_date)}
+                  </span>
+                </span>
+              </>
+            )}
+            <span className="text-surface-400">|</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+              <span className="font-medium text-ink-700">
+                {task.context === "event" ? "Tâche d’événement" : "Tâche de projet"}
+              </span>
+            </span>
           </div>
 
           {/* Grille infos */}
@@ -316,7 +334,7 @@ export default function TaskDetailsTab({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <UserCard label="Créateur" user={creator} />
             <UserCard label="Chargé de la tâche" user={assignee} />
-            <UserCard label="Superviseur" user={project?.clientContact} />
+            <UserCard label="Superviseur" user={supervisor} />
           </div>
         </div>
       </Card>

@@ -7,19 +7,25 @@ const createTaskSchema = Joi.object({
   title: Joi.string().min(2).max(255).required(),
   description: Joi.string().max(5000).optional().allow(null, ''),
   assigned_to: Joi.string().uuid().optional().allow(null),
+  supervisor_id: Joi.string().uuid().optional().allow(null),
   due_date: Joi.date().iso().optional().allow(null),
+  publication_date: Joi.date().iso().optional().allow(null),
   status: Joi.string().valid('todo', 'in_production', 'done', 'blocked', 'cancelled').default('todo'),
   priority: Joi.string().valid('low', 'normal', 'high', 'urgent').default('normal'),
-  visibility: Joi.string().valid('internal_only', 'client_visible').default('client_visible'),
+  context: Joi.string().valid('project', 'event').default('project'),
+  event_id: Joi.string().uuid().optional().allow(null),
 });
 
 const updateTaskSchema = Joi.object({
   title: Joi.string().min(2).max(255).optional(),
   description: Joi.string().max(5000).optional().allow(null, ''),
   assigned_to: Joi.string().uuid().optional().allow(null),
+  supervisor_id: Joi.string().uuid().optional().allow(null),
   due_date: Joi.date().iso().optional().allow(null),
+  publication_date: Joi.date().iso().optional().allow(null),
   priority: Joi.string().valid('low', 'normal', 'high', 'urgent').optional(),
-  visibility: Joi.string().valid('internal_only', 'client_visible').optional(),
+  context: Joi.string().valid('project', 'event').optional(),
+  event_id: Joi.string().uuid().optional().allow(null),
 }).min(1);
 
 const patchTaskStatusSchema = Joi.object({

@@ -9,10 +9,6 @@ class TaskService {
    * Liste les tâches — client ne voit que client_visible
    */
   async list(filters, user) {
-    const isClient = user.user_type === 'client';
-    if (isClient) {
-      filters.visibility = 'client_visible';
-    }
     return taskRepository.findAll(filters);
   }
 

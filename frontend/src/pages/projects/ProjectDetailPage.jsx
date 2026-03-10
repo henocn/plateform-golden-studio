@@ -317,7 +317,7 @@ function TasksTab({ tasks, onRefresh }) {
               {colTasks.map((t) => (
                 <div
                   key={t.id}
-                  className="bg-white rounded-xl border border-surface-300 p-3 shadow-card hover:shadow-card-hover transition-shadow cursor-pointer"
+                  className={`bg-white rounded-xl border border-1.5 p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${t.due_date && new Date(t.due_date) < new Date() ? "border-red-500" : "border-green-600"} ${t.context === "event" ? "bg-blue-500/20" : "bg-yellow-200/20"} cursor-pointer`}
                   draggable
                   onDragStart={() => handleDragStart(t)}
                   onDragEnd={handleDragEnd}

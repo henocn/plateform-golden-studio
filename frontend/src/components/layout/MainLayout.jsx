@@ -1,18 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import { useNotificationStore } from '../../store/notificationStore';
 
 export default function MainLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    const store = useNotificationStore.getState();
-    store.fetchUnreadCount();
-    store.fetchNotifications();
-  }, []);
 
   return (
     <div className="min-h-screen bg-surface-100">
