@@ -283,7 +283,6 @@ function CreateEventModal({ onClose, onCreated, assignableUsers, templates }) {
     end_date: "",
     agency_id: "",
     direction_id: "",
-    tasks: [],
   });
   const [agencies, setAgencies] = useState([]);
   const [directions, setDirections] = useState([]);
@@ -321,29 +320,6 @@ function CreateEventModal({ onClose, onCreated, assignableUsers, templates }) {
       return next;
     });
 
-  const handleAddTask = () => {
-    setForm((prev) => ({
-      ...prev,
-      tasks: [...prev.tasks, { title: "", status: "pending", responsible_user_id: "" }],
-    }));
-  };
-
-  const handleTaskChange = (index, key, value) => {
-    setForm((prev) => {
-      const tasks = prev.tasks.slice();
-      tasks[index] = { ...tasks[index], [key]: value };
-      return { ...prev, tasks };
-    });
-  };
-
-  const handleRemoveTask = (index) => {
-    setForm((prev) => {
-      const tasks = prev.tasks.slice();
-      tasks.splice(index, 1);
-      return { ...prev, tasks };
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -354,7 +330,6 @@ function CreateEventModal({ onClose, onCreated, assignableUsers, templates }) {
       if (!payload.direction_id) delete payload.direction_id;
       // Le statut est géré par défaut côté modèle (pending)
       delete payload.status;
-      payload.tasks = (payload.tasks || []).filter((t) => t.title?.trim());
       await calendarAPI.createEvent(payload);
       toast.success("Événement créé");
       onCreated();
@@ -376,19 +351,6 @@ function CreateEventModal({ onClose, onCreated, assignableUsers, templates }) {
             onChange={(e) => {
               const id = e.target.value;
               setSelectedTemplateId(id);
-              const tpl = templates.find((t) => t.id === id);
-              if (tpl && Array.isArray(tpl.tasks)) {
-                setField(
-                  "tasks",
-                  tpl.tasks.map((t) => ({
-                    title: t.title || "",
-                    status: t.status || "pending",
-                    responsible_user_id: t.responsible_user_id || "",
-                  })),
-                );
-              } else {
-                setField("tasks", []);
-              }
             }}
             options={[
               { value: "", label: "Aucun template" },
