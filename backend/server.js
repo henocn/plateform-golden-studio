@@ -5,9 +5,7 @@ const app = require('./src/app');
 const env = require('./src/config/env');
 const logger = require('./src/utils/logger');
 const { Sequelize } = require('sequelize');
-const { initSocketIO } = require('./src/config/socket');
 const { startCronJobs } = require('./src/config/cron');
-const notificationService = require('./src/modules/notifications/notification.service');
 
 const dbConfig = require('./src/config/database')[env.NODE_ENV];
 
@@ -34,9 +32,6 @@ async function startServer() {
     logger.info(`Database connected: ${dbConfig.database}@${dbConfig.host}:${dbConfig.port}`);
 
     const httpServer = http.createServer(app);
-
-    const io = initSocketIO(httpServer);
-    notificationService.setSocketIO(io);
 
     startCronJobs();
 

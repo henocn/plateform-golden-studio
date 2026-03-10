@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { notificationsAPI } from '../api/services';
-import { connectSocket, disconnectSocket, getSocket } from '../api/socket';
 
 
 // ═══════════════════════════════════════════════════
@@ -88,31 +87,4 @@ export const useNotificationStore = create((set, get) => ({
   /* Ouvre / ferme le panneau de notifications */
   togglePanel: () => set((s) => ({ panelOpen: !s.panelOpen })),
   closePanel: () => set({ panelOpen: false }),
-
-  /* Initialise le WebSocket et écoute les events */
-  initSocket: () => {
-    const socket = connectSocket();
-    if (!socket) return;
-
-    socket.on('notification:new', (notif) => {
-      set((state) => ({
-        notifications: [notif, ...state.notifications],
-        unreadCount: state.unreadCount + 1,
-      }));
-    });
-
-    socket.on('notification:unread_count', (count) => {
-      set({ unreadCount: count });
-    });
-  },
-
-  /* Déconnecte le WebSocket */
-  destroySocket: () => {
-    const socket = getSocket();
-    if (socket) {
-      socket.off('notification:new');
-      socket.off('notification:unread_count');
-    }
-    disconnectSocket();
-  },
 }));

@@ -15,28 +15,6 @@ const { buildNotificationEmail } = require('../../utils/emailTemplates');
 
 
 class NotificationService {
-  constructor() {
-    this.io = null;
-  }
-
-  /* Injecte l'instance Socket.IO pour les émissions temps réel */
-  setSocketIO(io) {
-    this.io = io;
-  }
-
-  /* Émet une notification temps réel via Socket.IO */
-  emitToUser(userId, notification) {
-    if (!this.io) return;
-    this.io.to(`user:${userId}`).emit('notification:new', notification);
-  }
-
-  /* Émet le compteur de non lus */
-  async emitUnreadCount(userId) {
-    if (!this.io) return;
-    const count = await notificationRepository.countUnread(userId);
-    this.io.to(`user:${userId}`).emit('notification:unread_count', count);
-  }
-
   /* Crée et émet une notification à un utilisateur, et envoie un email */
   async notify({ userId, type, title, message, referenceId, referenceType, link }) {
     const notification = await notificationRepository.create({
@@ -48,9 +26,6 @@ class NotificationService {
       reference_type: referenceType || null,
       link: link || null,
     });
-
-    this.emitToUser(userId, notification);
-    this.emitUnreadCount(userId);
 
     this._sendNotificationEmails([userId], { type, title, message, link, referenceId, referenceType }).catch((err) => {
       logger.error('[Notification] Email non envoyé', { userId, error: err.message });
@@ -73,13 +48,6 @@ class NotificationService {
     }));
 
     const notifications = await notificationRepository.bulkCreate(items);
-
-    for (const uid of uniqueIds) {
-      const userNotif = notifications.find((n) => n.user_id === uid);
-      if (userNotif) this.emitToUser(uid, userNotif);
-      this.emitUnreadCount(uid);
-    }
-
     this._sendNotificationEmails(uniqueIds, { type, title, message, link, referenceId, referenceType }).catch((err) => {
       logger.error('[Notification] Emails non envoyés', { userIds: uniqueIds, error: err.message });
     });

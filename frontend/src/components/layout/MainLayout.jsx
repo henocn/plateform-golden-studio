@@ -4,18 +4,12 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import { useNotificationStore } from '../../store/notificationStore';
 
-let _socketBooted = false;
-
 export default function MainLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (_socketBooted) return;
-    _socketBooted = true;
-
     const store = useNotificationStore.getState();
-    store.initSocket();
     store.fetchUnreadCount();
     store.fetchNotifications();
   }, []);
