@@ -1,7 +1,6 @@
 'use strict';
 
 const notificationRepository = require('./notification.repository');
-const ApiError = require('../../utils/ApiError');
 const PERMISSIONS = require('../../config/permissions');
 const NOTIFICATIONS_CONFIG = require('../../config/notifications');
 const logger = require('../../utils/logger');
@@ -10,49 +9,40 @@ const { buildNotificationEmail } = require('../../utils/emailTemplates');
 
 
 // ═══════════════════════════════════════════════════
-//              NotificationService
+//              NotificationService (emails only)
 // ═══════════════════════════════════════════════════
 
 
 class NotificationService {
-  /* Crée et émet une notification à un utilisateur, et envoie un email */
+  /* Envoie une notification (email uniquement) à un utilisateur */
   async notify({ userId, type, title, message, referenceId, referenceType, link }) {
-    const notification = await notificationRepository.create({
-      user_id: userId,
+    await this._sendNotificationEmails([userId], {
       type,
       title,
       message,
-      reference_id: referenceId || null,
-      reference_type: referenceType || null,
-      link: link || null,
-    });
-
-    this._sendNotificationEmails([userId], { type, title, message, link, referenceId, referenceType }).catch((err) => {
+      link,
+      referenceId,
+      referenceType,
+    }).catch((err) => {
       logger.error('[Notification] Email non envoyé', { userId, error: err.message });
     });
-
-    return notification;
+    return null;
   }
 
-  /* Crée et émet des notifications pour plusieurs utilisateurs, et envoie les emails */
+  /* Envoie une notification (email uniquement) à plusieurs utilisateurs */
   async notifyMany(userIds, { type, title, message, referenceId, referenceType, link }) {
     const uniqueIds = [...new Set(userIds)];
-    const items = uniqueIds.map((uid) => ({
-      user_id: uid,
+    await this._sendNotificationEmails(uniqueIds, {
       type,
       title,
       message,
-      reference_id: referenceId || null,
-      reference_type: referenceType || null,
-      link: link || null,
-    }));
-
-    const notifications = await notificationRepository.bulkCreate(items);
-    this._sendNotificationEmails(uniqueIds, { type, title, message, link, referenceId, referenceType }).catch((err) => {
+      link,
+      referenceId,
+      referenceType,
+    }).catch((err) => {
       logger.error('[Notification] Emails non envoyés', { userIds: uniqueIds, error: err.message });
     });
-
-    return notifications;
+    return null;
   }
 
   /* Envoie un email par destinataire pour une notification (template enrichi et stylé) */
@@ -61,7 +51,7 @@ class NotificationService {
     const env = require('../../config/env');
     const baseUrl = env.FRONTEND_URL || env.APP_URL || 'http://localhost:5173';
 
-    const config = NOTIFICATIONS_CONFIG[type] || { email: true, inApp: true };
+    const config = NOTIFICATIONS_CONFIG[type] || { email: true };
     if (!config.email) return;
 
     const details = await this._buildEmailDetails({ type, referenceId, referenceType });
@@ -147,35 +137,28 @@ class NotificationService {
 
   /* Liste les notifications d'un utilisateur */
   async list(userId, { page = 1, limit = 50, unreadOnly = false } = {}) {
-    const offset = (page - 1) * limit;
-    return notificationRepository.findByUser(userId, { limit, offset, unreadOnly });
+    // Système de notifications en base supprimé : toujours vide
+    return { data: [], total: 0 };
   }
 
   /* Compte les non lues */
   async countUnread(userId) {
-    return notificationRepository.countUnread(userId);
+    return 0;
   }
 
   /* Marque une notification comme lue */
   async markAsRead(notifId, userId) {
-    const notif = await notificationRepository.markAsRead(notifId, userId);
-    if (!notif) throw ApiError.notFound('Notification');
-    this.emitUnreadCount(userId);
-    return notif;
+    return null;
   }
 
   /* Marque toutes les notifications comme lues */
   async markAllAsRead(userId) {
-    await notificationRepository.markAllAsRead(userId);
-    this.emitUnreadCount(userId);
+    return null;
   }
 
   /* Supprime une notification */
   async delete(notifId, userId) {
-    const notif = await notificationRepository.delete(notifId, userId);
-    if (!notif) throw ApiError.notFound('Notification');
-    this.emitUnreadCount(userId);
-    return notif;
+    return null;
   }
 
   // ─── Méthodes métier spécialisées ─────────────────────────
@@ -201,14 +184,6 @@ class NotificationService {
   /* Notifie l'assigné d'une tâche quand sa deadline approche */
   async onTaskDeadlineWarning(task, daysRemaining, isLastWarning) {
     if (!task.assigned_to) return;
-
-    const alreadySent = await notificationRepository.exists({
-      userId: task.assigned_to,
-      type: 'task_deadline_warning',
-      referenceId: task.id,
-      afterDate: this.startOfToday(),
-    });
-    if (alreadySent) return;
 
     const urgency = isLastWarning ? 'Dernier avertissement' : 'Premier avertissement';
 
