@@ -3,6 +3,7 @@
 const notificationRepository = require('./notification.repository');
 const ApiError = require('../../utils/ApiError');
 const PERMISSIONS = require('../../config/permissions');
+const NOTIFICATIONS_CONFIG = require('../../config/notifications');
 const logger = require('../../utils/logger');
 const sendEmail = require('../../utils/sendEmail');
 const { buildNotificationEmail } = require('../../utils/emailTemplates');
@@ -92,18 +93,29 @@ class NotificationService {
     const env = require('../../config/env');
     const baseUrl = env.FRONTEND_URL || env.APP_URL || 'http://localhost:5173';
 
+    const config = NOTIFICATIONS_CONFIG[type] || { email: true, inApp: true };
+    if (!config.email) return;
+
     const details = await this._buildEmailDetails({ type, referenceId, referenceType });
     const { html, text } = buildNotificationEmail({ title, message, link, details }, baseUrl);
 
     for (const user of users) {
-      if (user.email) {
-        await sendEmail({
-          to: user.email,
-          subject: title || 'Notification',
-          html,
-          text,
-        });
-      }
+      if (!user.email) continue;
+      const prefs = user.notification_settings || {};
+      const emailPrefKey = config.emailPreferenceKey || 'email_enabled';
+      const domainPrefKey = config.domainPreferenceKey;
+
+      // Global désactivation des emails
+      if (prefs[emailPrefKey] === false) continue;
+      // Désactivation par domaine (tâches, événements, etc.)
+      if (domainPrefKey && prefs[domainPrefKey] === false) continue;
+
+      await sendEmail({
+        to: user.email,
+        subject: title || 'Notification',
+        html,
+        text,
+      });
     }
   }
 

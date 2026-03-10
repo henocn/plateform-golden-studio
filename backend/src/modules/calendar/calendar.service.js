@@ -58,7 +58,7 @@ class CalendarService {
       const ids = recipients.map((u) => u.id);
       if (ids.length) {
         await notificationService.notifyMany(ids, {
-          type: 'task_deadline_warning',
+          type: 'calendar_event_created',
           title: `Nouvel événement : "${event.title}"`,
           message: `Un nouvel événement a été créé pour le ${event.start_date?.toISOString().slice(0, 10) || ''}.`,
           referenceId: event.id,
@@ -68,6 +68,31 @@ class CalendarService {
       }
     } catch (err) {
       console.error('Erreur lors de la notification de création d’événement', err);
+    }
+
+    // Notifie les utilisateurs responsables de tâches de cet événement
+    try {
+      const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+      const responsibleIds = [
+        ...new Set(
+          tasks
+            .map((t) => t.responsible_user_id)
+            .filter((id) => typeof id === 'string' && id),
+        ),
+      ];
+      if (responsibleIds.length) {
+        await notificationService.notifyMany(responsibleIds, {
+          type: 'event_task_assigned',
+          title: `Tâche d’événement assignée — "${event.title}"`,
+          message:
+            "Une ou plusieurs tâches vous ont été assignées dans le cadre d'un événement. Consultez le détail dans le calendrier.",
+          referenceId: event.id,
+          referenceType: 'calendar_event',
+          link: '/calendar/events',
+        });
+      }
+    } catch (err) {
+      console.error('Erreur lors de la notification des tâches d’événement', err);
     }
     return event;
   }

@@ -93,7 +93,7 @@ class NotificationRepository {
     if (!userIds?.length) return [];
     const users = await User.findAll({
       where: { id: { [Op.in]: [...new Set(userIds)] } },
-      attributes: ['id', 'email'],
+      attributes: ['id', 'email', 'notification_settings'],
     });
     return users.filter((u) => u.email);
   }

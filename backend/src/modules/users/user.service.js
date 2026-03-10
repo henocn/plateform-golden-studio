@@ -111,6 +111,17 @@ class UserService {
   }
 
   /**
+   * Met à jour les préférences de notifications de l'utilisateur courant
+   */
+  async updateNotificationSettings(userId, settings) {
+    const user = await userRepository.findById(userId);
+    if (!user) throw ApiError.notFound('User');
+    const current = user.notification_settings || {};
+    const next = { ...current, ...settings };
+    return userRepository.update(userId, { notification_settings: next });
+  }
+
+  /**
    * Change internal user role (super_admin only)
    */
   async changeInternalRole(id, newRole) {

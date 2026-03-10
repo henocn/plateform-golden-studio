@@ -702,6 +702,11 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
                         <p className="text-body-sm text-ink-500 mt-0.5">
                           Responsable : {responsibleLabel}
                         </p>
+                        {task.due_date && (
+                          <p className="text-body-xs text-ink-400 mt-0.5">
+                            Date cible : {formatDate(task.due_date)}
+                          </p>
+                        )}
                       </div>
                       <Badge color={getEventStatusColor(task.status)} size="sm">
                         {getEventStatusLabel(task.status)}
@@ -786,7 +791,7 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
             {(form.tasks || []).map((task, index) => (
               <div
                 key={index}
-                className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_auto] gap-2 items-center"
+                className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_minmax(0,1.4fr)_auto] gap-2 items-center"
               >
                 <Input
                   label={index === 0 ? "Titre" : undefined}
@@ -811,6 +816,12 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
                       label: `${u.first_name} ${u.last_name}`,
                     })),
                   ]}
+                />
+                <Input
+                  label={index === 0 ? "Date cible" : undefined}
+                  type="date"
+                  value={task.due_date ? task.due_date.slice(0, 10) : ""}
+                  onChange={(e) => handleTaskChange(index, "due_date", e.target.value)}
                 />
                 <button
                   type="button"

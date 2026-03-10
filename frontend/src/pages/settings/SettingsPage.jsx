@@ -257,29 +257,7 @@ export default function SettingsPage() {
       {isAdmin && <EventTemplatesSection userType={userType} />}
 
       {/* Notifications */}
-      <Card title="Notifications" action={<Badge color="info" size="sm"><Bell className="w-3 h-3 inline mr-1" />Préférences</Badge>}>
-        <div className="space-y-4">
-          <ToggleSetting
-            label="Notifications par email"
-            description="Recevoir un email pour chaque notification importante"
-            defaultChecked
-          />
-          <ToggleSetting
-            label="Notifications de tâches"
-            description="Être notifié quand une tâche vous est assignée"
-            defaultChecked
-          />
-          <ToggleSetting
-            label="Alertes de validation"
-            description="Recevoir une alerte quand une proposition est en attente de validation"
-            defaultChecked
-          />
-          <ToggleSetting
-            label="Résumé hebdomadaire"
-            description="Recevoir un récapitulatif hebdomadaire par email"
-          />
-        </div>
-      </Card>
+      <NotificationsSection />
 
       {/* Le reste (apparence / plateforme / sécurité) sera configuré plus tard */}
     </div>
@@ -694,6 +672,100 @@ function EventTemplatesSection({ userType }) {
   );
 }
 
+function NotificationsSection() {
+  const { user, setUser } = useAuthStore();
+  const [saving, setSaving] = useState(false);
+  const [settings, setSettings] = useState({
+    email_enabled: true,
+    tasks_enabled: true,
+    validations_enabled: true,
+    events_enabled: true,
+    weekly_summary_enabled: false,
+  });
+
+  useEffect(() => {
+    const raw = user?.notification_settings || {};
+    setSettings({
+      email_enabled: raw.email_enabled !== false,
+      tasks_enabled: raw.tasks_enabled !== false,
+      validations_enabled: raw.validations_enabled !== false,
+      events_enabled: raw.events_enabled !== false,
+      weekly_summary_enabled: raw.weekly_summary_enabled === true,
+    });
+  }, [user]);
+
+  const updateSetting = async (key, value) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+    setSaving(true);
+    try {
+      const payload = { [key]: value };
+      const { data } = await usersAPI.updateNotificationSettings(payload);
+      const updatedUser = data?.data || data;
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
+    } catch (err) {
+      const msg =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        "Erreur lors de la mise à jour des notifications";
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card
+      title="Notifications"
+      action={
+        <Badge color="info" size="sm">
+          <Bell className="w-3 h-3 inline mr-1" />
+          Préférences
+        </Badge>
+      }
+    >
+      <div className="space-y-4">
+        <ToggleSetting
+          label="Notifications par email"
+          description="Recevoir un email pour chaque notification importante"
+          checked={settings.email_enabled}
+          onChange={(val) => updateSetting('email_enabled', val)}
+        />
+        <ToggleSetting
+          label="Notifications de tâches"
+          description="Être notifié quand une tâche vous est assignée"
+          checked={settings.tasks_enabled}
+          onChange={(val) => updateSetting('tasks_enabled', val)}
+        />
+        <ToggleSetting
+          label="Alertes de validation"
+          description="Recevoir une alerte quand une proposition est en attente de validation"
+          checked={settings.validations_enabled}
+          onChange={(val) => updateSetting('validations_enabled', val)}
+        />
+        <ToggleSetting
+          label="Notifications d’événements"
+          description="Être notifié des événements importants du calendrier"
+          checked={settings.events_enabled}
+          onChange={(val) => updateSetting('events_enabled', val)}
+        />
+        <ToggleSetting
+          label="Résumé hebdomadaire"
+          description="Recevoir un récapitulatif hebdomadaire par email"
+          checked={settings.weekly_summary_enabled}
+          onChange={(val) => updateSetting('weekly_summary_enabled', val)}
+        />
+        {saving && (
+          <p className="text-body-xs text-ink-400">
+            Enregistrement des préférences...
+          </p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 function DirectionsSection() {
   const [agencies, setAgencies] = useState([]);
   const [list, setList] = useState([]);
@@ -867,8 +939,16 @@ function DirectionsSection() {
   );
 }
 
-function ToggleSetting({ label, description, defaultChecked = false }) {
-  const [checked, setChecked] = useState(defaultChecked);
+function ToggleSetting({ label, description, defaultChecked = false, checked, onChange }) {
+  const [internalChecked, setInternalChecked] = useState(defaultChecked);
+  const isControlled = typeof checked === 'boolean';
+  const value = isControlled ? checked : internalChecked;
+
+  const toggle = () => {
+    const next = !value;
+    if (!isControlled) setInternalChecked(next);
+    if (onChange) onChange(next);
+  };
 
   return (
     <div className="flex items-center justify-between py-1">
@@ -877,10 +957,10 @@ function ToggleSetting({ label, description, defaultChecked = false }) {
         {description && <p className="text-body-sm text-ink-400 mt-0.5">{description}</p>}
       </div>
       <button
-        onClick={() => setChecked(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${checked ? 'bg-primary-500' : 'bg-surface-300'}`}
+        onClick={toggle}
+        className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${value ? 'bg-primary-500' : 'bg-surface-300'}`}
       >
-        <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${checked ? 'translate-x-5' : ''}`} />
+        <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${value ? 'translate-x-5' : ''}`} />
       </button>
     </div>
   );

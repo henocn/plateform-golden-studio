@@ -187,6 +187,18 @@ const patchStatus = async (req, res, next) => {
 };
 
 /**
+ * PATCH /api/v1/users/me/notifications
+ */
+const updateNotificationSettings = async (req, res, next) => {
+  try {
+    const user = await userService.updateNotificationSettings(req.user.id, req.body);
+    return ApiResponse.success(res, user, 'Préférences de notifications mises à jour');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
  * DELETE /api/v1/users/:id
  */
 const deleteUser = async (req, res, next) => {
@@ -211,4 +223,5 @@ module.exports = {
   patchStatus,
   deleteUser,
   updateAvatar,
+  updateNotificationSettings,
 };

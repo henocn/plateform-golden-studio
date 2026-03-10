@@ -14,6 +14,7 @@ const {
   changeRoleSchema,
   patchStatusSchema,
   listUsersQuery,
+  notificationSettingsSchema,
 } = require('./user.validation');
 
 const router = Router();
@@ -78,5 +79,12 @@ router.put(
 );
 router.patch('/:id/status', authorize('users.manage_internal', 'users.manage_clients', 'users.manage_own_org'), validate(patchStatusSchema), userController.patchStatus);
 router.delete('/:id', authorize('users.manage_internal', 'users.manage_clients'), userController.deleteUser);
+
+// Préférences de notifications de l'utilisateur courant
+router.patch(
+  '/me/notifications',
+  validate(notificationSettingsSchema),
+  userController.updateNotificationSettings,
+);
 
 module.exports = router;

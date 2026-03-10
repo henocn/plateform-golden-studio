@@ -45,6 +45,7 @@ export const usersAPI = {
   patchRole: (type, id, data) => api.patch(`/users/${type}/${id}/role`, data),
   patchStatus: (id, data) => api.patch(`/users/${id}/status`, data),
   remove: (id) => api.delete(`/users/${id}`),
+  updateNotificationSettings: (data) => api.patch('/users/me/notifications', data),
 };
 
 export const agenciesAPI = {

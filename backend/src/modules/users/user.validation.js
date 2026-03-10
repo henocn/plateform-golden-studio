@@ -56,6 +56,14 @@ const listUsersQuery = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
 });
 
+const notificationSettingsSchema = Joi.object({
+  email_enabled: Joi.boolean().optional(),
+  tasks_enabled: Joi.boolean().optional(),
+  validations_enabled: Joi.boolean().optional(),
+  events_enabled: Joi.boolean().optional(),
+  weekly_summary_enabled: Joi.boolean().optional(),
+}).min(1);
+
 module.exports = {
   createInternalUserSchema,
   createClientUserSchema,
@@ -63,4 +71,5 @@ module.exports = {
   changeRoleSchema,
   patchStatusSchema,
   listUsersQuery,
+  notificationSettingsSchema,
 };
