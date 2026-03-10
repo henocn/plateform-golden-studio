@@ -5,6 +5,7 @@ const ApiError = require('../../utils/ApiError');
 const { parseEventsImport, buildEventsExport } = require('./calendar.excel.utils');
 const notificationRepository = require('../notifications/notification.repository');
 const notificationService = require('../notifications/notification.service');
+const logger = require('../../utils/logger');
 
 // Alias pour les statuts d'événements dans les imports Excel
 const EVENT_STATUS_ALIASES = {
@@ -57,8 +58,9 @@ class CalendarService {
       const recipients = await notificationRepository.findUsersByRoles(rolesToNotify);
       const ids = recipients.map((u) => u.id);
       if (ids.length) {
+        // On réutilise un type existant pour éviter de modifier l'ENUM en base
         await notificationService.notifyMany(ids, {
-          type: 'calendar_event_created',
+          type: 'task_deadline_warning',
           title: `Nouvel événement : "${event.title}"`,
           message: `Un nouvel événement a été créé pour le ${event.start_date?.toISOString().slice(0, 10) || ''}.`,
           referenceId: event.id,
@@ -73,26 +75,49 @@ class CalendarService {
     // Notifie les utilisateurs responsables de tâches de cet événement
     try {
       const tasks = Array.isArray(data.tasks) ? data.tasks : [];
-      const responsibleIds = [
-        ...new Set(
-          tasks
-            .map((t) => t.responsible_user_id)
-            .filter((id) => typeof id === 'string' && id),
-        ),
-      ];
-      if (responsibleIds.length) {
-        await notificationService.notifyMany(responsibleIds, {
-          type: 'event_task_assigned',
-          title: `Tâche d’événement assignée — "${event.title}"`,
-          message:
-            "Une ou plusieurs tâches vous ont été assignées dans le cadre d'un événement. Consultez le détail dans le calendrier.",
+      const byUser = new Map();
+
+      for (const task of tasks) {
+        if (!task || !task.responsible_user_id) continue;
+        const userId = task.responsible_user_id;
+        if (!byUser.has(userId)) byUser.set(userId, []);
+        byUser.get(userId).push(task);
+      }
+
+      for (const [userId, userTasks] of byUser.entries()) {
+        const lines = userTasks.map((t) => {
+          const base = `- ${t.title || 'Tâche'}`;
+          if (t.due_date) {
+            return `${base} (date cible : ${new Date(t.due_date).toISOString().slice(0, 10)})`;
+          }
+          return base;
+        });
+
+        const messageLines = [
+          `Une ou plusieurs tâches vous ont été assignées dans le cadre de l’événement « ${event.title} ».`,
+          '',
+          'Détail des tâches :',
+          ...lines,
+        ];
+
+        logger.info('[Calendar] Notification tâches événement', {
+          eventId: event.id,
+          userId,
+          tasks: userTasks.map((t) => t.title),
+        });
+
+        await notificationService.notify({
+          userId,
+          type: 'task_pending_validation', // type ENUM existant réutilisé pour rester compatible
+          title: `Tâches d’événement assignées — « ${event.title} »`,
+          message: messageLines.join('\n'),
           referenceId: event.id,
           referenceType: 'calendar_event',
           link: '/calendar/events',
         });
       }
     } catch (err) {
-      console.error('Erreur lors de la notification des tâches d’événement', err);
+      logger.error('Erreur lors de la notification des tâches d’événement', { eventId: event.id, error: err.message });
     }
     return event;
   }

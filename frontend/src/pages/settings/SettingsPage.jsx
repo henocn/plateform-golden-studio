@@ -254,7 +254,7 @@ export default function SettingsPage() {
       )}
 
       {/* Templates d'événements (type + tâches pré-remplies) — uniquement super admin / admin */}
-      {isAdmin && <EventTemplatesSection userType={userType} />}
+      {isAdmin && <EventTemplatesSection />}
 
       {/* Notifications */}
       <NotificationsSection />
@@ -393,13 +393,14 @@ function AgenciesSection() {
   );
 }
 
-function EventTemplatesSection({ userType }) {
+function EventTemplatesSection() {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [assignableUsers, setAssignableUsers] = useState([]);
+  const { isInternal } = usePermissions();
   const [form, setForm] = useState({
     name: '',
     tasks: [],
@@ -419,34 +420,27 @@ function EventTemplatesSection({ userType }) {
     }
   };
 
+  const loadUsers = async () => {
+    try {
+      if (isInternal) {
+        const { data } = await usersAPI.listMembers({ page: 1, limit: 100 });
+        const items = data?.data?.data || [];
+        setAssignableUsers(items);
+      } else {
+        const { data } = await usersAPI.listClients({ page: 1, limit: 100 });
+        const items = data?.data?.data || [];
+        setAssignableUsers(items);
+      }
+    } catch {
+      setAssignableUsers([]);
+    }
+  };
+
   useEffect(() => {
+    loadUsers();
     loadTemplates();
   }, []);
 
-  // Commentaire: charge les utilisateurs assignables pour les tâches des templates
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        // En settings, on autorise les internes à voir internes + clients
-        if (userType === 'internal') {
-          const [internalRes, clientRes] = await Promise.all([
-            usersAPI.listMembers({ type: 'internal', page: 1, limit: 100 }),
-            usersAPI.listClients({ page: 1, limit: 100 }),
-          ]);
-          const internalItems = extractList(internalRes.data.data).items || [];
-          const clientItems = extractList(clientRes.data.data).items || [];
-          setAssignableUsers([...internalItems, ...clientItems]);
-        } else {
-          const { data } = await usersAPI.listClients({ page: 1, limit: 100 });
-          const clientItems = extractList(data.data).items || [];
-          setAssignableUsers(clientItems);
-        }
-      } catch {
-        setAssignableUsers([]);
-      }
-    };
-    loadUsers();
-  }, [userType]);
 
   const openCreate = () => {
     setEditing(null);
@@ -623,23 +617,13 @@ function EventTemplatesSection({ userType }) {
             {(form.tasks || []).map((task, index) => (
               <div
                 key={index}
-                className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_auto] gap-2 items-center"
+                className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto] gap-2 items-center"
               >
                 <Input
                   label={index === 0 ? 'Titre' : undefined}
                   value={task.title}
                   onChange={(e) => handleTaskChange(index, 'title', e.target.value)}
                   placeholder="Intitulé de la tâche"
-                />
-                <Select
-                  label={index === 0 ? 'Statut' : undefined}
-                  value={task.status || 'pending'}
-                  onChange={(e) => handleTaskChange(index, 'status', e.target.value)}
-                  options={[
-                    { value: 'pending', label: 'En attente' },
-                    { value: 'in_progress', label: 'En cours' },
-                    { value: 'done', label: 'Terminée' },
-                  ]}
                 />
                 <Select
                   label={index === 0 ? 'Responsable' : undefined}

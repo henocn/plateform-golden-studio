@@ -24,12 +24,6 @@ const NOTIFICATIONS_CONFIG = {
     emailPreferenceKey: 'email_enabled',
     domainPreferenceKey: 'events_enabled',
   },
-  calendar_event_created: {
-    email: true,
-    inApp: true,
-    emailPreferenceKey: 'email_enabled',
-    domainPreferenceKey: 'events_enabled',
-  },
   event_task_assigned: {
     email: true,
     inApp: true,

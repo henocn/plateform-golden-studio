@@ -73,7 +73,7 @@ const PERMISSIONS = {
   // ─── Paramètres (agences, directions) ────────────────────
   'settings.agencies_directions': ['super_admin', 'admin'],
   // ─── Templates d'événements ──────────────────────────────
-  'calendar.templates':         ['super_admin', 'admin'],
+  'calendar.templates':         ['super_admin', 'admin', 'client_admin'],
 };
 
 module.exports = PERMISSIONS;
