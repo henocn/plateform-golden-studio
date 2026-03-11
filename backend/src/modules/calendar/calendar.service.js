@@ -54,25 +54,6 @@ class CalendarService {
       ...data,
       created_by: user.id,
     });
-    // Notifie super_admin, admin et client_admin à la création d'un événement
-    try {
-      const rolesToNotify = ['super_admin', 'admin', 'client_admin'];
-      const recipients = await notificationRepository.findUsersByRoles(rolesToNotify);
-      const ids = recipients.map((u) => u.id);
-      if (ids.length) {
-        // On réutilise un type existant pour éviter de modifier l'ENUM en base
-        await notificationService.notifyMany(ids, {
-          type: 'task_deadline_warning',
-          title: `Nouvel événement : "${event.title}"`,
-          message: `Un nouvel événement a été créé pour le ${event.start_date?.toISOString().slice(0, 10) || ''}.`,
-          referenceId: event.id,
-          referenceType: 'calendar_event',
-          link: '/calendar/events',
-        });
-      }
-    } catch (err) {
-      console.error('Erreur lors de la notification de création d’événement', err);
-    }
 
     // Crée des tâches (model Task) pour les tâches d'événement éventuelles (templates)
     try {
@@ -132,15 +113,9 @@ class CalendarService {
           ...lines,
         ];
 
-        logger.info('[Calendar] Notification tâches événement', {
-          eventId: event.id,
-          userId,
-          tasks: userTasks.map((t) => t.title),
-        });
-
         await notificationService.notify({
           userId,
-          type: 'task_pending_validation', // type ENUM existant réutilisé pour rester compatible
+          type: 'task_pending_validation',
           title: `Tâches d’événement assignées — « ${event.title} »`,
           message: messageLines.join('\n'),
           referenceId: event.id,
@@ -149,14 +124,14 @@ class CalendarService {
         });
       }
     } catch (err) {
-      logger.error('Erreur lors de la notification des tâches d’événement', { eventId: event.id, error: err.message });
+      logger.error('[Calendar :] Erreur lors de la notification des tâches d’événement', { eventId: event.id, error: err.message });
     }
 
     // Envoie un message WhatsApp aux numéros configurés pour signaler la création de l'événement
     try {
       await whatsapp.sendEventCreatedNotification(event);
     } catch (err) {
-      logger.error('Erreur lors de l’envoi WhatsApp pour la création d’événement', {
+      logger.error('[Calendar :] Erreur lors de l’envoi WhatsApp pour la création d’événement', {
         eventId: event.id,
         error: err.message,
       });
@@ -168,7 +143,7 @@ class CalendarService {
   async update(id, data) {
     const event = await calendarRepository.update(id, data);
     if (!event) throw ApiError.notFound('Événement de calendrier');
-    // Pour l’instant, on ne touche pas aux tâches (Task) existantes lors de la modification
+    //TODO: Pour l’instant, on ne touche pas aux tâches (Task) existantes lors de la modification
     // pour éviter les doublons : elles sont créées uniquement à la création de l’événement.
     return event;
   }

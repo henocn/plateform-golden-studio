@@ -132,6 +132,7 @@ class TaskService {
           subject: `Rappel : tâche « ${task.title} » à rendre demain`,
           html,
           text,
+          type: 'task_reminder',
         });
       }
     }

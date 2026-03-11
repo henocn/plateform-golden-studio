@@ -23,8 +23,9 @@ class NotificationService {
       link,
       referenceId,
       referenceType,
-    }).catch((err) => {
-      logger.error('[Notification] Email non envoyé', { userId, error: err.message });
+    })
+    .catch((err) => {
+      logger.error(`[Notification :] Email non envoyé ${JSON.stringify({ userId, error: err.message })}`);
     });
     return null;
   }
@@ -40,7 +41,7 @@ class NotificationService {
       referenceId,
       referenceType,
     }).catch((err) => {
-      logger.error('[Notification] Emails non envoyés', { userIds: uniqueIds, error: err.message });
+      logger.error(`[Notification :] Emails non envoyés ${JSON.stringify({ userIds: uniqueIds, error: err.message })}`);
     });
     return null;
   }
@@ -73,6 +74,7 @@ class NotificationService {
         subject: title || 'Notification',
         html,
         text,
+        type: 'Notification',
       });
     }
   }
