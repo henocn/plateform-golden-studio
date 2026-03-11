@@ -8,6 +8,7 @@ const EVENT_TASK_STATUS = ['pending', 'in_progress', 'done'];
 // Commentaire: schéma d'une tâche dans un template d'événement
 const templateTaskSchema = Joi.object({
   title: Joi.string().min(1).max(255).required(),
+  description: Joi.string().max(5000).optional().allow(null, ''),
   status: Joi.string().valid(...EVENT_TASK_STATUS).default('pending'),
   responsible_user_id: Joi.string().uuid().optional().allow(null, ''),
 });

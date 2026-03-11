@@ -3,7 +3,7 @@
 const Joi = require('joi');
 
 const createTaskSchema = Joi.object({
-  project_id: Joi.string().uuid().required(),
+  project_id: Joi.string().uuid().optional().allow(null),
   title: Joi.string().min(2).max(255).required(),
   description: Joi.string().max(5000).optional().allow(null, ''),
   assigned_to: Joi.string().uuid().optional().allow(null),
@@ -14,7 +14,12 @@ const createTaskSchema = Joi.object({
   priority: Joi.string().valid('low', 'normal', 'high', 'urgent').default('normal'),
   context: Joi.string().valid('project', 'event').default('project'),
   event_id: Joi.string().uuid().optional().allow(null),
-});
+}).custom((value, helpers) => {
+  if ((!value.context || value.context === 'project') && !value.project_id) {
+    return helpers.error('any.custom', { message: 'project_id est requis pour une tâche de projet' });
+  }
+  return value;
+}, 'project_id requirement for project tasks');
 
 const updateTaskSchema = Joi.object({
   title: Joi.string().min(2).max(255).optional(),

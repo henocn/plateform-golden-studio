@@ -11,7 +11,7 @@ module.exports = (sequelize) => {
     },
     project_id: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
     },
     event_id: {
       type: DataTypes.UUID,
@@ -60,6 +60,11 @@ module.exports = (sequelize) => {
       type: DataTypes.ENUM('project', 'event'),
       allowNull: false,
       defaultValue: 'project',
+    },
+    is_configured: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
   }, {
     tableName: 'tasks',

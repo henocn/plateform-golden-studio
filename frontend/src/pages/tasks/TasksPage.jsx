@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Plus, Clock, AlertTriangle, List, LayoutGrid } from "lucide-react";
+import { Plus, Clock, AlertTriangle, List, LayoutGrid, Trash2 } from "lucide-react";
 import {
   Card,
   Button,
@@ -285,6 +285,17 @@ export default function TasksPage() {
                         draggable
                         onDragStart={() => handleDragStart(t)}
                         onDragEnd={handleDragEnd}
+                        canDelete={can("tasks.delete")}
+                        onDelete={async (task) => {
+                          try {
+                            await tasksAPI.remove(task.id);
+                            toast.success("Tâche supprimée");
+                            loadTasks();
+                          } catch (err) {
+                            const details = formatErrorMessage(err);
+                            details.forEach((d) => toast.error(d.message));
+                          }
+                        }}
                       />
                     </div>
                   ))}
@@ -408,10 +419,16 @@ export default function TasksPage() {
   );
 }
 
-function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd }) {
+function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd, canDelete, onDelete }) {
   return (
     <div
-      className={`bg-white rounded-xl border border-1.5 p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${isOverdue ? "border-red-500" : "border-green-600"} ${t.context === "event" ? "bg-blue-500/20" : "bg-yellow-200/20"}`}
+      className={`bg-white rounded-xl border border-1.5 p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${
+        !t.is_configured
+          ? "border-warning-500 bg-warning-50"
+          : isOverdue
+          ? "border-red-500 bg-danger-50/20"
+          : "border-green-600 bg-success-50/20"
+      } ${t.context === "event" ? "bg-blue-500/10" : ""}`}
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -419,10 +436,28 @@ function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd }) {
     >
       <div className="flex items-center justify-between mb-1.5">
         <p className="text-body-md font-medium text-ink-900">{t.title}</p>
+        {canDelete && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.(t);
+            }}
+            className="p-1.5 rounded-full text-ink-300 hover:text-danger-600 hover:bg-danger-50 transition-colors"
+            aria-label="Supprimer la tâche"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
       {t.description && (
         <p className="text-body-sm text-ink-400 line-clamp-2 mb-2.5">
           {t.description}
+        </p>
+      )}
+      {!t.is_configured && (
+        <p className="text-[11px] text-warning-700 font-medium mb-1">
+          À paramétrer (superviseur et date cible manquants)
         </p>
       )}
       <div className="flex items-center justify-between">

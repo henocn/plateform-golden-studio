@@ -16,12 +16,8 @@ class TaskService {
    * Récupère une tâche par ID
    */
   async getById(id, user) {
-    const isClient = user.user_type === 'client';
     const task = await taskRepository.findById(id);
     if (!task) throw ApiError.notFound('Tâche');
-    if (isClient && task.visibility === 'internal_only') {
-      throw ApiError.notFound('Task');
-    }
     return task;
   }
 
@@ -34,20 +30,39 @@ class TaskService {
   }
 
   /**
-   * Create task — internal only, must link to existing project
+   * Create task — internal only.
+   * Pour les tâches de projet, on exige un project_id valide.
+   * Pour les tâches d'événement (context = 'event'), le project_id peut être nul.
    */
   async create(data, user) {
-    const project = await Project.findByPk(data.project_id);
-    if (!project) throw ApiError.notFound('Projet');
+    if (!data.context || data.context === 'project') {
+      const project = await Project.findByPk(data.project_id);
+      if (!project) throw ApiError.notFound('Projet');
+    }
+
+    const isConfigured = Boolean(data.supervisor_id && data.due_date);
 
     return taskRepository.create({
       ...data,
       created_by: user.id,
+      is_configured: isConfigured,
     });
   }
 
   async update(id, data) {
-    const task = await taskRepository.update(id, data);
+    const isConfigured =
+      data.supervisor_id !== undefined || data.due_date !== undefined
+        ? Boolean(data.supervisor_id && data.due_date)
+        : undefined;
+
+    const payload = {
+      ...data,
+    };
+    if (isConfigured !== undefined) {
+      payload.is_configured = isConfigured;
+    }
+
+    const task = await taskRepository.update(id, payload);
     if (!task) throw ApiError.notFound('Tâche');
     return task;
   }

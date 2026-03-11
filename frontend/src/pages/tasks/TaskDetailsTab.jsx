@@ -231,7 +231,10 @@ export default function TaskDetailsTab({
   commentsEndRef,
   handleAddComment,
 }) {
-  const { assignee, project, creator, supervisor } = task;
+  const { assignee, project, creator, supervisor, event } = task;
+  const isEventTask = task.context === "event";
+  const containerLabel = isEventTask ? "Événement" : "Projet";
+  const containerName = isEventTask ? event?.title || "—" : project?.title || "—";
 
   return (
     <div className="space-y-6">
@@ -287,10 +290,10 @@ export default function TaskDetailsTab({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div>
               <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-1">
-                Projet
+                {containerLabel}
               </p>
               <p className="text-body-md text-ink-800 font-medium">
-                {project?.title || "—"}
+                {containerName}
               </p>
             </div>
             <div>

@@ -283,6 +283,7 @@ function CreateEventModal({ onClose, onCreated, assignableUsers, templates }) {
     end_date: "",
     agency_id: "",
     direction_id: "",
+    tasks: [],
   });
   const [agencies, setAgencies] = useState([]);
   const [directions, setDirections] = useState([]);
@@ -351,6 +352,17 @@ function CreateEventModal({ onClose, onCreated, assignableUsers, templates }) {
             onChange={(e) => {
               const id = e.target.value;
               setSelectedTemplateId(id);
+              const tpl = templates.find((t) => t.id === id);
+              if (tpl && Array.isArray(tpl.tasks)) {
+                setField("tasks", tpl.tasks.map((t) => ({
+                  title: t.title || "",
+                  description: t.description || "",
+                  status: t.status || "pending",
+                  responsible_user_id: t.responsible_user_id || "",
+                })));
+              } else {
+                setField("tasks", []);
+              }
             }}
             options={[
               { value: "", label: "Aucun template" },

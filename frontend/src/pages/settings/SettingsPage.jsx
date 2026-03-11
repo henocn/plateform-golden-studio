@@ -617,13 +617,19 @@ function EventTemplatesSection() {
             {(form.tasks || []).map((task, index) => (
               <div
                 key={index}
-                className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto] gap-2 items-center"
+                className="grid grid-cols-[minmax(0,2fr)_minmax(0,2fr)_minmax(0,1.5fr)_auto] gap-2 items-start"
               >
                 <Input
                   label={index === 0 ? 'Titre' : undefined}
                   value={task.title}
                   onChange={(e) => handleTaskChange(index, 'title', e.target.value)}
                   placeholder="Intitulé de la tâche"
+                />
+                <Textarea
+                  label={index === 0 ? 'Description' : undefined}
+                  value={task.description || ''}
+                  onChange={(e) => handleTaskChange(index, 'description', e.target.value)}
+                  rows={2}
                 />
                 <Select
                   label={index === 0 ? 'Responsable' : undefined}
@@ -642,7 +648,7 @@ function EventTemplatesSection() {
                 <button
                   type="button"
                   onClick={() => handleRemoveTask(index)}
-                  className="mt-4 p-2 rounded-lg text-ink-400 hover:bg-surface-200"
+                  className="mt-7 p-2 rounded-lg text-ink-400 hover:bg-surface-200"
                   aria-label="Supprimer la tâche"
                 >
                   <Trash2 className="w-4 h-4" />

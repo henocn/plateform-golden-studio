@@ -98,6 +98,10 @@ class TaskRepository {
           association: "supervisor",
           attributes: ["id", "first_name", "last_name", "email"],
         },
+        {
+          association: "event",
+          attributes: ["id", "title"],
+        },
       ],
     });
   }

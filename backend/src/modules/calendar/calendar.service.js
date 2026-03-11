@@ -5,6 +5,7 @@ const ApiError = require('../../utils/ApiError');
 const { parseEventsImport, buildEventsExport } = require('./calendar.excel.utils');
 const notificationRepository = require('../notifications/notification.repository');
 const notificationService = require('../notifications/notification.service');
+const taskRepository = require('../tasks/task.repository');
 const whatsapp = require('../../config/whatsapp');
 const logger = require('../../utils/logger');
 
@@ -73,6 +74,36 @@ class CalendarService {
       console.error('Erreur lors de la notification de création d’événement', err);
     }
 
+    // Crée des tâches (model Task) pour les tâches d'événement éventuelles (templates)
+    try {
+      const tasks = Array.isArray(event.tasks) ? event.tasks : [];
+      const payloads = tasks
+        .filter((t) => t && t.title)
+        .map((t) => ({
+          title: `${event.title} - ${t.title}`,
+          description: t.description || null,
+          assigned_to: t.responsible_user_id || null,
+          supervisor_id: t.supervisor_id || null,
+          due_date: t.due_date || null,
+          publication_date: event.start_date || null,
+          priority: t.priority || 'normal',
+          status: 'todo',
+          context: 'event',
+          event_id: event.id,
+          created_by: user.id,
+          is_configured: Boolean(t.supervisor_id && t.due_date),
+        }));
+
+      for (const payload of payloads) {
+        await taskRepository.create(payload);
+      }
+    } catch (err) {
+      logger.error('[Calendar] Erreur lors de la création des tâches liées à un événement', {
+        eventId: event.id,
+        error: err.message,
+      });
+    }
+
     // Notifie les utilisateurs responsables de tâches de cet événement
     try {
       const tasks = Array.isArray(data.tasks) ? data.tasks : [];
@@ -137,6 +168,8 @@ class CalendarService {
   async update(id, data) {
     const event = await calendarRepository.update(id, data);
     if (!event) throw ApiError.notFound('Événement de calendrier');
+    // Pour l’instant, on ne touche pas aux tâches (Task) existantes lors de la modification
+    // pour éviter les doublons : elles sont créées uniquement à la création de l’événement.
     return event;
   }
 
