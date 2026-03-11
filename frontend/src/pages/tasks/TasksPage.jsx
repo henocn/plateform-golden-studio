@@ -147,7 +147,7 @@ export default function TasksPage() {
   };
 
   const isOverdue = (t) =>
-    t.due_date && new Date(t.due_date) < new Date() && t.status !== "done";
+    t.due_date && new Date(t.due_date) < new Date() && t.status !== "done" && t.status !== "cancelled";
 
   return (
     <div className="space-y-6">
@@ -422,13 +422,11 @@ export default function TasksPage() {
 function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd, canDelete, onDelete }) {
   return (
     <div
-      className={`bg-white rounded-xl border border-1.5 p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${
-        !t.is_configured
-          ? "border-warning-500 bg-warning-50"
-          : isOverdue
-          ? "border-red-500 bg-danger-50/20"
-          : "border-green-600 bg-success-50/20"
-      } ${t.context === "event" ? "bg-blue-500/10" : ""}`}
+      className={`bg-white rounded-xl border border-2 p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${
+        isOverdue
+          ? "border-red-500"
+          : "border-green-600"
+      } ${t.context === "event" ? "bg-blue-300/10" : "bg-orange-300/10"}`}
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -457,7 +455,7 @@ function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd, canDe
       )}
       {!t.is_configured && (
         <p className="text-[11px] text-warning-700 font-medium mb-1">
-          À paramétrer (superviseur et date cible manquants)
+          À paramétrer
         </p>
       )}
       <div className="flex items-center justify-between">
