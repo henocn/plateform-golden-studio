@@ -5,6 +5,7 @@ const ApiError = require('../../utils/ApiError');
 const { parseEventsImport, buildEventsExport } = require('./calendar.excel.utils');
 const notificationRepository = require('../notifications/notification.repository');
 const notificationService = require('../notifications/notification.service');
+const whatsapp = require('../../config/whatsapp');
 const logger = require('../../utils/logger');
 
 // Alias pour les statuts d'événements dans les imports Excel
@@ -119,6 +120,17 @@ class CalendarService {
     } catch (err) {
       logger.error('Erreur lors de la notification des tâches d’événement', { eventId: event.id, error: err.message });
     }
+
+    // Envoie un message WhatsApp aux numéros configurés pour signaler la création de l'événement
+    try {
+      await whatsapp.sendEventCreatedNotification(event);
+    } catch (err) {
+      logger.error('Erreur lors de l’envoi WhatsApp pour la création d’événement', {
+        eventId: event.id,
+        error: err.message,
+      });
+    }
+
     return event;
   }
 
