@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import {
-  User, Mail, Phone, Key, Camera, Save,
+  User, Mail, Key, Camera, Save,
 } from 'lucide-react';
 import { Card, Button, Input, Badge, Avatar } from '../../components/ui';
 import { authAPI, usersAPI, uploadsUrl } from '../../api/services';
@@ -108,7 +108,7 @@ function ProfileInfoTab({ user, onUpdate }) {
   const [form, setForm] = useState({
     first_name: user.first_name || '',
     last_name: user.last_name || '',
-    phone: user.phone || '',
+    contact: user.contact || '',
   });
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
@@ -136,7 +136,12 @@ function ProfileInfoTab({ user, onUpdate }) {
           <Input label="Nom" value={form.last_name} onChange={(e) => set('last_name', e.target.value)} icon={User} />
         </div>
         <Input label="Email" value={user.email} disabled icon={Mail} hint="L'email ne peut pas être modifié" />
-        <Input label="Téléphone" value={form.phone} onChange={(e) => set('phone', e.target.value)} icon={Phone} />
+        <Input
+          label="Contact"
+          value={form.contact}
+          onChange={(e) => set('contact', e.target.value)}
+          hint="Informations de contact complémentaires (WhatsApp, autre numéro, etc.)"
+        />
         <div className="flex justify-end pt-2">
           <Button type="submit" loading={saving} icon={Save}>Enregistrer</Button>
         </div>
