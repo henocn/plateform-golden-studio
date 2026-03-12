@@ -113,7 +113,20 @@ class TaskRepository {
       where,
       include: [
         { association: 'author', attributes: ['id', 'first_name', 'last_name', 'email'] },
-        { association: 'task', attributes: ['id', 'title'] },
+        {
+          association: 'task',
+          attributes: ['id', 'title', 'context'],
+          include: [
+            {
+              association: 'project',
+              attributes: ['id', 'title'],
+            },
+            {
+              association: 'event',
+              attributes: ['id', 'title'],
+            },
+          ],
+        },
         { association: 'attachments', order: [['sort_order', 'ASC']] },
         {
           association: 'comments',

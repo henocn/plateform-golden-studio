@@ -22,10 +22,14 @@ class ProposalRepository {
         { association: 'author', attributes: ['id', 'first_name', 'last_name'] },
         {
           association: 'task',
-          attributes: ['id', 'title', 'project_id'],
+          attributes: ['id', 'title', 'project_id', 'context'],
           include: [
             {
               association: 'project',
+              attributes: ['id', 'title'],
+            },
+            {
+              association: 'event',
               attributes: ['id', 'title'],
             },
           ],
@@ -45,10 +49,14 @@ class ProposalRepository {
       include: [
         {
           association: 'task',
-          attributes: ['id', 'title', 'project_id'],
+          attributes: ['id', 'title', 'project_id', 'context'],
           include: [
             {
               association: 'project',
+              attributes: ['id', 'title'],
+            },
+            {
+              association: 'event',
               attributes: ['id', 'title'],
             },
           ],

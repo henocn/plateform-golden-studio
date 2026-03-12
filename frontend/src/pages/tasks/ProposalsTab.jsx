@@ -396,6 +396,25 @@ export function LatestProposalCard({ proposal, canValidate, onRefresh }) {
               {formatDate(proposal.submitted_at)}
             </span>
           )}
+          {proposal.task && (
+            <span className="flex items-center gap-1">
+              {proposal.task.context === "event" ? (
+                <>
+                  <span>Événement:</span>
+                  <span className="text-ink-600">
+                    {proposal.task.event?.title || "—"}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span>Projet:</span>
+                  <span className="text-ink-600">
+                    {proposal.task.project?.title || "—"}
+                  </span>
+                </>
+              )}
+            </span>
+          )}
         </div>
 
         {/* Actions */}

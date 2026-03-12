@@ -286,7 +286,11 @@ export default function ProposalsPage() {
                       </div>
 
                       <div className="flex items-center gap-4 mt-2 text-body-sm text-ink-400">
-                        <span>Projet: {p.task?.project?.title || "—"}</span>
+                        <span>
+                          {p.task?.context === "event"
+                            ? `Événement: ${p.task?.event?.title || "—"}`
+                            : `Projet: ${p.task?.project?.title || "—"}`}
+                        </span>
                         <span>
                           Par {p.author?.first_name || "—"}{" "}
                           {p.author?.last_name || ""}
@@ -435,8 +439,17 @@ function ProposalDetailModal({ proposal: p, onClose, onRefresh, canValidate }) {
 
         <div className="grid grid-cols-2 gap-4 text-body-sm">
           <div>
-            <span className="text-ink-400">Projet:</span>{" "}
-            <span className="text-ink-700 ml-1">{p.task?.project?.title || "—"}</span>
+            {p.task?.context === "event" ? (
+              <>
+                <span className="text-ink-400">Événement:</span>{" "}
+                <span className="text-ink-700 ml-1">{p.task?.event?.title || "—"}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-ink-400">Projet:</span>{" "}
+                <span className="text-ink-700 ml-1">{p.task?.project?.title || "—"}</span>
+              </>
+            )}
           </div>
           <div>
             <span className="text-ink-400">Auteur:</span>{" "}
