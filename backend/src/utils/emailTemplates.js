@@ -1,6 +1,8 @@
 'use strict';
 
 const env = require('../config/env');
+// importation du logo de l'application depuis le dossier public du frontend
+const logo = require('../../../frontend/public/images/Qidoo white.jpeg');
 
 const APP_NAME = env.EMAIL_BRAND_NAME || 'Qidoo';
 

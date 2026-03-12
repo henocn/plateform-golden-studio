@@ -105,6 +105,7 @@ export default function UsersPage() {
               <thead>
                 <tr className="border-b border-surface-200">
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Utilisateur</th>
+                  <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Contact</th>
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Rôle</th>
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Statut</th>
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Dernière connexion</th>
@@ -123,6 +124,7 @@ export default function UsersPage() {
                         </div>
                       </div>
                     </td>
+                    <td className="px-5 py-3">{u.contact}</td>
                     <td className="px-5 py-3">{getRoleBadge(u.role)}</td>
                     <td className="px-5 py-3">
                       <Badge color={u.is_active ? 'success' : 'neutral'} dot size="sm">
