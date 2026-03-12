@@ -37,7 +37,16 @@ import CreateFolderModal from "./CreateFolderModal";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
-const buildUrl = (filePath) => (filePath ? `${API_BASE}/${filePath}` : null);
+const buildUrl = (filePath) => {
+  if (!filePath) return null;
+  let p = String(filePath).replace(/\\/g, '/');
+  // Si le chemin contient déjà "uploads/", on enlève tout ce qui est avant
+  const idx = p.indexOf('uploads/');
+  if (idx !== -1) {
+    p = p.slice(idx + 'uploads/'.length);
+  }
+  return `${API_BASE}/uploads/${p.replace(/^\/+/, '')}`;
+};
 
 const getFileCategory = (mime) => {
   if (!mime) return "document";

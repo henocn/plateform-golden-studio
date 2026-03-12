@@ -1,11 +1,11 @@
 import {
   FileText, Download, Save, CheckCircle2, XCircle,
   RefreshCw, Hourglass, Paperclip, Clock, User,
-  FolderOpen, FolderPlus, ChevronRight,
+  FolderOpen, FolderPlus, ChevronRight, Eye,
 } from "lucide-react";
 import { Card, Badge, Avatar, Button, Textarea, Modal } from "../../components/ui";
 import { tasksAPI, proposalsAPI, foldersAPI } from "../../api/services";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
 import { formatDate, formatDateTime, PROPOSAL_STATUS, formatErrorMessage } from "../../utils/helpers";
 import { usePermissions } from "../../hooks";
@@ -143,6 +143,128 @@ function FileDownloadButton({ proposalId }) {
       <Download className="w-4 h-4" />
       Télécharger
     </button>
+  );
+}
+
+/** Retourne "image" | "video" | "other" selon l'extension du fichier */
+function getPreviewType(fileName) {
+  if (!fileName || typeof fileName !== "string") return "other";
+  const ext = fileName.split(".").pop()?.toLowerCase() || "";
+  const imageExts = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"];
+  const videoExts = ["mp4", "webm", "ogg", "mov", "avi", "mkv"];
+  if (imageExts.includes(ext)) return "image";
+  if (videoExts.includes(ext)) return "video";
+  return "other";
+}
+
+/** Modale d'aperçu : image ou vidéo si possible, sinon message "Aperçu indisponible, veuillez télécharger." */
+function ProposalPreviewModal({ proposal, onClose }) {
+  const [loading, setLoading] = useState(true);
+  const [blobUrl, setBlobUrl] = useState(null);
+  const [previewType, setPreviewType] = useState("other"); // "image" | "video" | "other"
+  const [error, setError] = useState(false);
+  const blobUrlRef = useRef(null);
+
+  const hasFile = Boolean(proposal?.file_path) || (proposal?.attachments && proposal.attachments.length > 0);
+  const isSingleFile =
+    hasFile &&
+    ((proposal.attachments && proposal.attachments.length === 1) ||
+      (!proposal.attachments?.length && proposal.file_path));
+  const firstName =
+    proposal?.attachments?.[0]?.file_name || proposal?.file_name || "";
+
+  useEffect(() => {
+    if (!proposal?.id || !isSingleFile) {
+      setLoading(false);
+      return;
+    }
+    setError(false);
+    setBlobUrl(null);
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+    const type = getPreviewType(firstName);
+    if (type === "other") {
+      setPreviewType("other");
+      setLoading(false);
+      return;
+    }
+    setPreviewType(type);
+    proposalsAPI
+      .download(proposal.id)
+      .then((res) => {
+        const blob = res.data;
+        if (blob && blob.size > 0) {
+          const url = URL.createObjectURL(blob);
+          blobUrlRef.current = url;
+          setBlobUrl(url);
+        } else {
+          setPreviewType("other");
+        }
+      })
+      .catch(() => {
+        setError(true);
+        setPreviewType("other");
+      })
+      .finally(() => setLoading(false));
+
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
+    };
+  }, [proposal?.id, isSingleFile, firstName]);
+
+  return (
+    <Modal open onClose={onClose} title="Aperçu de la proposition" size="xl">
+      <div className="space-y-4">
+        {!hasFile || !isSingleFile ? (
+          <p className="text-body-md text-ink-500 py-8 text-center rounded-xl bg-surface-50 border border-surface-200">
+            Aperçu indisponible, veuillez télécharger.
+          </p>
+        ) : loading ? (
+          <div className="min-h-[280px] flex items-center justify-center rounded-xl bg-surface-100">
+            <p className="text-body-md text-ink-500">Chargement…</p>
+          </div>
+        ) : error ? (
+          <p className="text-body-md text-ink-500 py-8 text-center rounded-xl bg-surface-50 border border-surface-200">
+            Aperçu indisponible, veuillez télécharger.
+          </p>
+        ) : previewType === "image" && blobUrl ? (
+          <div className="rounded-xl overflow-hidden bg-surface-100 flex items-center justify-center min-h-[280px]">
+            <img
+              src={blobUrl}
+              alt={firstName || "Aperçu"}
+              className="max-h-[70vh] w-full object-contain"
+            />
+          </div>
+        ) : previewType === "video" && blobUrl ? (
+          <div className="rounded-xl overflow-hidden bg-surface-100 flex items-center justify-center min-h-[280px]">
+            <video src={blobUrl} controls className="max-h-[70vh] w-full" />
+          </div>
+        ) : (
+          <p className="text-body-md text-ink-500 py-8 text-center rounded-xl bg-surface-50 border border-surface-200">
+            Aperçu indisponible, veuillez télécharger.
+          </p>
+        )}
+        <div className="flex justify-end gap-2 pt-2 border-t border-surface-200">
+          <Button variant="secondary" onClick={onClose}>
+            Fermer
+          </Button>
+          {hasFile && (
+            <Button
+              variant="outline"
+              icon={Download}
+              onClick={() => downloadProposalFile(proposal.id)}
+            >
+              Télécharger
+            </Button>
+          )}
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -347,6 +469,7 @@ export function LatestProposalCard({ proposal, canValidate, onRefresh }) {
     }
   };
   const [showSaveToMedia, setShowSaveToMedia] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const comments = proposal.comments || [];
   const validations = proposal.validations || [];
@@ -423,6 +546,17 @@ export function LatestProposalCard({ proposal, canValidate, onRefresh }) {
             <Button
               size="sm"
               variant="outline"
+              icon={Eye}
+              onClick={() => setShowPreview(true)}
+              className="border-1 border-gray-600 rounded-lg hover:bg-blue-100"
+            >
+              Aperçu
+            </Button>
+          )}
+          {hasFile && (
+            <Button
+              size="sm"
+              variant="outline"
               icon={Download}
               loading={downloading}
               onClick={handleDownload}
@@ -437,6 +571,12 @@ export function LatestProposalCard({ proposal, canValidate, onRefresh }) {
             </Button>
           )}
         </div>
+        {showPreview && (
+          <ProposalPreviewModal
+            proposal={proposal}
+            onClose={() => setShowPreview(false)}
+          />
+        )}
         {showSaveToMedia && (
           <SaveToMediaModal
             proposal={proposal}
@@ -514,6 +654,7 @@ export function LatestProposalCard({ proposal, canValidate, onRefresh }) {
 
 /* ─── Entrée de la timeline (versions précédentes) ───────────────────────── */
 export function TimelineEntry({ proposal, isLast }) {
+  const [showPreview, setShowPreview] = useState(false);
   const status = PROPOSAL_STATUS[proposal.status] ?? { label: proposal.status, color: "neutral" };
 
   const dotStyles = {
@@ -569,9 +710,25 @@ export function TimelineEntry({ proposal, isLast }) {
           </div>
 
           {(proposal.file_path || (proposal.attachments && proposal.attachments.length > 0)) && (
-            <FileDownloadButton proposalId={proposal.id} />
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowPreview(true)}
+                className="inline-flex items-center gap-1.5 text-body-sm font-medium text-primary-600 hover:text-primary-700 hover:underline"
+              >
+                <Eye className="w-4 h-4" />
+                Aperçu
+              </button>
+              <FileDownloadButton proposalId={proposal.id} />
+            </div>
           )}
         </div>
+        {showPreview && (
+          <ProposalPreviewModal
+            proposal={proposal}
+            onClose={() => setShowPreview(false)}
+          />
+        )}
 
         {/* Commentaires sous cette version */}
         {comments.length > 0 && (
