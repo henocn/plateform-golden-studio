@@ -78,8 +78,19 @@ export default function TaskDetailPage() {
       }
     };
 
+    const fetchProposalsCount = async () => {
+      try {
+        const res = await tasksAPI.getProposals(id);
+        const list = Array.isArray(res.data?.data) ? res.data.data : [];
+        setProposalsCount(list.length);
+      } catch {
+        setProposalsCount(0);
+      }
+    };
+
     fetchTask();
     fetchComments();
+    fetchProposalsCount();
     intervalRef.current = setInterval(() => fetchComments(false), 5000);
     return () => clearInterval(intervalRef.current);
   }, [id, navigate]);
@@ -245,6 +256,7 @@ export default function TaskDetailPage() {
           onCreated={() => {
             setShowCreateProposal(false);
             setProposalsRefreshKey((k) => k + 1);
+            setProposalsCount((c) => (typeof c === "number" ? c + 1 : c));
           }}
         />
       )}
