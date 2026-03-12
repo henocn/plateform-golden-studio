@@ -55,7 +55,6 @@ class ProposalService {
 
     const proposal = await proposalRepository.create({
       ...data,
-      project_id: projectId,
       task_id: taskId,
       author_id: user.id,
       version_number: versionNumber,
@@ -72,33 +71,24 @@ class ProposalService {
     return proposalRepository.findById(proposal.id);
   }
 
-  /* Notifie les validateurs lors de la création d'une proposition */
+  /* Notifie le superviseur de la tâche lors de la création d'une proposition */
   async _notifyNewProposal(proposal, taskId, projectId) {
-    const PERMISSIONS = require('../../config/permissions');
-    const validatorRoles = PERMISSIONS['proposals.validate'] || [];
-    const notifRepo = require('../notifications/notification.repository');
-    const validators = await notifRepo.findUsersByRoles(validatorRoles);
-    const recipientIds = new Set(validators.map((v) => v.id));
+    if (!taskId) return;
 
-    if (taskId) {
-      const task = await Task.findByPk(taskId, { attributes: ['id', 'created_by', 'title'] });
-      if (task && task.created_by) recipientIds.add(task.created_by);
-    }
+    const task = await Task.findByPk(taskId, { attributes: ['id', 'title', 'supervisor_id'] });
+    if (!task || !task.supervisor_id) return;
 
-    recipientIds.delete(proposal.author_id);
+    // Évite de notifier l'auteur lui-même si c'est aussi le superviseur
+    if (task.supervisor_id === proposal.author_id) return;
 
-    if (!recipientIds.size) return;
-
-    const project = await Project.findByPk(projectId, { attributes: ['id', 'title'] });
-    const projectTitle = project?.title || 'Projet';
-
-    await notificationService.notifyMany([...recipientIds], {
+    await notificationService.notify({
+      userId: task.supervisor_id,
       type: 'task_pending_validation',
-      title: `Validation de proposition de tâche — ${projectTitle}`,
-      message: `Vous avez une proposition de tâche à valider : « ${projectTitle} ». Cette proposition (v${proposal.version_number}) a été envoyée le ${new Date(proposal.created_at || new Date()).toLocaleDateString('fr-FR')}.`,
-      referenceId: taskId || projectId,
-      referenceType: taskId ? 'task' : 'project',
-      link: taskId ? `/tasks/${taskId}` : `/projects/${projectId}`,
+      title: `Validation de proposition de tâche — ${task.title}`,
+      message: `Vous avez une proposition de tâche à valider : « ${task.title} ». Cette proposition (v${proposal.version_number}) a été envoyée le ${new Date(proposal.created_at || new Date()).toLocaleDateString('fr-FR')}.`,
+      referenceId: task.id,
+      referenceType: 'task',
+      link: `/tasks/${task.id}`,
     });
   }
 
@@ -171,6 +161,20 @@ class ProposalService {
     });
 
     await proposalRepository.update(proposalId, { status });
+
+    // Si la proposition est approuvée, on passe automatiquement la tâche en "done"
+    if (status === 'approved' && proposal.task_id) {
+      try {
+        const taskService = require('../tasks/task.service');
+        await taskService.updateStatus(proposal.task_id, 'done');
+      } catch (err) {
+        logger.error('[Proposal] Échec de la mise à jour du statut de la tâche après approbation de proposition', {
+          proposalId,
+          taskId: proposal.task_id,
+          error: err?.message,
+        });
+      }
+    }
 
     this._notifyValidationResult(proposal, status, user, comments).catch((err) => {
       logger.error('[NOTIF] onValidationResult error:', err);
