@@ -9,7 +9,7 @@ const env = require('../../config/env');
 
 const list = async (req, res, next) => {
   try {
-    const proposals = await proposalService.listByProject(req.params.projectId, req.user);
+    const proposals = await proposalService.list(req.query, req.user);
     return ApiResponse.success(res, proposals, 'Propositions récupérées');
   } catch (error) {
     return next(error);
@@ -28,7 +28,7 @@ const create = async (req, res, next) => {
       body.file_path = filesMeta[0].file_path;
       body.file_name = filesMeta[0].file_name;
     }
-    const proposal = await proposalService.create(req.params.projectId, body, req.user, filesMeta);
+    const proposal = await proposalService.create(body, req.user, filesMeta);
     return ApiResponse.created(res, proposal, 'Proposition créée avec succès');
   } catch (error) {
     return next(error);
@@ -114,7 +114,7 @@ function getProposalFiles(proposal) {
   return [];
 }
 
-/** GET /projects/:projectId/proposals/:id/download — un fichier ou ZIP si plusieurs */
+/** GET /proposals/:id/download — un fichier ou ZIP si plusieurs */
 const download = async (req, res, next) => {
   try {
     const proposal = await proposalService.getById(req.params.id, req.user);
@@ -148,7 +148,7 @@ const download = async (req, res, next) => {
   }
 };
 
-/** POST /projects/:projectId/proposals/:id/save-to-media — enregistrer les fichiers dans un dossier médiathèque */
+/** POST /proposals/:id/save-to-media — enregistrer les fichiers dans un dossier médiathèque */
 const saveToMedia = async (req, res, next) => {
   try {
     const created = await proposalService.saveToMedia(

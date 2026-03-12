@@ -111,7 +111,7 @@ app.use(`${env.API_PREFIX}/organizations`, orgRoutes);
 app.use(`${env.API_PREFIX}/users`, userRoutes);
 app.use(`${env.API_PREFIX}/projects`, projectRoutes);
 app.use(`${env.API_PREFIX}/tasks`, taskRoutes);
-app.use(`${env.API_PREFIX}/projects/:projectId/proposals`, proposalRoutes);
+app.use(`${env.API_PREFIX}/proposals`, proposalRoutes);
 app.use(`${env.API_PREFIX}/projects/:projectId/publications`, publicationRoutes);
 app.use(`${env.API_PREFIX}/calendar`, calendarRoutes);
 app.use(`${env.API_PREFIX}/media`, mediaRoutes);

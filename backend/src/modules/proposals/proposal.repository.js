@@ -4,9 +4,12 @@ const { Proposal, ProposalComment, Validation, User, ProposalAttachment } = requ
 const { Op } = require('sequelize');
 
 class ProposalRepository {
-  /* Récupère les propositions d'un projet, avec filtrage de statut pour les clients */
-  async findByProject(projectId, { isClient = false } = {}) {
-    const where = { project_id: projectId };
+  /* Récupère les propositions avec filtres optionnels (projet, tâche, statut) */
+  async findAll({ projectId, taskId, status, isClient = false } = {}) {
+    const where = {};
+    if (projectId) where.project_id = projectId;
+    if (taskId) where.task_id = taskId;
+    if (status) where.status = status;
     if (isClient) {
       where.status = { [Op.notIn]: ['draft', 'submitted'] };
     }

@@ -88,20 +88,20 @@ export const tasksAPI = {
 };
 
 export const proposalsAPI = {
-  list: (projectId, params) => api.get(`/projects/${projectId}/proposals`, { params }),
-  getById: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}`),
-  download: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}/download`, { responseType: 'blob' }),
-  saveToMedia: (projectId, id, data) => api.post(`/projects/${projectId}/proposals/${id}/save-to-media`, data),
-  create: (projectId, data) =>
-    api.post(`/projects/${projectId}/proposals`, data, {
+  list: (params) => api.get('/proposals', { params }),
+  getById: (id) => api.get(`/proposals/${id}`),
+  download: (id) => api.get(`/proposals/${id}/download`, { responseType: 'blob' }),
+  saveToMedia: (id, data) => api.post(`/proposals/${id}/save-to-media`, data),
+  create: (data) =>
+    api.post('/proposals', data, {
       headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
     }),
-  update: (projectId, id, data) => api.put(`/projects/${projectId}/proposals/${id}`, data),
-  submit: (projectId, id) => api.patch(`/projects/${projectId}/proposals/${id}/submit`),
-  getComments: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}/comments`),
-  addComment: (projectId, id, data) => api.post(`/projects/${projectId}/proposals/${id}/comments`, data),
-  validate: (projectId, id, data) => api.post(`/projects/${projectId}/proposals/${id}/validate`, data),
-  getValidations: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}/validations`),
+  update: (id, data) => api.put(`/proposals/${id}`, data),
+  submit: (id) => api.patch(`/proposals/${id}/submit`),
+  getComments: (id) => api.get(`/proposals/${id}/comments`),
+  addComment: (id, data) => api.post(`/proposals/${id}/comments`, data),
+  validate: (id, data) => api.post(`/proposals/${id}/validate`, data),
+  getValidations: (id) => api.get(`/proposals/${id}/validations`),
 };
 
 export const publicationsAPI = {

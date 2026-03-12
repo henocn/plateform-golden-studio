@@ -30,8 +30,7 @@ function ValidationActions({ proposal, onRefresh }) {
     if (!decision) return toast.error("Veuillez choisir une décision");
     setSubmitting(true);
     try {
-      const projectId = proposal.project_id || proposal.project?.id;
-      await proposalsAPI.validate(projectId, proposal.id, {
+      await proposalsAPI.validate(proposal.id, {
         status: decision,
         comments: comment,
       });
@@ -109,8 +108,8 @@ function ValidationActions({ proposal, onRefresh }) {
 const AWAITING_DECISION_STATUSES = ["pending_client_validation", "submitted", "draft"];
 
 /* ─── Téléchargement (un fichier ou ZIP) avec nom depuis Content-Disposition ─ */
-async function downloadProposalFile(projectId, proposalId) {
-  const res = await proposalsAPI.download(projectId, proposalId);
+async function downloadProposalFile(proposalId) {
+  const res = await proposalsAPI.download(proposalId);
   const blob = res.data;
   const cd = res.headers?.["content-disposition"];
   const name = (cd && (cd.match(/filename\*?=(?:UTF-8'')?"?([^";\n]+)"?/)?.[1] || cd.match(/filename="?([^"]+)"?/)?.[1])) || "fichier";
@@ -122,7 +121,7 @@ async function downloadProposalFile(projectId, proposalId) {
   URL.revokeObjectURL(url);
 }
 
-function FileDownloadButton({ projectId, proposalId }) {
+function FileDownloadButton({ proposalId }) {
   const [loading, setLoading] = useState(false);
   const handleClick = async () => {
     setLoading(true);
@@ -150,7 +149,6 @@ function FileDownloadButton({ projectId, proposalId }) {
 /* ─── Modale Sauvegarder dans la médiathèque (explorateur de dossiers) ────── */
 function SaveToMediaModal({ proposal, onClose, onSaved }) {
   const { canCreateFolder } = usePermissions();
-  const projectId = proposal.project_id || proposal.project?.id;
 
   const [breadcrumb, setBreadcrumb] = useState([]);
   const [subfolders, setSubfolders] = useState([]);
@@ -212,13 +210,13 @@ function SaveToMediaModal({ proposal, onClose, onSaved }) {
   };
 
   const handleSaveHere = async () => {
-    if (!selectedFolderId || !projectId) {
+    if (!selectedFolderId) {
       toast.error("Ouvrez un dossier ou créez-en un pour enregistrer les fichiers.");
       return;
     }
     setSaving(true);
     try {
-      await proposalsAPI.saveToMedia(projectId, proposal.id, { folder_id: selectedFolderId });
+      await proposalsAPI.saveToMedia(proposal.id, { folder_id: selectedFolderId });
       toast.success("Fichier(s) enregistré(s) dans la médiathèque");
       onSaved();
     } catch (err) {

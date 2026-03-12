@@ -12,11 +12,14 @@ const logger = require('../../utils/logger');
 
 class ProposalService {
   /**
-   * Liste les propositions d'un projet
+   * Liste les propositions (filtrage par projet, tâche, statut possible)
    */
-  async listByProject(projectId, user) {
+  async list(filters, user) {
     const isClient = user.user_type === 'client';
-    return proposalRepository.findByProject(projectId, { isClient });
+    const projectId = filters?.project_id || filters?.projectId || null;
+    const taskId = filters?.task_id || filters?.taskId || null;
+    const status = filters?.status || null;
+    return proposalRepository.findAll({ projectId, taskId, status, isClient });
   }
 
   /**
@@ -36,11 +39,18 @@ class ProposalService {
    * Create proposal — internal contributor+, versioning automatique par tâche ou par projet.
    * Si task_id est fourni : version par tâche (pas de doublon de version pour la même tâche).
    */
-  async create(projectId, data, user, filesMeta = []) {
-    const project = await Project.findByPk(projectId);
-    if (!project) throw ApiError.notFound('Project');
-
+  async create(data, user, filesMeta = []) {
     const taskId = data.task_id || null;
+    if (!taskId) {
+      throw ApiError.badRequest('Une tâche est requise pour créer une proposition');
+    }
+
+    const task = await Task.findByPk(taskId, { attributes: ['id', 'project_id', 'title'] });
+    if (!task) {
+      throw ApiError.notFound('Tâche');
+    }
+
+    const projectId = task.project_id || null;
     const versionNumber = await proposalRepository.getNextVersion(projectId, taskId);
 
     const proposal = await proposalRepository.create({
