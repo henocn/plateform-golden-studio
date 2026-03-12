@@ -5,7 +5,11 @@ const PERMISSIONS = require('../../config/permissions');
 const NOTIFICATIONS_CONFIG = require('../../config/notifications');
 const logger = require('../../utils/logger');
 const sendEmail = require('../../utils/sendEmail');
-const { buildNotificationEmail } = require('../../utils/emailTemplates');
+const {
+  buildNotificationEmail,
+  buildTaskDeadlineEmail,
+  buildPublicationDeadlineEmail,
+} = require('../../utils/emailTemplates');
 
 
 // ═══════════════════════════════════════════════════
@@ -56,7 +60,53 @@ class NotificationService {
     if (!config.email) return;
 
     const details = await this._buildEmailDetails({ type, referenceId, referenceType });
-    const { html, text } = buildNotificationEmail({ title, message, link, details }, baseUrl);
+
+    let html;
+    let text;
+
+    if (type === 'task_deadline_warning' && referenceType === 'task' && referenceId && details.length > 0) {
+      const dateDetail = details.find((d) => d.label === 'Date limite');
+      const dueDate = dateDetail ? String(dateDetail.value) : '';
+      const daysDetail = details.find((d) => d.label === 'Jours restants');
+      const daysRemaining = daysDetail ? Number(daysDetail.value) || 0 : 0;
+
+      const rendered = buildTaskDeadlineEmail(
+        {
+          taskTitle: title?.replace(/^.*—\s*/, '') || 'Tâche',
+          dueDate,
+          daysRemaining,
+          link,
+          isLastWarning: title?.startsWith('Dernier') || false,
+        },
+        baseUrl
+      );
+      html = rendered.html;
+      text = rendered.text;
+    } else if (type === 'publication_deadline_warning' && referenceType === 'publication' && referenceId) {
+      const titleLabel = details.find((d) => d.label === 'Titre');
+      const dateLabel = details.find((d) => d.label === 'Date de publication');
+      const publicationTitle = titleLabel ? String(titleLabel.value) : 'Publication';
+      const publicationDate = dateLabel ? String(dateLabel.value) : '';
+      const daysDetail = details.find((d) => d.label === 'Jours restants');
+      const daysRemaining = daysDetail ? Number(daysDetail.value) || 0 : 0;
+
+      const rendered = buildPublicationDeadlineEmail(
+        {
+          publicationTitle,
+          publicationDate,
+          daysRemaining,
+          link,
+          isLastWarning: title?.startsWith('Dernier') || false,
+        },
+        baseUrl
+      );
+      html = rendered.html;
+      text = rendered.text;
+    } else {
+      const rendered = buildNotificationEmail({ title, message, link, details }, baseUrl);
+      html = rendered.html;
+      text = rendered.text;
+    }
 
     for (const user of users) {
       if (!user.email) continue;
@@ -187,13 +237,13 @@ class NotificationService {
   async onTaskDeadlineWarning(task, daysRemaining, isLastWarning) {
     if (!task.assigned_to) return;
 
-    const urgency = isLastWarning ? 'Dernier avertissement' : 'Premier avertissement';
+    const urgency = isLastWarning ? 'Dernier rappel de deadline' : 'Rappel de deadline';
 
     await this.notify({
       userId: task.assigned_to,
       type: 'task_deadline_warning',
-      title: `${urgency} — Tâche "${task.title}"`,
-      message: `La tâche "${task.title}" est prévue dans ${daysRemaining} jour(s). Assurez-vous qu'elle soit finalisée à temps.`,
+      title: `${urgency} — ${task.title}`,
+      message: `Ceci est un rappel concernant la tâche « ${task.title} ». Il vous reste ${daysRemaining} jour(s) pour la finaliser.`,
       referenceId: task.id,
       referenceType: 'task',
       link: `/tasks/${task.id}`,
@@ -212,14 +262,14 @@ class NotificationService {
     });
     if (alreadySent) return;
 
-    const urgency = isLastWarning ? 'Dernier avertissement' : 'Premier avertissement';
+    const urgency = isLastWarning ? 'Dernier rappel de publication' : 'Rappel de publication';
     const title = publication.publication_title || 'Publication';
 
     await this.notify({
       userId: publication.created_by,
       type: 'publication_deadline_warning',
-      title: `${urgency} — "${title}"`,
-      message: `La publication "${title}" est prévue dans ${daysRemaining} jour(s) et n'est pas encore publiée ou archivée.`,
+      title: `${urgency} — ${title}`,
+      message: `La publication « ${title} » est prévue prochainement. Il reste ${daysRemaining} jour(s) avant la date de publication.`,
       referenceId: publication.id,
       referenceType: 'publication',
       link: '/calendar/editorial',

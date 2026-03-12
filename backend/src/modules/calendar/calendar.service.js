@@ -106,18 +106,11 @@ class CalendarService {
           return base;
         });
 
-        const messageLines = [
-          `Une ou plusieurs tâches vous ont été assignées dans le cadre de l’événement « ${event.title} ».`,
-          '',
-          'Détail des tâches :',
-          ...lines,
-        ];
-
         await notificationService.notify({
           userId,
-          type: 'task_pending_validation',
+          type: 'event_task_assigned',
           title: `Tâches d’événement assignées — « ${event.title} »`,
-          message: messageLines.join('\n'),
+          message: lines.join('\n'),
           referenceId: event.id,
           referenceType: 'calendar_event',
           link: '/calendar/events',

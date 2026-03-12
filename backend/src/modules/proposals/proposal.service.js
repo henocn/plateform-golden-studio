@@ -84,8 +84,8 @@ class ProposalService {
 
     await notificationService.notifyMany([...recipientIds], {
       type: 'task_pending_validation',
-      title: `Nouvelle proposition — "${projectTitle}"`,
-      message: `Une nouvelle proposition (v${proposal.version_number}) a été soumise pour le projet "${projectTitle}".`,
+      title: `Validation de proposition de tâche — ${projectTitle}`,
+      message: `Vous avez une proposition de tâche à valider : « ${projectTitle} ». Cette proposition (v${proposal.version_number}) a été envoyée le ${new Date(proposal.created_at || new Date()).toLocaleDateString('fr-FR')}.`,
       referenceId: taskId || projectId,
       referenceType: taskId ? 'task' : 'project',
       link: taskId ? `/tasks/${taskId}` : `/projects/${projectId}`,
@@ -162,7 +162,7 @@ class ProposalService {
 
     await proposalRepository.update(proposalId, { status });
 
-    this._notifyValidationResult(proposal, status, user).catch((err) => {
+    this._notifyValidationResult(proposal, status, user, comments).catch((err) => {
       logger.error('[NOTIF] onValidationResult error:', err);
     });
 
@@ -170,7 +170,7 @@ class ProposalService {
   }
 
   /* Notifie le chargé de la tâche et l'auteur de la proposition (si différents du validateur et entre eux) */
-  async _notifyValidationResult(proposal, status, validator) {
+  async _notifyValidationResult(proposal, status, validator, comments) {
     if (!proposal.task_id) return;
 
     const task = await Task.findByPk(proposal.task_id, {
@@ -195,10 +195,12 @@ class ProposalService {
 
     if (recipientIds.size === 0) return;
 
+    const commentText = comments || '(Aucun commentaire fourni)';
+
     await notificationService.notifyMany([...recipientIds], {
       type: 'task_pending_validation',
-      title: `Proposition ${label} — "${task.title}"`,
-      message: `La proposition (v${proposal.version_number}) pour la tâche "${task.title}" a été ${label}.`,
+      title: `Statut de votre proposition — ${task.title}`,
+      message: `Votre proposition (v${proposal.version_number}) pour la tâche « ${task.title} » a été ${label}.\n\nCommentaire du validateur :\n${commentText}`,
       referenceId: task.id,
       referenceType: 'task',
       link: `/tasks/${task.id}`,

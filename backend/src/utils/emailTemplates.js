@@ -1,8 +1,6 @@
 'use strict';
 
 const env = require('../config/env');
-// importation du logo de l'application depuis le dossier public du frontend
-const logo = require('../../../frontend/public/images/Qidoo white.jpeg');
 
 const APP_NAME = env.EMAIL_BRAND_NAME || 'Qidoo';
 
@@ -101,18 +99,120 @@ function buildNotificationEmail(options, baseUrl = '') {
  * @param {string} baseUrl
  * @returns {{ html: string, text: string }}
  */
-function buildTaskReminderEmail(options, baseUrl = '') {
-  const { taskTitle, dueDate, description = '', link } = options;
+function buildTaskDeadlineEmail({ taskTitle, dueDate, daysRemaining, link, isLastWarning }, baseUrl = '') {
+  const urgency = isLastWarning ? 'Dernier rappel de deadline' : 'Rappel de deadline';
+  const details = [
+    { label: 'Date limite', value: dueDate },
+    { label: 'Jours restants', value: String(daysRemaining) },
+  ];
 
-  const details = [{ label: 'Date limite', value: dueDate }];
-  if (description) details.push({ label: 'Description', value: description });
+  const message =
+    `Ceci est un rappel concernant la tâche « ${taskTitle} » dont la date limite ` +
+    `est fixée au ${dueDate}. Il vous reste ${daysRemaining} jour(s) pour la finaliser.`;
 
   return buildNotificationEmail(
     {
-      title: `Rappel : tâche à rendre — ${taskTitle}`,
-      message: `La tâche « ${taskTitle} » doit être rendue avant la date limite indiquée ci-dessous.`,
+      title: `${urgency} — ${taskTitle}`,
+      message,
       link,
-      linkLabel: 'Ouvrir la tâche',
+      linkLabel: "Voir la tâche",
+      details,
+    },
+    baseUrl
+  );
+}
+
+function buildPublicationDeadlineEmail({ publicationTitle, publicationDate, daysRemaining, link, isLastWarning }, baseUrl = '') {
+  const urgency = isLastWarning ? 'Dernier rappel de publication' : 'Rappel de publication';
+  const details = [
+    { label: 'Titre', value: publicationTitle },
+    { label: 'Date de publication', value: publicationDate },
+    { label: 'Jours restants', value: String(daysRemaining) },
+  ];
+
+  const message =
+    `La publication « ${publicationTitle} » est prévue pour le ${publicationDate}. ` +
+    `Il reste ${daysRemaining} jour(s) avant cette date. ` +
+    `Merci de vous assurer que tout est prêt pour la diffusion à la date prévue.`;
+
+  return buildNotificationEmail(
+    {
+      title: `${urgency} — ${publicationTitle}`,
+      message,
+      link,
+      linkLabel: "Voir la publication",
+      details,
+    },
+    baseUrl
+  );
+}
+
+function buildEventTasksAssignedEmail({ eventTitle, lines, link }, baseUrl = '') {
+  const messageLines = [
+    `Dans le cadre de l’événement « ${eventTitle} », vous avez été assigné(e) à une ou plusieurs tâches.`,
+    '',
+    'Détail des tâches :',
+    ...lines,
+  ];
+
+  return buildNotificationEmail(
+    {
+      title: `Tâches d’événement assignées — « ${eventTitle} »`,
+      message: messageLines.join('\n'),
+      link,
+      linkLabel: "Voir l’événement",
+      details: [{ label: 'Événement', value: eventTitle }],
+    },
+    baseUrl
+  );
+}
+
+function buildProposalValidationRequestEmail({ projectTitle, taskTitle, versionNumber, authorName, submittedAt, link }, baseUrl = '') {
+  const target = taskTitle || projectTitle;
+  const messageLines = [
+    `Vous avez une proposition de tâche à valider : « ${target} ».`,
+    `Cette proposition (v${versionNumber}) a été envoyée par ${authorName} le ${submittedAt}.`,
+  ];
+
+  const details = [
+    { label: 'Projet', value: projectTitle },
+  ];
+  if (taskTitle) details.push({ label: 'Tâche', value: taskTitle });
+  details.push({ label: 'Version', value: `v${versionNumber}` });
+
+  return buildNotificationEmail(
+    {
+      title: `Validation de proposition de tâche — ${target}`,
+      message: messageLines.join('\n'),
+      link,
+      linkLabel: "Voir la proposition",
+      details,
+    },
+    baseUrl
+  );
+}
+
+function buildProposalValidationResultEmail({ taskTitle, versionNumber, statusLabel, validatorName, validatedAt, comment, link }, baseUrl = '') {
+  const messageLines = [
+    `Votre proposition (v${versionNumber}) pour la tâche « ${taskTitle} » a été ${statusLabel}.`,
+    '',
+    'Commentaire du validateur :',
+    comment || '(Aucun commentaire fourni)',
+  ];
+
+  const details = [
+    { label: 'Tâche', value: taskTitle },
+    { label: 'Version', value: `v${versionNumber}` },
+    { label: 'Validateur', value: validatorName },
+    { label: 'Date de validation', value: validatedAt },
+  ];
+
+  return buildNotificationEmail(
+    {
+      title: `Statut de votre proposition — ${taskTitle}`,
+      message: messageLines.join('\n'),
+      link,
+      linkLabel: "Voir la proposition",
       details,
     },
     baseUrl
@@ -130,6 +230,10 @@ function escapeHtml(str) {
 
 module.exports = {
   buildNotificationEmail,
-  buildTaskReminderEmail,
+  buildTaskDeadlineEmail,
+  buildPublicationDeadlineEmail,
+  buildEventTasksAssignedEmail,
+  buildProposalValidationRequestEmail,
+  buildProposalValidationResultEmail,
   APP_NAME,
 };
