@@ -7,7 +7,9 @@ class ProposalRepository {
   /* Récupère les propositions avec filtres optionnels (projet, tâche, statut) */
   async findAll({ projectId, taskId, status, isClient = false } = {}) {
     const where = {};
-    if (projectId) where.project_id = projectId;
+    if (projectId) {
+      where['$task.project_id$'] = projectId;
+    }
     if (taskId) where.task_id = taskId;
     if (status) where.status = status;
     if (isClient) {
@@ -18,11 +20,19 @@ class ProposalRepository {
       where,
       include: [
         { association: 'author', attributes: ['id', 'first_name', 'last_name'] },
-        { association: 'project', attributes: ['id', 'title'] },
-        { association: 'task', attributes: ['id', 'title'] },
+        {
+          association: 'task',
+          attributes: ['id', 'title', 'project_id'],
+          include: [
+            {
+              association: 'project',
+              attributes: ['id', 'title'],
+            },
+          ],
+        },
         { association: 'validatorUser', attributes: ['id', 'first_name', 'last_name'] },
       ],
-      order: [['version_number', 'DESC']],
+      order: [['created_at', 'DESC'], ['version_number', 'DESC']],
     });
   }
 
@@ -33,7 +43,16 @@ class ProposalRepository {
     return Proposal.findOne({
       where,
       include: [
-        { association: 'project', attributes: ['id', 'title'] },
+        {
+          association: 'task',
+          attributes: ['id', 'title', 'project_id'],
+          include: [
+            {
+              association: 'project',
+              attributes: ['id', 'title'],
+            },
+          ],
+        },
         { association: 'author', attributes: ['id', 'first_name', 'last_name', 'email'] },
         { association: 'validatorUser', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'validations', include: [{ association: 'validator', attributes: ['id', 'first_name', 'last_name'] }] },
@@ -69,7 +88,7 @@ class ProposalRepository {
 
   /* Retourne le prochain numéro de version pour une tâche ou un projet */
   async getNextVersion(projectId, taskId = null) {
-    const where = taskId ? { task_id: taskId } : { project_id: projectId };
+    const where = taskId ? { task_id: taskId } : {};
     const maxVersion = await Proposal.max('version_number', { where });
     return (maxVersion || 0) + 1;
   }

@@ -126,7 +126,7 @@ function FileDownloadButton({ proposalId }) {
   const handleClick = async () => {
     setLoading(true);
     try {
-      await downloadProposalFile(projectId, proposalId);
+      await downloadProposalFile(proposalId);
     } catch {
       toast.error("Erreur lors du téléchargement");
     } finally {
@@ -335,12 +335,11 @@ export function LatestProposalCard({ proposal, canValidate, onRefresh }) {
     canValidate && AWAITING_DECISION_STATUSES.includes(proposal.status);
 
   const hasFile = Boolean(proposal.file_path) || (proposal.attachments && proposal.attachments.length > 0);
-  const projectId = proposal.project_id || proposal.project?.id;
   const handleDownload = async () => {
-    if (!hasFile || !projectId) return;
+    if (!hasFile) return;
     setDownloading(true);
     try {
-      await downloadProposalFile(projectId, proposal.id);
+      await downloadProposalFile(proposal.id);
     } catch {
       toast.error("Erreur lors du téléchargement");
     } finally {
@@ -407,7 +406,6 @@ export function LatestProposalCard({ proposal, canValidate, onRefresh }) {
               variant="outline"
               icon={Download}
               loading={downloading}
-              disabled={!projectId}
               onClick={handleDownload}
               className="border-1 border-gray-600 rounded-lg hover:bg-green-200"
             >
@@ -551,11 +549,8 @@ export function TimelineEntry({ proposal, isLast }) {
             </div>
           </div>
 
-          {(proposal.file_path || (proposal.attachments && proposal.attachments.length > 0)) && (proposal.project_id || proposal.project?.id) && (
-            <FileDownloadButton
-              projectId={proposal.project_id || proposal.project?.id}
-              proposalId={proposal.id}
-            />
+          {(proposal.file_path || (proposal.attachments && proposal.attachments.length > 0)) && (
+            <FileDownloadButton proposalId={proposal.id} />
           )}
         </div>
 

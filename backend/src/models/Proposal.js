@@ -9,10 +9,6 @@ module.exports = (sequelize) => {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    project_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
-    },
     task_id: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -62,7 +58,6 @@ module.exports = (sequelize) => {
   });
 
   Proposal.associate = (models) => {
-    Proposal.belongsTo(models.Project, { as: 'project', foreignKey: 'project_id' });
     Proposal.belongsTo(models.Task, { as: 'task', foreignKey: 'task_id' });
     Proposal.belongsTo(models.User, { as: 'author', foreignKey: 'author_id' });
     Proposal.belongsTo(models.User, { as: 'validatorUser', foreignKey: 'validator_id' });
