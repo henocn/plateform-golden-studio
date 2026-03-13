@@ -40,7 +40,7 @@ class TaskService {
       if (!project) throw ApiError.notFound('Projet');
     }
 
-    const isConfigured = Boolean(data.supervisor_id && data.due_date);
+    const isConfigured = Boolean(data.supervisor_id && data.due_date && data.assigned_to);
 
     return taskRepository.create({
       ...data,
@@ -51,8 +51,8 @@ class TaskService {
 
   async update(id, data) {
     const isConfigured =
-      data.supervisor_id !== undefined || data.due_date !== undefined
-        ? Boolean(data.supervisor_id && data.due_date)
+      data.supervisor_id !== undefined || data.due_date !== undefined || data.assigned_to !== undefined
+        ? Boolean(data.supervisor_id && data.due_date && data.assigned_to)
         : undefined;
 
     const payload = {
