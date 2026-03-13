@@ -257,13 +257,6 @@ export default function TaskDetailsTab({
                   Échéance :{" "}
                   <span className="font-medium text-ink-700">{formatDate(task.due_date)}</span>
                 </span>
-                <span className="text-surface-400">|</span>
-                <span>
-                  Jours restants :{" "}
-                  <span className="font-medium text-ink-700">
-                    {deltaTime(task.createdAt, task.due_date)}
-                  </span>
-                </span>
               </>
             )}
             {task.publication_date && (

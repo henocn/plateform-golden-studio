@@ -57,7 +57,7 @@ class CalendarService {
 
     // Crée des tâches (model Task) pour les tâches d'événement éventuelles (templates)
     try {
-      const tasks = Array.isArray(event.tasks) ? event.tasks : [];
+      const tasks = Array.isArray(data.tasks) ? data.tasks : [];
       const payloads = tasks
         .filter((t) => t && t.title)
         .map((t) => ({
@@ -66,7 +66,7 @@ class CalendarService {
           assigned_to: t.responsible_user_id || null,
           supervisor_id: t.supervisor_id || null,
           due_date: t.due_date || null,
-          publication_date: event.start_date || null,
+          publication_date: t.publication_date || event.start_date || null,
           priority: t.priority || 'normal',
           status: 'todo',
           context: 'event',
@@ -136,8 +136,6 @@ class CalendarService {
   async update(id, data) {
     const event = await calendarRepository.update(id, data);
     if (!event) throw ApiError.notFound('Événement de calendrier');
-    //TODO: Pour l’instant, on ne touche pas aux tâches (Task) existantes lors de la modification
-    // pour éviter les doublons : elles sont créées uniquement à la création de l’événement.
     return event;
   }
 

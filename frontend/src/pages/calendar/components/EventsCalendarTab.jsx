@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Plus, Upload, Download, Trash2, Edit3, X } f
 import { addMonths, subMonths, format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Card, Button, Modal, Input, Select, Textarea, Skeleton, Badge } from "../../../components/ui";
-import { calendarAPI, agenciesAPI, directionsAPI, usersAPI } from "../../../api/services";
+import { calendarAPI, agenciesAPI, directionsAPI, usersAPI, tasksAPI } from "../../../api/services";
 import { extractList, formatDate, formatErrorMessage, downloadBlob } from "../../../utils/helpers";
 import { BigCalendar, localizer, calendarMessages, eventStyleGetter, toCalendarItems } from "./calendarShared";
 import { usePermissions } from "../../../hooks";
@@ -444,6 +444,7 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
           status: full.status || "pending",
           agency_id: full.agency_id || "",
           direction_id: full.direction_id || "",
+          // On édite les vraies tâches (Task) liées à l'événement
           tasks: Array.isArray(full.tasks) ? full.tasks : [],
         });
       } catch {
@@ -492,7 +493,7 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
   const handleAddTask = () => {
     setForm((prev) => ({
       ...prev,
-      tasks: [...(prev.tasks || []), { title: "", status: "pending", responsible_user_id: "" }],
+      tasks: [...(prev.tasks || []), { id: null, title: "", status: "todo", assigned_to: "", due_date: "", publication_date: "" }],
     }));
   };
 
@@ -527,14 +528,45 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
 
   const handleSave = async () => {
     try {
-      const payload = { ...form };
+      const { tasks = [], ...rest } = form;
+      const payload = { ...rest };
       if (!payload.end_date) payload.end_date = null;
       if (!payload.agency_id) delete payload.agency_id;
       if (!payload.direction_id) delete payload.direction_id;
-      payload.tasks = (payload.tasks || []).filter((t) => t.title?.trim());
-      const { data } = await calendarAPI.updateEvent(event.id, payload);
-      const updated = data?.data || data;
-      setCurrent(updated);
+
+      // Mise à jour de l'événement (sans toucher aux tâches)
+      await calendarAPI.updateEvent(event.id, payload);
+
+      // Synchronisation des tâches via l'API des tâches
+      const cleanTasks = (tasks || []).filter((t) => t.title?.trim());
+      await Promise.all(
+        cleanTasks.map(async (t) => {
+          const taskPayload = {
+            title: t.title,
+            due_date: t.due_date || null,
+            publication_date: t.publication_date || null,
+          };
+          if (t.assigned_to) taskPayload.assigned_to = t.assigned_to;
+
+          if (t.id) {
+            // Mise à jour d'une tâche existante
+            await tasksAPI.update(t.id, taskPayload);
+          } else {
+            // Création d'une nouvelle tâche liée à l'événement
+            await tasksAPI.create({
+              ...taskPayload,
+              context: "event",
+              event_id: event.id,
+              priority: "normal",
+            });
+          }
+        }),
+      );
+
+      // Recharge l'événement avec ses tâches à jour
+      const refreshed = await calendarAPI.getEventById(event.id);
+      const full = refreshed.data?.data || refreshed.data;
+      setCurrent(full);
       setEditMode(false);
       toast.success("Événement mis à jour");
       onUpdated?.();
@@ -552,7 +584,7 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
       open
       onClose={onClose}
       title="Détail de l'événement"
-      size="lg"
+      size="xl"
       footer={
         <div className="flex justify-between w-full">
           <div className="flex items-center gap-2">
@@ -661,8 +693,8 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
               <div className="space-y-2">
                 {(displayed.tasks || []).map((task, index) => {
                   const user =
-                    task.responsible_user_id &&
-                    assignableUsers.find((u) => u.id === task.responsible_user_id);
+                    task.assigned_to &&
+                    assignableUsers.find((u) => u.id === task.assigned_to);
                   const responsibleLabel = user
                     ? `${user.first_name} ${user.last_name}`
                     : "—";
@@ -765,7 +797,7 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
             {(form.tasks || []).map((task, index) => (
               <div
                 key={index}
-                className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_minmax(0,1.4fr)_auto] gap-2 items-center"
+                className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_minmax(0,1.4fr)_minmax(0,1.4fr)_auto] gap-2 items-center"
               >
                 <Input
                   label={index === 0 ? "Titre" : undefined}
@@ -796,6 +828,12 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
                   type="date"
                   value={task.due_date ? task.due_date.slice(0, 10) : ""}
                   onChange={(e) => handleTaskChange(index, "due_date", e.target.value)}
+                />
+                <Input
+                  label={index === 0 ? "Date de publication" : undefined}
+                  type="date"
+                  value={task.publication_date ? task.publication_date.slice(0, 10) : ""}
+                  onChange={(e) => handleTaskChange(index, "publication_date", e.target.value)}
                 />
                 <button
                   type="button"

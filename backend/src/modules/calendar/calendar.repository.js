@@ -48,6 +48,10 @@ class CalendarRepository {
         { association: 'creator', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'agency', attributes: ['id', 'name', 'code'] },
         { association: 'direction', attributes: ['id', 'name', 'code'] },
+        {
+          association: 'tasks',
+          attributes: ['id', 'title', 'status', 'due_date', 'publication_date', 'assigned_to', 'supervisor_id'],
+        },
       ],
     });
   }
