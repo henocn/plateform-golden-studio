@@ -637,13 +637,10 @@ function EventTemplatesSection() {
                   onChange={(e) =>
                     handleTaskChange(index, 'responsible_user_id', e.target.value)
                   }
-                  options={[
-                    { value: '', label: 'Aucun responsable' },
-                    ...assignableUsers.map((u) => ({
-                      value: u.id,
-                      label: `${u.first_name} ${u.last_name}`,
-                    })),
-                  ]}
+                  options={assignableUsers.map((u) => ({
+                    value: u.id,
+                    label: `${u.first_name} ${u.last_name}`,
+                  }))}
                 />
                 <button
                   type="button"

@@ -368,8 +368,8 @@ export default function TasksPage() {
                             <span>{t.title}</span>
                             <span
                               className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${t.context === "event"
-                                  ? "bg-info-50 text-info-700 border border-info-100"
-                                  : "bg-surface-50 text-ink-600 border border-surface-200"
+                                ? "bg-info-50 text-info-700 border border-info-100"
+                                : "bg-surface-50 text-ink-600 border border-surface-200"
                                 }`}
                             >
                               {t.context === "event" ? "Événement" : "Projet"}
@@ -422,8 +422,8 @@ function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd, canDe
   return (
     <div
       className={`bg-white rounded-xl border border-2 p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${isOverdue
-          ? "border-red-500"
-          : "border-green-600"
+        ? "border-red-500"
+        : "border-green-600"
         } ${t.context === "event" ? "bg-blue-300/10" : "bg-orange-300/10"}`}
       draggable={draggable}
       onDragStart={onDragStart}
@@ -511,7 +511,7 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
         let allUsers;
         if (isInternal) {
           allUsers = await usersAPI.listMembers({ limit: 100 });
-        } else{
+        } else {
           allUsers = await usersAPI.listClients({ limit: 100 });
         }
         const validators = await usersAPI.listClients({ limit: 100, role: "client_validator" });
@@ -584,7 +584,7 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
           onChange={(e) => set("description", e.target.value)}
           rows={3}
         />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Type de tâche"
             value={form.context}
@@ -604,24 +604,10 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
             }}
             options={
               form.context === "project"
-                ? [{ value: "", label: "Sélectionner un projet" }, ...projects.map((p) => ({ value: p.id, label: p.title }))]
-                : [{ value: "", label: "Sélectionner un événement" }, ...events.map((ev) => ({ value: ev.id, label: ev.title }))]
+                ? [...projects.map((p) => ({ value: p.id, label: p.title }))]
+                : [...events.map((ev) => ({ value: ev.id, label: ev.title }))]
             }
           />
-          {isInternal && (
-            <Select
-              label="Assignation"
-              value={form.assigned_to}
-              onChange={(e) => set("assigned_to", e.target.value)}
-              options={[
-                { value: "", label: "Non assigné" },
-                ...users.map((u) => ({
-                  value: u.id,
-                  label: `${u.first_name} ${u.last_name}`,
-                })),
-              ]}
-            />
-          )}
         </div>
         <div className="grid grid-cols-3 gap-4">
           <Select
@@ -651,24 +637,20 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
             label="Assigné à"
             value={form.assigned_to}
             onChange={(e) => set("assigned_to", e.target.value)}
-            options={[
-              { value: "", label: "Non assigné" },
-              ...users.map((u) => ({
-                value: u.id,
-                label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
-              })),
+            options={[...users.map((u) => ({
+              value: u.id,
+              label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+            })),
             ]}
           />
           <Select
             label="Superviseur côté ministère"
             value={form.supervisor_id}
             onChange={(e) => set("supervisor_id", e.target.value)}
-            options={[
-              { value: "", label: "Aucun superviseur" },
-              ...validators.map((u) => ({
-                value: u.id,
-                label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
-              })),
+            options={[...validators.map((u) => ({
+              value: u.id,
+              label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+            })),
             ]}
           />
         </div>

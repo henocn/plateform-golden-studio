@@ -815,13 +815,10 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
                   label={index === 0 ? "Responsable" : undefined}
                   value={task.assigned_to || ""}
                   onChange={(e) => handleTaskChange(index, "assigned_to", e.target.value)}
-                  options={[
-                    { value: "", label: "Aucun responsable" },
-                    ...assignableUsers.map((u) => ({
-                      value: u.id,
-                      label: `${u.first_name} ${u.last_name}`,
-                    })),
-                  ]}
+                  options={assignableUsers.map((u) => ({
+                    value: u.id,
+                    label: `${u.first_name} ${u.last_name}`,
+                  }))}
                 />
                 <Input
                   label={index === 0 ? "Date cible" : undefined}

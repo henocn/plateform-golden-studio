@@ -6,7 +6,7 @@ import {
   Textarea,
   Select,
 } from "../../components/ui";
-import { tasksAPI, usersAPI, calendarAPI } from "../../api/services";
+import { tasksAPI, usersAPI, calendarAPI, projectsAPI } from "../../api/services";
 import { extractList, formatErrorMessage, TASK_STATUS, PRIORITY } from "../../utils/helpers";
 import toast from "react-hot-toast";
 
@@ -36,6 +36,7 @@ export default function EditTaskModal({ task, isInternal, onClose, onSaved }) {
   const [users, setUsers] = useState([]);
   const [validators, setValidators] = useState([]);
   const [events, setEvents] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function EditTaskModal({ task, isInternal, onClose, onSaved }) {
       status: task.status || "todo",
       publication_date: task.publication_date ? task.publication_date.slice(0, 10) : "",
       context: task.context || "project",
+      project_id: task.project_id || task.project?.id || "",
       event_id: task.event_id || "",
       supervisor_id: task.supervisor_id || "",
     });
@@ -88,6 +90,18 @@ export default function EditTaskModal({ task, isInternal, onClose, onSaved }) {
     loadEvents();
   }, []);
 
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const { data } = await projectsAPI.list({ page: 1, limit: 100 });
+        setProjects(extractList(data.data).items);
+      } catch {
+        setProjects([]);
+      }
+    };
+    loadProjects();
+  }, []);
+
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSubmit = async (e) => {
@@ -103,17 +117,18 @@ export default function EditTaskModal({ task, isInternal, onClose, onSaved }) {
         publication_date: form.publication_date || null,
         context: form.context,
       };
-      if (isInternal) {
-        if (form.assigned_to) payload.assigned_to = form.assigned_to;
-        else payload.assigned_to = null;
-      }
+      // Même les externes peuvent assigner une tâche, mais uniquement aux utilisateurs qu'ils voient dans la liste
+      if (form.assigned_to) payload.assigned_to = form.assigned_to;
+      else payload.assigned_to = null;
 
       if (form.supervisor_id) payload.supervisor_id = form.supervisor_id;
       else payload.supervisor_id = null;
 
       if (form.context === "event") {
+        payload.project_id = null;
         payload.event_id = form.event_id || null;
       } else {
+        payload.project_id = form.project_id || null;
         payload.event_id = null;
       }
 
@@ -161,16 +176,19 @@ export default function EditTaskModal({ task, isInternal, onClose, onSaved }) {
           />
           <Select
             label={form.context === "project" ? "Projet" : "Événement"}
-            value={form.context === "project" ? (task.project_id || task.project?.id || "") : form.event_id}
+            value={form.context === "project" ? form.project_id || "" : form.event_id}
             onChange={(e) => {
+              const value = e.target.value;
               if (form.context === "event") {
-                set("event_id", e.target.value);
+                set("event_id", value);
+              } else {
+                set("project_id", value);
               }
             }}
             options={
               form.context === "event"
-                ? [{ value: "", label: "—" }, ...events.map((ev) => ({ value: ev.id, label: ev.title }))]
-                : [{ value: task.project_id || task.project?.id || "", label: task.project?.title || "Projet parent" }]
+                ? events.map((ev) => ({ value: ev.id, label: ev.title }))
+                : projects.map((p) => ({ value: p.id, label: p.title }))
             }
           />
           <Select
@@ -205,25 +223,19 @@ export default function EditTaskModal({ task, isInternal, onClose, onSaved }) {
             label="Assigné à"
             value={form.assigned_to}
             onChange={(e) => set("assigned_to", e.target.value)}
-            options={[
-              { value: "", label: "Non assigné" },
-              ...users.map((u) => ({
-                value: u.id,
-                label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
-              })),
-            ]}
+            options={users.map((u) => ({
+              value: u.id,
+              label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+            }))}
           />
           <Select
             label="Superviseur côté ministère"
             value={form.supervisor_id}
             onChange={(e) => set("supervisor_id", e.target.value)}
-            options={[
-              { value: "", label: "Aucun superviseur" },
-              ...validators.map((u) => ({
-                value: u.id,
-                label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
-              })),
-            ]}
+            options={validators.map((u) => ({
+              value: u.id,
+              label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+            }))}
           />
         </div>
         <div className="flex justify-end gap-3 pt-2 border-t border-surface-200">
