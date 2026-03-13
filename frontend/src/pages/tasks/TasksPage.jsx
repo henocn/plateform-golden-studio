@@ -14,7 +14,7 @@ import {
   Skeleton,
   Avatar,
 } from "../../components/ui";
-import { tasksAPI, projectsAPI, usersAPI } from "../../api/services";
+import { tasksAPI, projectsAPI, calendarAPI, usersAPI } from "../../api/services";
 import {
   formatDate,
   TASK_STATUS,
@@ -31,6 +31,7 @@ export default function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [events, setEvents] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("kanban");
@@ -47,6 +48,7 @@ export default function TasksPage() {
     loadTasks();
   }, [page, status, priority, projectId, search]);
   useEffect(() => {
+    loadEvents();
     loadProjects();
   }, []);
 
@@ -56,11 +58,10 @@ export default function TasksPage() {
       const params = { page, limit: 100 };
       if (status) params.status = status;
       if (priority) params.priority = priority;
-      if (projectId) params.projectId = projectId; // Respecte l'API backend : projectId
+      if (projectId) params.projectId = projectId;
       if (search) params.search = search;
       const { data } = await tasksAPI.list(params);
       const { items, total } = extractList(data.data);
-      // Trie toujours côté frontend (sécurité UX)
       const sorted = items
         .slice()
         .sort(
@@ -83,6 +84,15 @@ export default function TasksPage() {
       setProjects(extractList(data.data).items);
     } catch (err) {
       toast.error("Erreur lors du chargement des projets");
+    }
+  };
+
+  const loadEvents = async () => {
+    try {
+      const { data } = await calendarAPI.listEvents({ page: 1, limit: 100 });
+      setEvents(extractList(data.data).items);
+    } catch (err) {
+      toast.error("Erreur lors du chargement des événements");
     }
   };
 
@@ -406,6 +416,7 @@ export default function TasksPage() {
       {showCreate && (
         <CreateTaskModal
           projects={projects}
+          events={events}
           isInternal={isInternal}
           onClose={() => setShowCreate(false)}
           onCreated={() => {
@@ -486,7 +497,7 @@ function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd, canDe
   );
 }
 
-function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
+function CreateTaskModal({ projects, events, isInternal, onClose, onCreated }) {
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -502,7 +513,6 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
   const [submitting, setSubmitting] = useState(false);
   const [users, setUsers] = useState([]);
   const [validators, setValidators] = useState([]);
-  const [events, setEvents] = useState([]);
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   useEffect(() => {
@@ -524,20 +534,6 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
     };
     loadUsers();
   }, [isInternal]);
-
-  // Charge une liste d'événements pour les tâches de type "événement"
-  useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        const { data } = await calendarAPI.listEvents({ page: 1, limit: 100 });
-        const { items } = extractList(data.data);
-        setEvents(items || []);
-      } catch {
-        setEvents([]);
-      }
-    };
-    loadEvents();
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -603,9 +599,9 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
               else set("event_id", value);
             }}
             options={
-              form.context === "project"
-                ? [...projects.map((p) => ({ value: p.id, label: p.title }))]
-                : [...events.map((ev) => ({ value: ev.id, label: ev.title }))]
+              form.context === "event"
+                ? events.map((ev) => ({ value: ev.id, label: ev.title }))
+                : projects.map((p) => ({ value: p.id, label: p.title }))
             }
           />
         </div>

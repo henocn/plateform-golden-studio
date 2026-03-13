@@ -63,7 +63,7 @@ export default function EditTaskModal({ task, isInternal, onClose, onSaved }) {
         let allUsers;
         if (isInternal) {
           allUsers = await usersAPI.listMembers({ limit: 100 });
-        } else{
+        } else {
           allUsers = await usersAPI.listClients({ limit: 100 });
         }
         const validators = await usersAPI.listClients({ limit: 100, role: "client_validator" });
@@ -117,7 +117,6 @@ export default function EditTaskModal({ task, isInternal, onClose, onSaved }) {
         publication_date: form.publication_date || null,
         context: form.context,
       };
-      // Même les externes peuvent assigner une tâche, mais uniquement aux utilisateurs qu'ils voient dans la liste
       if (form.assigned_to) payload.assigned_to = form.assigned_to;
       else payload.assigned_to = null;
 
