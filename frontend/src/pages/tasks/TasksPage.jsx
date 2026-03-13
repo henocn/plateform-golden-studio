@@ -505,17 +505,18 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
   const [events, setEvents] = useState([]);
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-  /* Charge les utilisateurs internes (assignation) + validateurs clients (superviseurs) */
   useEffect(() => {
-    if (!isInternal) return;
     const loadUsers = async () => {
       try {
-        const [internalRes, clientValidatorsRes] = await Promise.all([
-          usersAPI.listInternal({ limit: 100 }),
-          usersAPI.listClients({ limit: 100, role: "client_validator" }),
-        ]);
-        setUsers(extractList(internalRes.data.data).items);
-        setValidators(extractList(clientValidatorsRes.data.data).items);
+        let allUsers;
+        if (isInternal) {
+          allUsers = await usersAPI.listMembers({ limit: 100 });
+        } else{
+          allUsers = await usersAPI.listClients({ limit: 100 });
+        }
+        const validators = await usersAPI.listClients({ limit: 100, role: "client_validator" });
+        setUsers(extractList(allUsers.data.data).items);
+        setValidators(extractList(validators.data.data).items);
       } catch {
         setUsers([]);
         setValidators([]);
@@ -645,7 +646,19 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
             onChange={(e) => set("publication_date", e.target.value)}
           />
         </div>
-        <div className="grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Select
+            label="Assigné à"
+            value={form.assigned_to}
+            onChange={(e) => set("assigned_to", e.target.value)}
+            options={[
+              { value: "", label: "Non assigné" },
+              ...users.map((u) => ({
+                value: u.id,
+                label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+              })),
+            ]}
+          />
           <Select
             label="Superviseur côté ministère"
             value={form.supervisor_id}
