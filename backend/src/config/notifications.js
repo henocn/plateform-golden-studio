@@ -30,6 +30,18 @@ const NOTIFICATIONS_CONFIG = {
     emailPreferenceKey: 'email_enabled',
     domainPreferenceKey: 'tasks_enabled',
   },
+  task_created: {
+    email: true,
+    inApp: true,
+    emailPreferenceKey: 'email_enabled',
+    domainPreferenceKey: 'tasks_enabled',
+  },
+  project_created: {
+    email: true,
+    inApp: true,
+    emailPreferenceKey: 'email_enabled',
+    domainPreferenceKey: 'projects_enabled',
+  },
 };
 
 module.exports = NOTIFICATIONS_CONFIG;

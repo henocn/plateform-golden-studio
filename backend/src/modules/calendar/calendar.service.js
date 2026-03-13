@@ -6,6 +6,7 @@ const { parseEventsImport, buildEventsExport } = require('./calendar.excel.utils
 const notificationRepository = require('../notifications/notification.repository');
 const notificationService = require('../notifications/notification.service');
 const taskRepository = require('../tasks/task.repository');
+const taskService = require('../tasks/task.service');
 const whatsapp = require('../../config/whatsapp');
 const logger = require('../../utils/logger');
 
@@ -76,48 +77,13 @@ class CalendarService {
         }));
 
       for (const payload of payloads) {
-        await taskRepository.create(payload);
+        await taskService.create(payload, user);
       }
     } catch (err) {
       logger.error('[Calendar] Erreur lors de la création des tâches liées à un événement', {
         eventId: event.id,
         error: err.message,
       });
-    }
-
-    // Notifie les utilisateurs responsables de tâches de cet événement
-    try {
-      const tasks = Array.isArray(data.tasks) ? data.tasks : [];
-      const byUser = new Map();
-
-      for (const task of tasks) {
-        if (!task || !task.responsible_user_id) continue;
-        const userId = task.responsible_user_id;
-        if (!byUser.has(userId)) byUser.set(userId, []);
-        byUser.get(userId).push(task);
-      }
-
-      for (const [userId, userTasks] of byUser.entries()) {
-        const lines = userTasks.map((t) => {
-          const base = `- ${t.title || 'Tâche'}`;
-          if (t.due_date) {
-            return `${base} (date cible : ${new Date(t.due_date).toISOString().slice(0, 10)})`;
-          }
-          return base;
-        });
-
-        await notificationService.notify({
-          userId,
-          type: 'event_task_assigned',
-          title: `Tâches d’événement assignées — « ${event.title} »`,
-          message: lines.join('\n'),
-          referenceId: event.id,
-          referenceType: 'calendar_event',
-          link: '/calendar/events',
-        });
-      }
-    } catch (err) {
-      logger.error('[Calendar :] Erreur lors de la notification des tâches d’événement', { eventId: event.id, error: err.message });
     }
 
     // Envoie un message WhatsApp aux numéros configurés pour signaler la création de l'événement
