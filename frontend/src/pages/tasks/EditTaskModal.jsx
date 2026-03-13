@@ -56,15 +56,17 @@ export default function EditTaskModal({ task, isInternal, onClose, onSaved }) {
 
   /* Charge les utilisateurs internes (assignation) + validateurs clients (superviseurs) */
   useEffect(() => {
-    if (!isInternal) return;
     const loadUsers = async () => {
       try {
-        const [internalRes, clientValidatorsRes] = await Promise.all([
-          usersAPI.listInternal({ limit: 100 }),
-          usersAPI.listClients({ limit: 100, role: "client_validator" }),
-        ]);
-        setUsers(extractList(internalRes.data.data).items);
-        setValidators(extractList(clientValidatorsRes.data.data).items);
+        let allUsers;
+        if (isInternal) {
+          allUsers = await usersAPI.listMembers({ limit: 100 });
+        } else{
+          allUsers = await usersAPI.listClients({ limit: 100 });
+        }
+        const validators = await usersAPI.listClients({ limit: 100, role: "client_validator" });
+        setUsers(extractList(allUsers.data.data).items);
+        setValidators(extractList(validators.data.data).items);
       } catch {
         setUsers([]);
         setValidators([]);
@@ -198,35 +200,31 @@ export default function EditTaskModal({ task, isInternal, onClose, onSaved }) {
             onChange={(e) => set("publication_date", e.target.value)}
           />
         </div>
-        <div className={isInternal ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : ""}>
-          {isInternal && (
-            <Select
-              label="Assigné à"
-              value={form.assigned_to}
-              onChange={(e) => set("assigned_to", e.target.value)}
-              options={[
-                { value: "", label: "Non assigné" },
-                ...users.map((u) => ({
-                  value: u.id,
-                  label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
-                })),
-              ]}
-            />
-          )}
-          {isInternal && (
-            <Select
-              label="Superviseur (validateur client)"
-              value={form.supervisor_id}
-              onChange={(e) => set("supervisor_id", e.target.value)}
-              options={[
-                { value: "", label: "Aucun superviseur" },
-                ...validators.map((u) => ({
-                  value: u.id,
-                  label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
-                })),
-              ]}
-            />
-          )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Select
+            label="Assigné à"
+            value={form.assigned_to}
+            onChange={(e) => set("assigned_to", e.target.value)}
+            options={[
+              { value: "", label: "Non assigné" },
+              ...users.map((u) => ({
+                value: u.id,
+                label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+              })),
+            ]}
+          />
+          <Select
+            label="Superviseur côté ministère"
+            value={form.supervisor_id}
+            onChange={(e) => set("supervisor_id", e.target.value)}
+            options={[
+              { value: "", label: "Aucun superviseur" },
+              ...validators.map((u) => ({
+                value: u.id,
+                label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+              })),
+            ]}
+          />
         </div>
         <div className="flex justify-end gap-3 pt-2 border-t border-surface-200">
           <Button type="button" variant="secondary" onClick={onClose}>

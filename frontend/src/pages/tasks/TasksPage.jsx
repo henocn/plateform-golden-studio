@@ -367,11 +367,10 @@ export default function TasksPage() {
                           <div className="flex items-center gap-2">
                             <span>{t.title}</span>
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                                t.context === "event"
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${t.context === "event"
                                   ? "bg-info-50 text-info-700 border border-info-100"
                                   : "bg-surface-50 text-ink-600 border border-surface-200"
-                              }`}
+                                }`}
                             >
                               {t.context === "event" ? "Événement" : "Projet"}
                             </span>
@@ -422,11 +421,10 @@ export default function TasksPage() {
 function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd, canDelete, onDelete }) {
   return (
     <div
-      className={`bg-white rounded-xl border border-2 p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${
-        isOverdue
+      className={`bg-white rounded-xl border border-2 p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${isOverdue
           ? "border-red-500"
           : "border-green-600"
-      } ${t.context === "event" ? "bg-blue-300/10" : "bg-orange-300/10"}`}
+        } ${t.context === "event" ? "bg-blue-300/10" : "bg-orange-300/10"}`}
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -647,22 +645,20 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
             onChange={(e) => set("publication_date", e.target.value)}
           />
         </div>
-        {isInternal && (
-          <div className="grid grid-cols-3 gap-4">
-            <Select
-              label="Superviseur (validateur client)"
-              value={form.supervisor_id}
-              onChange={(e) => set("supervisor_id", e.target.value)}
-              options={[
-                { value: "", label: "Aucun superviseur" },
-                ...validators.map((u) => ({
-                  value: u.id,
-                  label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
-                })),
-              ]}
-            />
-          </div>
-        )}
+        <div className="grid">
+          <Select
+            label="Superviseur côté ministère"
+            value={form.supervisor_id}
+            onChange={(e) => set("supervisor_id", e.target.value)}
+            options={[
+              { value: "", label: "Aucun superviseur" },
+              ...validators.map((u) => ({
+                value: u.id,
+                label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+              })),
+            ]}
+          />
+        </div>
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" onClick={onClose}>
             Annuler
