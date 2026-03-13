@@ -297,6 +297,10 @@ export default function TasksPage() {
                         onDragEnd={handleDragEnd}
                         canDelete={can("tasks.delete")}
                         onDelete={async (task) => {
+                          const confirmed = window.confirm(
+                            `Voulez-vous vraiment supprimer la tâche « ${task.title} » ?`,
+                          );
+                          if (!confirmed) return;
                           try {
                             await tasksAPI.remove(task.id);
                             toast.success("Tâche supprimée");

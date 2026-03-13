@@ -3,7 +3,7 @@
 const Joi = require('joi');
 
 const createTaskSchema = Joi.object({
-  project_id: Joi.string().uuid().optional().allow(null),
+  project_id: Joi.string().uuid().optional().allow(null).empty(''),
   title: Joi.string().min(2).max(255).required(),
   description: Joi.string().max(5000).optional().allow(null, ''),
   assigned_to: Joi.string().uuid().optional().allow(null),
@@ -13,11 +13,10 @@ const createTaskSchema = Joi.object({
   status: Joi.string().valid('todo', 'in_production', 'done', 'blocked', 'cancelled').default('todo'),
   priority: Joi.string().valid('low', 'normal', 'high', 'urgent').default('normal'),
   context: Joi.string().valid('project', 'event').default('project'),
-  event_id: Joi.string().uuid().optional().allow(null),
+  event_id: Joi.string().uuid().optional().allow(null).empty(''),
 }).custom((value, helpers) => {
   const ctx = value.context || 'project';
-
-  // Pour les tâches de projet, un project_id est requis
+  // Pour une tâche de projet, project_id doit être renseigné (et non vide)
   if (ctx === 'project' && !value.project_id) {
     return helpers.error('any.custom', { message: 'project_id est requis pour une tâche de projet' });
   }
@@ -25,13 +24,12 @@ const createTaskSchema = Joi.object({
   const due = value.due_date ? new Date(value.due_date) : null;
   const pub = value.publication_date ? new Date(value.publication_date) : null;
 
-  // Si les deux sont renseignées, publication_date doit être strictement postérieure à due_date
   if (due && pub && !(pub > due)) {
     return helpers.error('any.custom', { message: 'La date de publication doit être postérieure à la date limite.' });
   }
 
   return value;
-}, 'project_id and dates validation for tasks');
+}, 'Veuillez bien remplir les champs');
 
 const updateTaskSchema = Joi.object({
   title: Joi.string().min(2).max(255).optional(),
@@ -42,7 +40,8 @@ const updateTaskSchema = Joi.object({
   publication_date: Joi.date().iso().optional().allow(null),
   priority: Joi.string().valid('low', 'normal', 'high', 'urgent').optional(),
   context: Joi.string().valid('project', 'event').optional(),
-  event_id: Joi.string().uuid().optional().allow(null),
+  event_id: Joi.string().uuid().optional().allow(null).empty(''),
+  project_id: Joi.string().uuid().optional().allow(null).empty(''),
 }).min(1).custom((value, helpers) => {
   const due = value.due_date ? new Date(value.due_date) : null;
   const pub = value.publication_date ? new Date(value.publication_date) : null;
@@ -52,7 +51,7 @@ const updateTaskSchema = Joi.object({
   }
 
   return value;
-}, 'dates validation for task update');
+}, 'Veuillez bien remplir les champs');
 
 const patchTaskStatusSchema = Joi.object({
   status: Joi.string()
