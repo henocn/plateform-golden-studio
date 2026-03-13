@@ -813,8 +813,8 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
                 />
                 <Select
                   label={index === 0 ? "Responsable" : undefined}
-                  value={task.responsible_user_id || ""}
-                  onChange={(e) => handleTaskChange(index, "responsible_user_id", e.target.value)}
+                  value={task.assigned_to || ""}
+                  onChange={(e) => handleTaskChange(index, "assigned_to", e.target.value)}
                   options={[
                     { value: "", label: "Aucun responsable" },
                     ...assignableUsers.map((u) => ({
