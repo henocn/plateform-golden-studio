@@ -4,6 +4,7 @@ const path = require('path');
 const mediaService = require('./media.service');
 const ApiResponse = require('../../utils/ApiResponse');
 const { parsePagination, buildPaginationMeta } = require('../../utils/pagination');
+const env = require('../../config/env');
 
 const list = async (req, res, next) => {
   try {
@@ -73,7 +74,9 @@ const deleteMedia = async (req, res, next) => {
 const download = async (req, res, next) => {
   try {
     const media = await mediaService.getDownload(req.params.id);
-    const filePath = path.resolve(media.file_path);
+    const filePath = path.isAbsolute(media.file_path)
+      ? media.file_path
+      : path.resolve(env.UPLOAD_DIR, media.file_path);
     return res.download(filePath, media.file_name);
   } catch (error) {
     return next(error);

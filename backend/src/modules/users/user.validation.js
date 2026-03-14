@@ -15,6 +15,7 @@ const createInternalUserSchema = Joi.object({
   last_name: Joi.string().min(1).max(100).required(),
   role: Joi.string().valid(...INTERNAL_ROLES).required(),
   job_title: Joi.string().max(100).optional().allow(null, ''),
+  contact: Joi.string().max(255).optional().allow(null, ''),
 });
 
 const createClientUserSchema = Joi.object({
@@ -27,6 +28,7 @@ const createClientUserSchema = Joi.object({
   last_name: Joi.string().min(1).max(100).required(),
   role: Joi.string().valid(...CLIENT_ROLES).required(),
   job_title: Joi.string().max(100).optional().allow(null, ''),
+  contact: Joi.string().max(255).optional().allow(null, ''),
 });
 
 const updateUserSchema = Joi.object({
@@ -35,6 +37,7 @@ const updateUserSchema = Joi.object({
   email: Joi.string().email().optional().allow(null, ''),
   job_title: Joi.string().max(100).optional().allow(null, ''),
   phone: Joi.string().max(50).optional().allow(null, ''),
+  contact: Joi.string().max(255).optional().allow(null, ''),
   avatar_path: Joi.string().max(500).optional().allow(null, ''),
 }).min(1);
 
@@ -56,6 +59,14 @@ const listUsersQuery = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
 });
 
+const notificationSettingsSchema = Joi.object({
+  email_enabled: Joi.boolean().optional(),
+  tasks_enabled: Joi.boolean().optional(),
+  validations_enabled: Joi.boolean().optional(),
+  events_enabled: Joi.boolean().optional(),
+  weekly_summary_enabled: Joi.boolean().optional(),
+}).min(1);
+
 module.exports = {
   createInternalUserSchema,
   createClientUserSchema,
@@ -63,4 +74,5 @@ module.exports = {
   changeRoleSchema,
   patchStatusSchema,
   listUsersQuery,
+  notificationSettingsSchema,
 };

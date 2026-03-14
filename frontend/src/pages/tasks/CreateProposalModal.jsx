@@ -17,7 +17,6 @@ export default function CreateProposalModal({ task, onClose, onCreated }) {
   const [submitting, setSubmitting] = useState(false);
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-  const projectId = task?.project?.id || task?.project_id;
   const taskId = task?.id;
 
   const handleSubmit = async (e) => {
@@ -26,8 +25,8 @@ export default function CreateProposalModal({ task, onClose, onCreated }) {
       toast.error("Le titre est requis");
       return;
     }
-    if (!projectId) {
-      toast.error("Projet introuvable");
+    if (!taskId) {
+      toast.error("Tâche introuvable");
       return;
     }
     setSubmitting(true);
@@ -37,7 +36,7 @@ export default function CreateProposalModal({ task, onClose, onCreated }) {
       fd.append("description", form.description || "");
       if (taskId) fd.append("task_id", taskId);
       (form.files || []).forEach((file) => fd.append("files", file));
-      await proposalsAPI.create(projectId, fd);
+      await proposalsAPI.create(fd);
       toast.success("Proposition créée");
       onCreated();
     } catch (err) {

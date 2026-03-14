@@ -10,17 +10,17 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
-import { Card, Button, Input, Select, Badge, Modal } from '../../components/ui';
+import { Card, Button, Input, Select, Badge, Modal, Textarea } from '../../components/ui';
 import { useAuthStore } from '../../store/authStore';
 import { useOrganizationStore } from '../../store/organizationStore';
 import { usePermissions } from '../../hooks';
-import { organizationsAPI, agenciesAPI, directionsAPI, uploadsUrl } from '../../api/services';
+import { organizationsAPI, agenciesAPI, directionsAPI, uploadsUrl, calendarAPI, usersAPI } from '../../api/services';
 import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
   const { current, fetchCurrent, setCurrent } = useOrganizationStore();
-  const { can } = usePermissions();
+  const { can, userType, isAdmin } = usePermissions();
 
   const canManageAgenciesDirections = can('settings.agencies_directions');
   const isPlatformAdmin = user?.role === 'super_admin' || user?.role === 'admin';
@@ -253,30 +253,11 @@ export default function SettingsPage() {
         </>
       )}
 
+      {/* Templates d'événements (type + tâches pré-remplies) — uniquement super admin / admin */}
+      {isAdmin && <EventTemplatesSection />}
+
       {/* Notifications */}
-      <Card title="Notifications" action={<Badge color="info" size="sm"><Bell className="w-3 h-3 inline mr-1" />Préférences</Badge>}>
-        <div className="space-y-4">
-          <ToggleSetting
-            label="Notifications par email"
-            description="Recevoir un email pour chaque notification importante"
-            defaultChecked
-          />
-          <ToggleSetting
-            label="Notifications de tâches"
-            description="Être notifié quand une tâche vous est assignée"
-            defaultChecked
-          />
-          <ToggleSetting
-            label="Alertes de validation"
-            description="Recevoir une alerte quand une proposition est en attente de validation"
-            defaultChecked
-          />
-          <ToggleSetting
-            label="Résumé hebdomadaire"
-            description="Recevoir un récapitulatif hebdomadaire par email"
-          />
-        </div>
-      </Card>
+      <NotificationsSection />
 
       {/* Le reste (apparence / plateforme / sécurité) sera configuré plus tard */}
     </div>
@@ -408,6 +389,366 @@ function AgenciesSection() {
           </div>
         </form>
       </Modal>
+    </Card>
+  );
+}
+
+function EventTemplatesSection() {
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [assignableUsers, setAssignableUsers] = useState([]);
+  const { isInternal } = usePermissions();
+  const [form, setForm] = useState({
+    name: '',
+    tasks: [],
+  });
+
+  // Commentaire: charge les templates existants
+  const loadTemplates = async () => {
+    setLoading(true);
+    try {
+      const { data } = await calendarAPI.listEventTemplates();
+      const items = Array.isArray(data?.data) ? data.data : data || [];
+      setTemplates(items);
+    } catch {
+      toast.error('Erreur chargement des templates d’événement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      if (isInternal) {
+        const { data } = await usersAPI.listMembers({ page: 1, limit: 100 });
+        const items = data?.data?.data || [];
+        setAssignableUsers(items);
+      } else {
+        const { data } = await usersAPI.listClients({ page: 1, limit: 100 });
+        const items = data?.data?.data || [];
+        setAssignableUsers(items);
+      }
+    } catch {
+      setAssignableUsers([]);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+    loadTemplates();
+  }, []);
+
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ name: '', tasks: [] });
+    setModalOpen(true);
+  };
+
+  const openEdit = (tpl) => {
+    setEditing(tpl);
+    setForm({
+      name: tpl.name || '',
+      tasks: Array.isArray(tpl.tasks) ? tpl.tasks : [],
+    });
+    setModalOpen(true);
+  };
+
+  const handleAddTask = () => {
+    setForm((prev) => ({
+      ...prev,
+      tasks: [...(prev.tasks || []), { title: '', status: 'pending', responsible_user_id: '' }],
+    }));
+  };
+
+  const handleTaskChange = (index, key, value) => {
+    setForm((prev) => {
+      const tasks = (prev.tasks || []).slice();
+      tasks[index] = { ...tasks[index], [key]: value };
+      return { ...prev, tasks };
+    });
+  };
+
+  const handleRemoveTask = (index) => {
+    setForm((prev) => {
+      const tasks = (prev.tasks || []).slice();
+      tasks.splice(index, 1);
+      return { ...prev, tasks };
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name?.trim()) {
+      toast.error('Nom du template requis');
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        name: form.name.trim(),
+        tasks: (form.tasks || []).filter((t) => t.title?.trim()),
+      };
+      if (editing) {
+        await calendarAPI.updateEventTemplate(editing.id, payload);
+        toast.success('Template d’événement mis à jour');
+      } else {
+        await calendarAPI.createEventTemplate(payload);
+        toast.success('Template d’événement créé');
+      }
+      setModalOpen(false);
+      loadTemplates();
+    } catch (err) {
+      const details = formatErrorMessage(err);
+      details.forEach((d) => toast.error(d.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (tpl) => {
+    if (!window.confirm('Supprimer ce template d’événement ?')) return;
+    try {
+      await calendarAPI.removeEventTemplate(tpl.id);
+      toast.success('Template supprimé');
+      loadTemplates();
+    } catch (err) {
+      const details = formatErrorMessage(err);
+      details.forEach((d) => toast.error(d.message));
+    }
+  };
+
+  return (
+    <Card
+      title="Templates d’événements"
+      action={
+        <Button variant="ghost" size="sm" icon={Plus} onClick={openCreate}>
+          Nouveau template
+        </Button>
+      }
+    >
+      {loading ? (
+        <div className="space-y-2">
+          <div className="h-5 w-1/3 bg-surface-200 rounded" />
+          <div className="h-24 w-full bg-surface-100 rounded" />
+        </div>
+      ) : templates.length === 0 ? (
+        <p className="text-body-sm text-ink-400">
+          Aucun template pour l’instant. Créez un type d’événement avec des tâches pré-remplies afin de gagner du temps lors de la création d’un événement.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {templates.map((tpl) => (
+            <div
+              key={tpl.id}
+              className="flex items-start justify-between gap-3 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2"
+            >
+              <div className="flex-1">
+                <p className="text-body-md font-medium text-ink-900">{tpl.name}</p>
+                {Array.isArray(tpl.tasks) && tpl.tasks.length > 0 && (
+                  <p className="text-body-xs text-ink-400 mt-1">
+                    {tpl.tasks.length} tâche{tpl.tasks.length > 1 ? 's' : ''} pré-configurée{tpl.tasks.length > 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  icon={Pencil}
+                  onClick={() => openEdit(tpl)}
+                >
+                  Modifier
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  icon={Trash2}
+                  onClick={() => handleDelete(tpl)}
+                >
+                  Supprimer
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? 'Modifier le template' : 'Nouveau template d’événement'}
+        size="lg"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
+              Annuler
+            </Button>
+            <Button type="submit" form="event-template-form" loading={saving}>
+              Enregistrer
+            </Button>
+          </div>
+        }
+      >
+        <form id="event-template-form" onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Nom du template *"
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            placeholder="Ex. Conférence de presse, Couverture d’événement…"
+          />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-label text-ink-700">Tâches du template</p>
+              <Button type="button" variant="ghost" size="sm" onClick={handleAddTask}>
+                Ajouter une tâche
+              </Button>
+            </div>
+            {(!form.tasks || form.tasks.length === 0) && (
+              <p className="text-body-sm text-ink-400">
+                Ajoutez quelques tâches types qui seront pré-remplies lors de la création d’un événement.
+              </p>
+            )}
+            {(form.tasks || []).map((task, index) => (
+              <div
+                key={index}
+                className="grid grid-cols-[minmax(0,2fr)_minmax(0,2fr)_minmax(0,1.5fr)_auto] gap-2 items-start"
+              >
+                <Input
+                  label={index === 0 ? 'Titre' : undefined}
+                  value={task.title}
+                  onChange={(e) => handleTaskChange(index, 'title', e.target.value)}
+                  placeholder="Intitulé de la tâche"
+                />
+                <Textarea
+                  label={index === 0 ? 'Description' : undefined}
+                  value={task.description || ''}
+                  onChange={(e) => handleTaskChange(index, 'description', e.target.value)}
+                  rows={2}
+                />
+                <Select
+                  label={index === 0 ? 'Responsable' : undefined}
+                  value={task.responsible_user_id || ''}
+                  onChange={(e) =>
+                    handleTaskChange(index, 'responsible_user_id', e.target.value)
+                  }
+                  options={assignableUsers.map((u) => ({
+                    value: u.id,
+                    label: `${u.first_name} ${u.last_name}`,
+                  }))}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTask(index)}
+                  className="mt-7 p-2 rounded-lg text-ink-400 hover:bg-surface-200"
+                  aria-label="Supprimer la tâche"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </form>
+      </Modal>
+    </Card>
+  );
+}
+
+function NotificationsSection() {
+  const { user, setUser } = useAuthStore();
+  const [saving, setSaving] = useState(false);
+  const [settings, setSettings] = useState({
+    email_enabled: true,
+    tasks_enabled: true,
+    validations_enabled: true,
+    events_enabled: true,
+    weekly_summary_enabled: false,
+  });
+
+  useEffect(() => {
+    const raw = user?.notification_settings || {};
+    setSettings({
+      email_enabled: raw.email_enabled !== false,
+      tasks_enabled: raw.tasks_enabled !== false,
+      validations_enabled: raw.validations_enabled !== false,
+      events_enabled: raw.events_enabled !== false,
+      weekly_summary_enabled: raw.weekly_summary_enabled === true,
+    });
+  }, [user]);
+
+  const updateSetting = async (key, value) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+    setSaving(true);
+    try {
+      const payload = { [key]: value };
+      const { data } = await usersAPI.updateNotificationSettings(payload);
+      const updatedUser = data?.data || data;
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
+    } catch (err) {
+      const msg =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        "Erreur lors de la mise à jour des notifications";
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card
+      title="Notifications"
+      action={
+        <Badge color="info" size="sm">
+          <Bell className="w-3 h-3 inline mr-1" />
+          Préférences
+        </Badge>
+      }
+    >
+      <div className="space-y-4">
+        <ToggleSetting
+          label="Notifications par email"
+          description="Recevoir un email pour chaque notification importante"
+          checked={settings.email_enabled}
+          onChange={(val) => updateSetting('email_enabled', val)}
+        />
+        <ToggleSetting
+          label="Notifications de tâches"
+          description="Être notifié quand une tâche vous est assignée"
+          checked={settings.tasks_enabled}
+          onChange={(val) => updateSetting('tasks_enabled', val)}
+        />
+        <ToggleSetting
+          label="Alertes de validation"
+          description="Recevoir une alerte quand une proposition est en attente de validation"
+          checked={settings.validations_enabled}
+          onChange={(val) => updateSetting('validations_enabled', val)}
+        />
+        <ToggleSetting
+          label="Notifications d’événements"
+          description="Être notifié des événements importants du calendrier"
+          checked={settings.events_enabled}
+          onChange={(val) => updateSetting('events_enabled', val)}
+        />
+        <ToggleSetting
+          label="Résumé hebdomadaire"
+          description="Recevoir un récapitulatif hebdomadaire par email"
+          checked={settings.weekly_summary_enabled}
+          onChange={(val) => updateSetting('weekly_summary_enabled', val)}
+        />
+        {saving && (
+          <p className="text-body-xs text-ink-400">
+            Enregistrement des préférences...
+          </p>
+        )}
+      </div>
     </Card>
   );
 }
@@ -585,8 +926,16 @@ function DirectionsSection() {
   );
 }
 
-function ToggleSetting({ label, description, defaultChecked = false }) {
-  const [checked, setChecked] = useState(defaultChecked);
+function ToggleSetting({ label, description, defaultChecked = false, checked, onChange }) {
+  const [internalChecked, setInternalChecked] = useState(defaultChecked);
+  const isControlled = typeof checked === 'boolean';
+  const value = isControlled ? checked : internalChecked;
+
+  const toggle = () => {
+    const next = !value;
+    if (!isControlled) setInternalChecked(next);
+    if (onChange) onChange(next);
+  };
 
   return (
     <div className="flex items-center justify-between py-1">
@@ -595,10 +944,10 @@ function ToggleSetting({ label, description, defaultChecked = false }) {
         {description && <p className="text-body-sm text-ink-400 mt-0.5">{description}</p>}
       </div>
       <button
-        onClick={() => setChecked(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${checked ? 'bg-primary-500' : 'bg-surface-300'}`}
+        onClick={toggle}
+        className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${value ? 'bg-primary-500' : 'bg-surface-300'}`}
       >
-        <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${checked ? 'translate-x-5' : ''}`} />
+        <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${value ? 'translate-x-5' : ''}`} />
       </button>
     </div>
   );

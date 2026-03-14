@@ -9,7 +9,7 @@ const logger = require('./logger');
  * @param {{ to: string, subject: string, html?: string, text?: string }} options
  * @returns {Promise<object|null>} info nodemailer ou null si non envoyé
  */
-async function sendEmail({ to, subject, html, text }) {
+async function sendEmail({ to, subject, html, text, type }) {
   if (!isEmailConfigured() || !env.EMAIL_FROM || !to) {
     return null;
   }
@@ -24,10 +24,10 @@ async function sendEmail({ to, subject, html, text }) {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    logger.info('Email envoyé', { messageId: info.messageId, to: mailOptions.to });
+    logger.info(`[${type} :] Email envoyé ${JSON.stringify({ messageId: info.messageId, to: mailOptions.to })}`);
     return info;
   } catch (err) {
-    logger.error('Erreur envoi email', { error: err.message, to: mailOptions.to });
+    logger.error(`[${type} :] Erreur envoi email ${JSON.stringify({ error: err.message, to: mailOptions.to })}`);
     return null;
   }
 }

@@ -27,7 +27,7 @@ const listMembers = async (req, res, next) => {
       attributes: ['id', 'first_name', 'last_name', 'role', 'user_type'],
       order: [['first_name', 'ASC'], ['last_name', 'ASC']],
     });
-    return ApiResponse.success(res, { data: users, meta: { total: users.length } }, 'Members retrieved');
+    return ApiResponse.success(res, { data: users, meta: { total: users.length } }, 'Membres récupérés');
   } catch (error) {
     return next(error);
   }
@@ -46,7 +46,7 @@ const listInternal = async (req, res, next) => {
       page, limit, offset,
     });
     const meta = buildPaginationMeta(page, limit, total);
-    return ApiResponse.success(res, { data, meta }, 'Internal users retrieved');
+    return ApiResponse.success(res, { data, meta }, 'Utilisateurs internes récupérés');
   } catch (error) {
     return next(error);
   }
@@ -89,7 +89,7 @@ const listClients = async (req, res, next) => {
       page, limit, offset,
     });
     const meta = buildPaginationMeta(page, limit, total);
-    return ApiResponse.success(res, { data, meta }, 'Client users retrieved');
+    return ApiResponse.success(res, { data, meta }, 'Utilisateurs clients récupérés');
   } catch (error) {
     return next(error);
   }
@@ -187,6 +187,18 @@ const patchStatus = async (req, res, next) => {
 };
 
 /**
+ * PATCH /api/v1/users/me/notifications
+ */
+const updateNotificationSettings = async (req, res, next) => {
+  try {
+    const user = await userService.updateNotificationSettings(req.user.id, req.body);
+    return ApiResponse.success(res, user, 'Préférences de notifications mises à jour');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
  * DELETE /api/v1/users/:id
  */
 const deleteUser = async (req, res, next) => {
@@ -211,4 +223,5 @@ module.exports = {
   patchStatus,
   deleteUser,
   updateAvatar,
+  updateNotificationSettings,
 };

@@ -3,16 +3,13 @@
 const taskRepository = require('./task.repository');
 const ApiError = require('../../utils/ApiError');
 const { Project } = require('../../models');
+const logger = require('../../utils/logger');
 
 class TaskService {
   /**
    * Liste les tâches — client ne voit que client_visible
    */
   async list(filters, user) {
-    const isClient = user.user_type === 'client';
-    if (isClient) {
-      filters.visibility = 'client_visible';
-    }
     return taskRepository.findAll(filters);
   }
 
@@ -20,12 +17,8 @@ class TaskService {
    * Récupère une tâche par ID
    */
   async getById(id, user) {
-    const isClient = user.user_type === 'client';
     const task = await taskRepository.findById(id);
     if (!task) throw ApiError.notFound('Tâche');
-    if (isClient && task.visibility === 'internal_only') {
-      throw ApiError.notFound('Task');
-    }
     return task;
   }
 
@@ -38,20 +31,86 @@ class TaskService {
   }
 
   /**
-   * Create task — internal only, must link to existing project
+   * Create task — internal only.
+   * Pour les tâches de projet, on exige un project_id valide.
+   * Pour les tâches d'événement (context = 'event'), le project_id peut être nul.
    */
   async create(data, user) {
-    const project = await Project.findByPk(data.project_id);
-    if (!project) throw ApiError.notFound('Projet');
+    if (!data.context || data.context === 'project') {
+      const project = await Project.findByPk(data.project_id);
+      if (!project) throw ApiError.notFound('Projet');
+    }
 
-    return taskRepository.create({
+    const isConfigured = Boolean(data.supervisor_id && data.due_date && data.assigned_to);
+
+    const task = await taskRepository.create({
       ...data,
       created_by: user.id,
+      is_configured: isConfigured,
     });
+
+    // Envoi d'emails à l'assigné et au superviseur lors de la création
+    try {
+      const notificationService = require('../notifications/notification.service');
+
+      const basePayload = {
+        type: 'task_created',
+        title: `Nouvelle tâche — ${task.title}`,
+        message: `Une nouvelle tâche a été créée : « ${task.title} ».`,
+        referenceId: task.id,
+        referenceType: 'task',
+        link: `/tasks/${task.id}`,
+      };
+
+      const jobs = [];
+
+      if (task.assigned_to) {
+        jobs.push(
+          notificationService.notify({
+            userId: task.assigned_to,
+            ...basePayload,
+            message: `Une nouvelle tâche vous a été assignée : « ${task.title} ».`,
+          })
+        );
+      }
+
+      if (task.supervisor_id && task.supervisor_id !== task.assigned_to) {
+        jobs.push(
+          notificationService.notify({
+            userId: task.supervisor_id,
+            ...basePayload,
+            message: `Vous êtes superviseur de la tâche « ${task.title} ».`,
+          })
+        );
+      }
+
+      if (jobs.length) {
+        await Promise.all(jobs);
+      }
+    } catch (err) {
+      logger.error('[Task] Erreur lors de l’envoi des emails de création de tâche', {
+        taskId: task.id,
+        error: err?.message,
+      });
+    }
+
+    return task;
   }
 
   async update(id, data) {
-    const task = await taskRepository.update(id, data);
+    const isConfigured =
+      data.supervisor_id !== undefined || data.due_date !== undefined || data.assigned_to !== undefined
+        ? Boolean(data.supervisor_id && data.due_date && data.assigned_to)
+        : undefined;
+
+    const payload = {
+      ...data,
+    };
+    if (isConfigured !== undefined) {
+      payload.is_configured = isConfigured;
+    }
+
+    const task = await taskRepository.update(id, payload);
     if (!task) throw ApiError.notFound('Tâche');
     return task;
   }
@@ -121,6 +180,7 @@ class TaskService {
           subject: `Rappel : tâche « ${task.title} » à rendre demain`,
           html,
           text,
+          type: 'task_reminder',
         });
       }
     }
@@ -131,19 +191,14 @@ class TaskService {
     return taskRepository.findComments(taskId, { isClient });
   }
 
-  /**
-   * Add comment — is_internal transmis par le front (sauf client)
-   */
   async addComment(taskId, content, user, is_internal) {
     const task = await taskRepository.findById(taskId);
     if (!task) throw ApiError.notFound('Tâche');
 
-    // Client cannot comment on internal_only tasks
     if (user.user_type === 'client' && task.visibility === 'internal_only') {
-      throw ApiError.forbidden('Cannot comment on internal-only tasks');
+      throw ApiError.forbidden('Impossible de commenter une tâche interne');
     }
 
-    // Un client ne peut jamais poster en interne
     const internalFlag = user.user_type === 'client' ? false : Boolean(is_internal);
 
     return taskRepository.createComment({
@@ -158,7 +213,7 @@ class TaskService {
     const comment = await taskRepository.findCommentById(commentId);
     if (!comment) throw ApiError.notFound('Commentaire');
     if (comment.user_id !== userId) {
-      throw ApiError.forbidden('Vous ne pouvez supprimer que vos propres commentaires');
+      throw ApiError.forbidden('Impossible de supprimer un commentaire qui ne vous appartient pas');
     }
     return taskRepository.deleteComment(commentId);
   }

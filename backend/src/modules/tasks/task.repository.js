@@ -17,7 +17,6 @@ class TaskRepository {
     status,
     overdue,
     urgent,
-    visibility,
     search,
     page,
     limit,
@@ -28,7 +27,6 @@ class TaskRepository {
     if (projectId) where.project_id = projectId;
     if (assigneeId) where.assigned_to = assigneeId;
     if (status) where.status = status;
-    if (visibility) where.visibility = visibility;
     if (urgent === "true" || urgent === true) where.priority = "urgent";
     if (overdue === "true" || overdue === true) {
       where.due_date = { [Op.lt]: new Date() };
@@ -96,6 +94,14 @@ class TaskRepository {
           association: "creator",
           attributes: ["id", "first_name", "last_name", "email"],
         },
+        {
+          association: "supervisor",
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
+        {
+          association: "event",
+          attributes: ["id", "title"],
+        },
       ],
     });
   }
@@ -107,7 +113,20 @@ class TaskRepository {
       where,
       include: [
         { association: 'author', attributes: ['id', 'first_name', 'last_name', 'email'] },
-        { association: 'project', attributes: ['id', 'title'] },
+        {
+          association: 'task',
+          attributes: ['id', 'title', 'context'],
+          include: [
+            {
+              association: 'project',
+              attributes: ['id', 'title'],
+            },
+            {
+              association: 'event',
+              attributes: ['id', 'title'],
+            },
+          ],
+        },
         { association: 'attachments', order: [['sort_order', 'ASC']] },
         {
           association: 'comments',

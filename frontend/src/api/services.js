@@ -45,6 +45,7 @@ export const usersAPI = {
   patchRole: (type, id, data) => api.patch(`/users/${type}/${id}/role`, data),
   patchStatus: (id, data) => api.patch(`/users/${id}/status`, data),
   remove: (id) => api.delete(`/users/${id}`),
+  updateNotificationSettings: (data) => api.patch('/users/me/notifications', data),
 };
 
 export const agenciesAPI = {
@@ -87,20 +88,20 @@ export const tasksAPI = {
 };
 
 export const proposalsAPI = {
-  list: (projectId, params) => api.get(`/projects/${projectId}/proposals`, { params }),
-  getById: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}`),
-  download: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}/download`, { responseType: 'blob' }),
-  saveToMedia: (projectId, id, data) => api.post(`/projects/${projectId}/proposals/${id}/save-to-media`, data),
-  create: (projectId, data) =>
-    api.post(`/projects/${projectId}/proposals`, data, {
+  list: (params) => api.get('/proposals', { params }),
+  getById: (id) => api.get(`/proposals/${id}`),
+  download: (id) => api.get(`/proposals/${id}/download`, { responseType: 'blob' }),
+  saveToMedia: (id, data) => api.post(`/proposals/${id}/save-to-media`, data),
+  create: (data) =>
+    api.post('/proposals', data, {
       headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
     }),
-  update: (projectId, id, data) => api.put(`/projects/${projectId}/proposals/${id}`, data),
-  submit: (projectId, id) => api.patch(`/projects/${projectId}/proposals/${id}/submit`),
-  getComments: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}/comments`),
-  addComment: (projectId, id, data) => api.post(`/projects/${projectId}/proposals/${id}/comments`, data),
-  validate: (projectId, id, data) => api.post(`/projects/${projectId}/proposals/${id}/validate`, data),
-  getValidations: (projectId, id) => api.get(`/projects/${projectId}/proposals/${id}/validations`),
+  update: (id, data) => api.put(`/proposals/${id}`, data),
+  submit: (id) => api.patch(`/proposals/${id}/submit`),
+  getComments: (id) => api.get(`/proposals/${id}/comments`),
+  addComment: (id, data) => api.post(`/proposals/${id}/comments`, data),
+  validate: (id, data) => api.post(`/proposals/${id}/validate`, data),
+  getValidations: (id) => api.get(`/proposals/${id}/validations`),
 };
 
 export const publicationsAPI = {
@@ -120,6 +121,12 @@ export const calendarAPI = {
   removeEvent: (id) => api.delete(`/calendar/${id}`),
   importEventsExcel: (formData) => api.post('/calendar/events/import', formData),
   exportEventsExcel: (params) => api.get('/calendar/events/export', { params, responseType: 'blob' }),
+
+  // Event templates
+  listEventTemplates: () => api.get('/calendar/events/templates'),
+  createEventTemplate: (data) => api.post('/calendar/events/templates', data),
+  updateEventTemplate: (id, data) => api.put(`/calendar/events/templates/${id}`, data),
+  removeEventTemplate: (id) => api.delete(`/calendar/events/templates/${id}`),
 
   // Editorial calendar
   listEditorial: (params) => api.get('/calendar/editorial', { params }),
@@ -175,10 +182,4 @@ export const auditAPI = {
   getById: (id) => api.get(`/audit/${id}`),
 };
 
-export const notificationsAPI = {
-  list: (params) => api.get('/notifications', { params }),
-  unreadCount: () => api.get('/notifications/unread-count'),
-  markAsRead: (id) => api.patch(`/notifications/${id}/read`),
-  markAllAsRead: () => api.patch('/notifications/read-all'),
-  remove: (id) => api.delete(`/notifications/${id}`),
-};
+// Notifications API supprimée : toute la logique d'in-app notifications a été retirée.

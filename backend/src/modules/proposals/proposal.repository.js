@@ -4,9 +4,14 @@ const { Proposal, ProposalComment, Validation, User, ProposalAttachment } = requ
 const { Op } = require('sequelize');
 
 class ProposalRepository {
-  /* Récupère les propositions d'un projet, avec filtrage de statut pour les clients */
-  async findByProject(projectId, { isClient = false } = {}) {
-    const where = { project_id: projectId };
+  /* Récupère les propositions avec filtres optionnels (projet, tâche, statut) */
+  async findAll({ projectId, taskId, status, isClient = false } = {}) {
+    const where = {};
+    if (projectId) {
+      where['$task.project_id$'] = projectId;
+    }
+    if (taskId) where.task_id = taskId;
+    if (status) where.status = status;
     if (isClient) {
       where.status = { [Op.notIn]: ['draft', 'submitted'] };
     }
@@ -15,11 +20,23 @@ class ProposalRepository {
       where,
       include: [
         { association: 'author', attributes: ['id', 'first_name', 'last_name'] },
-        { association: 'project', attributes: ['id', 'title'] },
-        { association: 'task', attributes: ['id', 'title'] },
+        {
+          association: 'task',
+          attributes: ['id', 'title', 'project_id', 'context'],
+          include: [
+            {
+              association: 'project',
+              attributes: ['id', 'title'],
+            },
+            {
+              association: 'event',
+              attributes: ['id', 'title'],
+            },
+          ],
+        },
         { association: 'validatorUser', attributes: ['id', 'first_name', 'last_name'] },
       ],
-      order: [['version_number', 'DESC']],
+      order: [['created_at', 'DESC'], ['version_number', 'DESC']],
     });
   }
 
@@ -30,7 +47,20 @@ class ProposalRepository {
     return Proposal.findOne({
       where,
       include: [
-        { association: 'project', attributes: ['id', 'title'] },
+        {
+          association: 'task',
+          attributes: ['id', 'title', 'project_id', 'context'],
+          include: [
+            {
+              association: 'project',
+              attributes: ['id', 'title'],
+            },
+            {
+              association: 'event',
+              attributes: ['id', 'title'],
+            },
+          ],
+        },
         { association: 'author', attributes: ['id', 'first_name', 'last_name', 'email'] },
         { association: 'validatorUser', attributes: ['id', 'first_name', 'last_name'] },
         { association: 'validations', include: [{ association: 'validator', attributes: ['id', 'first_name', 'last_name'] }] },
@@ -66,7 +96,7 @@ class ProposalRepository {
 
   /* Retourne le prochain numéro de version pour une tâche ou un projet */
   async getNextVersion(projectId, taskId = null) {
-    const where = taskId ? { task_id: taskId } : { project_id: projectId };
+    const where = taskId ? { task_id: taskId } : {};
     const maxVersion = await Proposal.max('version_number', { where });
     return (maxVersion || 0) + 1;
   }

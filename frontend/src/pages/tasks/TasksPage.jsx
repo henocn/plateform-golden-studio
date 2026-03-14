@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Plus, Clock, AlertTriangle, List, LayoutGrid } from "lucide-react";
+import { Plus, Clock, AlertTriangle, List, LayoutGrid, Trash2 } from "lucide-react";
 import {
   Card,
   Button,
@@ -14,7 +14,7 @@ import {
   Skeleton,
   Avatar,
 } from "../../components/ui";
-import { tasksAPI, projectsAPI, usersAPI } from "../../api/services";
+import { tasksAPI, projectsAPI, calendarAPI, usersAPI } from "../../api/services";
 import {
   formatDate,
   TASK_STATUS,
@@ -31,6 +31,7 @@ export default function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [events, setEvents] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("kanban");
@@ -47,6 +48,7 @@ export default function TasksPage() {
     loadTasks();
   }, [page, status, priority, projectId, search]);
   useEffect(() => {
+    loadEvents();
     loadProjects();
   }, []);
 
@@ -56,11 +58,10 @@ export default function TasksPage() {
       const params = { page, limit: 100 };
       if (status) params.status = status;
       if (priority) params.priority = priority;
-      if (projectId) params.projectId = projectId; // Respecte l'API backend : projectId
+      if (projectId) params.projectId = projectId;
       if (search) params.search = search;
       const { data } = await tasksAPI.list(params);
       const { items, total } = extractList(data.data);
-      // Trie toujours côté frontend (sécurité UX)
       const sorted = items
         .slice()
         .sort(
@@ -83,6 +84,15 @@ export default function TasksPage() {
       setProjects(extractList(data.data).items);
     } catch (err) {
       toast.error("Erreur lors du chargement des projets");
+    }
+  };
+
+  const loadEvents = async () => {
+    try {
+      const { data } = await calendarAPI.listEvents({ page: 1, limit: 100 });
+      setEvents(extractList(data.data).items);
+    } catch (err) {
+      toast.error("Erreur lors du chargement des événements");
     }
   };
 
@@ -147,7 +157,7 @@ export default function TasksPage() {
   };
 
   const isOverdue = (t) =>
-    t.due_date && new Date(t.due_date) < new Date() && t.status !== "done";
+    t.due_date && new Date(t.due_date) < new Date() && t.status !== "done" && t.status !== "cancelled";
 
   return (
     <div className="space-y-6">
@@ -285,6 +295,21 @@ export default function TasksPage() {
                         draggable
                         onDragStart={() => handleDragStart(t)}
                         onDragEnd={handleDragEnd}
+                        canDelete={can("tasks.delete")}
+                        onDelete={async (task) => {
+                          const confirmed = window.confirm(
+                            `Voulez-vous vraiment supprimer la tâche « ${task.title} » ?`,
+                          );
+                          if (!confirmed) return;
+                          try {
+                            await tasksAPI.remove(task.id);
+                            toast.success("Tâche supprimée");
+                            loadTasks();
+                          } catch (err) {
+                            const details = formatErrorMessage(err);
+                            details.forEach((d) => toast.error(d.message));
+                          }
+                        }}
                       />
                     </div>
                   ))}
@@ -353,7 +378,17 @@ export default function TasksPage() {
                         onClick={() => navigate(`/tasks/${t.id}`)}
                       >
                         <td className="px-5 py-3 text-body-sm font-medium text-ink-900">
-                          {t.title}
+                          <div className="flex items-center gap-2">
+                            <span>{t.title}</span>
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${t.context === "event"
+                                ? "bg-info-50 text-info-700 border border-info-100"
+                                : "bg-surface-50 text-ink-600 border border-surface-200"
+                                }`}
+                            >
+                              {t.context === "event" ? "Événement" : "Projet"}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-5 py-3">
                           <Badge color={s.color} dot size="sm">
@@ -385,6 +420,7 @@ export default function TasksPage() {
       {showCreate && (
         <CreateTaskModal
           projects={projects}
+          events={events}
           isInternal={isInternal}
           onClose={() => setShowCreate(false)}
           onCreated={() => {
@@ -397,19 +433,42 @@ export default function TasksPage() {
   );
 }
 
-function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd }) {
+function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd, canDelete, onDelete }) {
   return (
     <div
-      className={`bg-white rounded-xl border p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${isOverdue ? "border-danger-300 bg-danger-50/30" : "border-surface-300"}`}
+      className={`bg-white rounded-xl border border-2 p-3.5 shadow-card hover:shadow-card-hover transition-shadow ${isOverdue
+        ? "border-red-500"
+        : "border-green-600"
+        } ${t.context === "event" ? "bg-blue-300/10" : "bg-orange-300/10"}`}
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       style={draggable ? { cursor: "grab" } : {}}
     >
-      <p className="text-body-md font-medium text-ink-900 mb-1">{t.title}</p>
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-body-md font-medium text-ink-900">{t.title}</p>
+        {canDelete && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.(t);
+            }}
+            className="p-1.5 rounded-full text-ink-300 hover:text-danger-600 hover:bg-danger-50 transition-colors"
+            aria-label="Supprimer la tâche"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
+      </div>
       {t.description && (
         <p className="text-body-sm text-ink-400 line-clamp-2 mb-2.5">
           {t.description}
+        </p>
+      )}
+      {!t.is_configured && (
+        <p className="text-[11px] text-warning-700 font-medium mb-1">
+          À paramétrer
         </p>
       )}
       <div className="flex items-center justify-between">
@@ -442,41 +501,63 @@ function TaskCard({ task: t, isOverdue, draggable, onDragStart, onDragEnd }) {
   );
 }
 
-function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
+function CreateTaskModal({ projects, events, isInternal, onClose, onCreated }) {
   const [form, setForm] = useState({
     title: "",
     description: "",
     project_id: "",
+    context: "project",
+    event_id: "",
     priority: "normal",
     due_date: "",
     assigned_to: "",
-    visibility: "client_visible",
+    supervisor_id: "",
+    publication_date: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [users, setUsers] = useState([]);
+  const [validators, setValidators] = useState([]);
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-  /* Charge les utilisateurs internes uniquement pour les internes (les clients n'ont pas accès) */
   useEffect(() => {
-    if (!isInternal) return;
     const loadUsers = async () => {
       try {
-        const { data } = await usersAPI.listInternal({ limit: 100 });
-        setUsers(extractList(data.data).items);
-      } catch {}
+        let allUsers;
+        if (isInternal) {
+          allUsers = await usersAPI.listMembers({ limit: 100 });
+        } else {
+          allUsers = await usersAPI.listClients({ limit: 100 });
+        }
+        const validators = await usersAPI.listClients({ limit: 100, role: "client_validator" });
+        setUsers(extractList(allUsers.data.data).items);
+        setValidators(extractList(validators.data.data).items);
+      } catch {
+        setUsers([]);
+        setValidators([]);
+      }
     };
     loadUsers();
   }, [isInternal]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.project_id)
-      return toast.error("Titre et projet requis");
+    if (!form.title) {
+      return toast.error("Titre requis");
+    }
+    if (form.context === "project" && !form.project_id) {
+      return toast.error("Projet requis pour une tâche de projet");
+    }
+    if (form.context === "event" && !form.event_id) {
+      return toast.error("Événement requis pour une tâche d’événement");
+    }
     setSubmitting(true);
     try {
       const payload = { ...form };
       if (!payload.assigned_to) delete payload.assigned_to;
       if (!payload.due_date) delete payload.due_date;
+      if (!payload.supervisor_id) delete payload.supervisor_id;
+      if (!payload.publication_date) delete payload.publication_date;
+      if (!payload.event_id) delete payload.event_id;
       await tasksAPI.create(payload);
       toast.success("Tâche créée");
       onCreated();
@@ -503,27 +584,30 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
           onChange={(e) => set("description", e.target.value)}
           rows={3}
         />
-        <div className={isInternal ? "grid grid-cols-2 gap-4" : ""}>
-          <Autocomplete
-            label="Projet *"
-            value={form.project_id}
-            onChange={(v) => set("project_id", v)}
-            options={projects.map((p) => ({ value: p.id, label: p.title }))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Select
+            label="Type de tâche"
+            value={form.context}
+            onChange={(e) => set("context", e.target.value)}
+            options={[
+              { value: "project", label: "Pour un projet" },
+              { value: "event", label: "Pour un événement" },
+            ]}
           />
-          {isInternal && (
-            <Select
-              label="Assignation"
-              value={form.assigned_to}
-              onChange={(e) => set("assigned_to", e.target.value)}
-              options={[
-                { value: "", label: "Non assigné" },
-                ...users.map((u) => ({
-                  value: u.id,
-                  label: `${u.first_name} ${u.last_name}`,
-                })),
-              ]}
-            />
-          )}
+          <Select
+            label={form.context === "project" ? "Projet *" : "Événement *"}
+            value={form.context === "project" ? form.project_id : form.event_id}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (form.context === "project") set("project_id", value);
+              else set("event_id", value);
+            }}
+            options={
+              form.context === "event"
+                ? events.map((ev) => ({ value: ev.id, label: ev.title }))
+                : projects.map((p) => ({ value: p.id, label: p.title }))
+            }
+          />
         </div>
         <div className="grid grid-cols-3 gap-4">
           <Select
@@ -541,13 +625,32 @@ function CreateTaskModal({ projects, isInternal, onClose, onCreated }) {
             value={form.due_date}
             onChange={(e) => set("due_date", e.target.value)}
           />
+          <Input
+            label="Date de publication"
+            type="date"
+            value={form.publication_date}
+            onChange={(e) => set("publication_date", e.target.value)}
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
-            label="Visibilité"
-            value={form.visibility}
-            onChange={(e) => set("visibility", e.target.value)}
-            options={[
-              { value: "client_visible", label: "Visible client" },
-              { value: "internal_only", label: "Interne uniquement" },
+            label="Assigné à"
+            value={form.assigned_to}
+            onChange={(e) => set("assigned_to", e.target.value)}
+            options={[...users.map((u) => ({
+              value: u.id,
+              label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+            })),
+            ]}
+          />
+          <Select
+            label="Superviseur côté ministère"
+            value={form.supervisor_id}
+            onChange={(e) => set("supervisor_id", e.target.value)}
+            options={[...validators.map((u) => ({
+              value: u.id,
+              label: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+            })),
             ]}
           />
         </div>

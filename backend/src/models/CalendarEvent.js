@@ -39,11 +39,6 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       allowNull: true,
     },
-    tasks: {
-      type: DataTypes.JSONB,
-      allowNull: false,
-      defaultValue: [],
-    },
     created_by: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -58,6 +53,7 @@ module.exports = (sequelize) => {
     CalendarEvent.belongsTo(models.User, { as: 'creator', foreignKey: 'created_by' });
     CalendarEvent.belongsTo(models.Agency, { as: 'agency', foreignKey: 'agency_id' });
     CalendarEvent.belongsTo(models.Direction, { as: 'direction', foreignKey: 'direction_id' });
+    CalendarEvent.hasMany(models.Task, { as: 'tasks', foreignKey: 'event_id' });
   };
 
   return CalendarEvent;

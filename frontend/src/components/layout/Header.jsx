@@ -1,19 +1,16 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, LogOut, User, ChevronDown, Bell } from 'lucide-react';
+import { Menu, LogOut, User, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-import { useNotificationStore } from '../../store/notificationStore';
 import { useClickOutside } from '../../hooks';
 import Avatar from '../ui/Avatar';
 import { ROLE_LABELS } from '../../utils/helpers';
 import { uploadsUrl } from '../../api/services';
-import NotificationPanel from './NotificationPanel';
 
 export default function Header({ sidebarCollapsed, onMenuClick }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { unreadCount, panelOpen, togglePanel } = useNotificationStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside(() => setMenuOpen(false));
 
@@ -70,26 +67,8 @@ export default function Header({ sidebarCollapsed, onMenuClick }) {
           </nav>
         </div>
 
-        {/* ── Right: Notifications + User ─ */}
+        {/* ── Right: User dropdown ─ */}
         <div className="flex items-center gap-2">
-          {/* Notifications bell */}
-          <div className="relative">
-            <button
-              onClick={togglePanel}
-              className="relative p-2 rounded-lg text-ink-400 hover:bg-surface-100 hover:text-ink-700 transition-default"
-            >
-              <Bell className="w-5 h-5" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold bg-danger-500 text-white rounded-full px-1 ring-2 ring-white">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </button>
-
-            <NotificationPanel />
-          </div>
-
-          {/* User dropdown */}
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}

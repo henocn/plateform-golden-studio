@@ -11,6 +11,7 @@ const taskSchema = Joi.object({
   // Utilisateur interne/client assigné à la tâche (optionnel)
   // Vide côté frontend (\"\"), null ou UUID valide
   responsible_user_id: Joi.string().uuid().optional().allow(null, ''),
+  due_date: Joi.date().iso().optional().allow(null, ''),
 });
 
 const createEventSchema = Joi.object({

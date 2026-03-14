@@ -6,7 +6,7 @@ const createProposalSchema = Joi.object({
   title: Joi.string().min(2).max(255).optional().allow(null, ''),
   description: Joi.string().max(10000).optional().allow(null, ''),
   file_path: Joi.string().max(500).optional().allow(null, ''),
-  task_id: Joi.string().uuid().optional().allow(null),
+  task_id: Joi.string().uuid().required(),
 });
 
 const updateProposalSchema = Joi.object({

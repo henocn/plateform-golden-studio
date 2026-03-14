@@ -40,13 +40,13 @@ class UserService {
   async createInternal(data, createdBy) {
     // Validate role is internal
     if (!INTERNAL_ROLES.includes(data.role)) {
-      throw ApiError.badRequest(`Role must be one of: ${INTERNAL_ROLES.join(', ')}`);
+      throw ApiError.badRequest(`Le rôle doit être l'un des suivants: ${INTERNAL_ROLES.join(', ')}`);
     }
 
     // Check email uniqueness
     const existing = await userRepository.findByEmail(data.email);
     if (existing) {
-      throw ApiError.conflict('A user with this email already exists');
+      throw ApiError.conflict('Un utilisateur avec cet email existe déjà');
     }
 
     // Hash password
@@ -71,12 +71,12 @@ class UserService {
    */
   async createClient(data, requestUser) {
     if (!CLIENT_ROLES.includes(data.role)) {
-      throw ApiError.badRequest(`Role must be one of: ${CLIENT_ROLES.join(', ')}`);
+      throw ApiError.badRequest(`Le rôle doit être l'un des suivants: ${CLIENT_ROLES.join(', ')}`);
     }
 
     const existing = await userRepository.findByEmail(data.email);
     if (existing) {
-      throw ApiError.conflict('A user with this email already exists');
+      throw ApiError.conflict('Un utilisateur avec cet email existe déjà');
     }
 
     const salt = await bcrypt.genSalt(12);
@@ -102,7 +102,7 @@ class UserService {
     if (requestUser.role === 'super_admin' && email != null && email !== '') {
       const existing = await userRepository.findByEmail(email);
       if (existing && existing.id !== id) {
-        throw ApiError.conflict('A user with this email already exists');
+        throw ApiError.conflict('Un utilisateur avec cet email existe déjà');
       }
       safeData.email = email.trim();
     }
@@ -111,17 +111,28 @@ class UserService {
   }
 
   /**
+   * Met à jour les préférences de notifications de l'utilisateur courant
+   */
+  async updateNotificationSettings(userId, settings) {
+    const user = await userRepository.findById(userId);
+    if (!user) throw ApiError.notFound('User');
+    const current = user.notification_settings || {};
+    const next = { ...current, ...settings };
+    return userRepository.update(userId, { notification_settings: next });
+  }
+
+  /**
    * Change internal user role (super_admin only)
    */
   async changeInternalRole(id, newRole) {
     if (!INTERNAL_ROLES.includes(newRole)) {
-      throw ApiError.badRequest(`Role must be one of: ${INTERNAL_ROLES.join(', ')}`);
+      throw ApiError.badRequest(`Le rôle doit être l'un des suivants: ${INTERNAL_ROLES.join(', ')}`);
     }
 
     const user = await userRepository.findById(id);
     if (!user) throw ApiError.notFound('User');
     if (user.user_type !== 'internal') {
-      throw ApiError.badRequest('This user is not an internal user');
+      throw ApiError.badRequest('Cet utilisateur n\'est pas un utilisateur interne');
     }
 
     return userRepository.updateRole(id, newRole);
@@ -135,13 +146,13 @@ class UserService {
    */
   async changeClientRole(id, newRole, requestUser) {
     if (!CLIENT_ROLES.includes(newRole)) {
-      throw ApiError.badRequest(`Role must be one of: ${CLIENT_ROLES.join(', ')}`);
+      throw ApiError.badRequest(`Le rôle doit être l'un des suivants: ${CLIENT_ROLES.join(', ')}`);
     }
 
     const user = await userRepository.findById(id);
     if (!user) throw ApiError.notFound('User');
     if (user.user_type !== 'client') {
-      throw ApiError.badRequest('This user is not a client user');
+      throw ApiError.badRequest('Cet utilisateur n\'est pas un utilisateur client');
     }
 
     return userRepository.updateRole(id, newRole);
@@ -158,7 +169,7 @@ class UserService {
     if (!user) throw ApiError.notFound('User');
 
     if (id === requestUser.id && !isActive) {
-      throw ApiError.badRequest('You cannot deactivate your own account');
+      throw ApiError.badRequest('Vous ne pouvez pas désactiver votre propre compte');
     }
 
     return userRepository.updateStatus(id, isActive);
@@ -173,7 +184,7 @@ class UserService {
 
     // Empêche un utilisateur de se supprimer lui-même
     if (id === requestUser.id) {
-      throw ApiError.badRequest('You cannot delete your own account');
+      throw ApiError.badRequest('Vous ne pouvez pas supprimer votre propre compte');
     }
 
     return userRepository.delete(id);

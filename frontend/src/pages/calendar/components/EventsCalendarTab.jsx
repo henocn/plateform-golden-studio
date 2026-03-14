@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Plus, Upload, Download, Trash2, Edit3, X } f
 import { addMonths, subMonths, format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Card, Button, Modal, Input, Select, Textarea, Skeleton, Badge } from "../../../components/ui";
-import { calendarAPI, agenciesAPI, directionsAPI, usersAPI } from "../../../api/services";
+import { calendarAPI, agenciesAPI, directionsAPI, usersAPI, tasksAPI } from "../../../api/services";
 import { extractList, formatDate, formatErrorMessage, downloadBlob } from "../../../utils/helpers";
 import { BigCalendar, localizer, calendarMessages, eventStyleGetter, toCalendarItems } from "./calendarShared";
 import { usePermissions } from "../../../hooks";
@@ -47,6 +47,7 @@ export default function EventsCalendarTab({ canCreateEvent }) {
   const [showCreate, setShowCreate] = useState(false);
   const importInputRef = useRef(null);
   const [assignableUsers, setAssignableUsers] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const { userType } = usePermissions();
   const isInternal = userType === "internal";
 
@@ -73,6 +74,20 @@ export default function EventsCalendarTab({ canCreateEvent }) {
     };
     loadUsers();
   }, [isInternal]);
+
+  useEffect(() => {
+    // Charge les templates d'événements pour la création rapide
+    const loadTemplates = async () => {
+      try {
+        const { data } = await calendarAPI.listEventTemplates();
+        const items = Array.isArray(data?.data) ? data.data : data || [];
+        setTemplates(items);
+      } catch {
+        setTemplates([]);
+      }
+    };
+    loadTemplates();
+  }, []);
 
   useEffect(() => {
     loadEvents();
@@ -222,6 +237,7 @@ export default function EventsCalendarTab({ canCreateEvent }) {
       )}
       {showCreate && (
         <CreateEventModal
+          templates={templates}
           assignableUsers={assignableUsers}
           onClose={() => setShowCreate(false)}
           onCreated={() => {
@@ -259,13 +275,12 @@ function EventStatusBadge({ event }) {
   );
 }
 
-function CreateEventModal({ onClose, onCreated, assignableUsers }) {
+function CreateEventModal({ onClose, onCreated, assignableUsers, templates }) {
   const [form, setForm] = useState({
     title: "",
     description: "",
     start_date: "",
     end_date: "",
-    status: "pending",
     agency_id: "",
     direction_id: "",
     tasks: [],
@@ -274,6 +289,7 @@ function CreateEventModal({ onClose, onCreated, assignableUsers }) {
   const [directions, setDirections] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const agencyIdRef = useRef("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
 
   useEffect(() => {
     agenciesAPI
@@ -305,29 +321,6 @@ function CreateEventModal({ onClose, onCreated, assignableUsers }) {
       return next;
     });
 
-  const handleAddTask = () => {
-    setForm((prev) => ({
-      ...prev,
-      tasks: [...prev.tasks, { title: "", status: "pending", responsible_user_id: "" }],
-    }));
-  };
-
-  const handleTaskChange = (index, key, value) => {
-    setForm((prev) => {
-      const tasks = prev.tasks.slice();
-      tasks[index] = { ...tasks[index], [key]: value };
-      return { ...prev, tasks };
-    });
-  };
-
-  const handleRemoveTask = (index) => {
-    setForm((prev) => {
-      const tasks = prev.tasks.slice();
-      tasks.splice(index, 1);
-      return { ...prev, tasks };
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -336,7 +329,8 @@ function CreateEventModal({ onClose, onCreated, assignableUsers }) {
       if (!payload.end_date) payload.end_date = null;
       if (!payload.agency_id) delete payload.agency_id;
       if (!payload.direction_id) delete payload.direction_id;
-      payload.tasks = (payload.tasks || []).filter((t) => t.title?.trim());
+      // Le statut est géré par défaut côté modèle (pending)
+      delete payload.status;
       await calendarAPI.createEvent(payload);
       toast.success("Événement créé");
       onCreated();
@@ -351,18 +345,37 @@ function CreateEventModal({ onClose, onCreated, assignableUsers }) {
   return (
     <Modal open onClose={onClose} title="Nouvel événement" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {Array.isArray(templates) && templates.length > 0 && (
+          <Select
+            label="Type d’événement (template)"
+            value={selectedTemplateId}
+            onChange={(e) => {
+              const id = e.target.value;
+              setSelectedTemplateId(id);
+              const tpl = templates.find((t) => t.id === id);
+              if (tpl && Array.isArray(tpl.tasks)) {
+                setField("tasks", tpl.tasks.map((t) => ({
+                  title: t.title || "",
+                  description: t.description || "",
+                  status: t.status || "pending",
+                  responsible_user_id: t.responsible_user_id || "",
+                })));
+              } else {
+                setField("tasks", []);
+              }
+            }}
+            options={[
+              { value: "", label: "Aucun template" },
+              ...templates.map((t) => ({ value: t.id, label: t.name })),
+            ]}
+          />
+        )}
         <Input label="Titre *" value={form.title} onChange={(e) => setField("title", e.target.value)} />
         <Textarea label="Description" value={form.description} onChange={(e) => setField("description", e.target.value)} rows={2} />
         <div className="grid grid-cols-2 gap-4">
           <Input label="Date de début *" type="date" value={form.start_date} onChange={(e) => setField("start_date", e.target.value)} />
           <Input label="Date de fin" type="date" value={form.end_date} onChange={(e) => setField("end_date", e.target.value)} />
         </div>
-        <Select
-          label="Statut"
-          value={form.status}
-          onChange={(e) => setField("status", e.target.value)}
-          options={EVENT_STATUS_OPTIONS.filter((opt) => opt.value)}
-        />
         <div className="grid grid-cols-2 gap-4">
           <Select
             label="Agence"
@@ -386,55 +399,7 @@ function CreateEventModal({ onClose, onCreated, assignableUsers }) {
           />
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-label text-ink-700">Tâches liées</p>
-            <Button type="button" variant="ghost" size="sm" onClick={handleAddTask}>
-              Ajouter une tâche
-            </Button>
-          </div>
-          {form.tasks.length === 0 && (
-            <p className="text-body-sm text-ink-400">
-              Aucune tâche définie. Vous pouvez en ajouter pour détailler les actions liées à l'événement.
-            </p>
-          )}
-          {form.tasks.map((task, index) => (
-            <div key={index} className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_auto] gap-2 items-center">
-              <Input
-                label={index === 0 ? "Titre" : undefined}
-                value={task.title}
-                onChange={(e) => handleTaskChange(index, "title", e.target.value)}
-                placeholder="Intitulé de la tâche"
-              />
-              <Select
-                label={index === 0 ? "Statut" : undefined}
-                value={task.status}
-                onChange={(e) => handleTaskChange(index, "status", e.target.value)}
-                options={TASK_STATUS_OPTIONS}
-              />
-              <Select
-                label={index === 0 ? "Responsable" : undefined}
-                value={task.responsible_user_id || ""}
-                onChange={(e) => handleTaskChange(index, "responsible_user_id", e.target.value)}
-                options={[
-                  { value: "", label: "Aucun responsable" },
-                  ...assignableUsers.map((u) => ({
-                    value: u.id,
-                    label: `${u.first_name} ${u.last_name}`,
-                  })),
-                ]}
-              />
-              <button
-                type="button"
-                onClick={() => handleRemoveTask(index)}
-                className="mt-4 p-2 rounded-lg text-ink-400 hover:bg-surface-200"
-                aria-label="Supprimer la tâche"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
+        {/* Les tâches liées sont gérées automatiquement via le template et modifiables dans le modal de détail */}
 
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" type="button" onClick={onClose}>Annuler</Button>
@@ -479,6 +444,7 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
           status: full.status || "pending",
           agency_id: full.agency_id || "",
           direction_id: full.direction_id || "",
+          // On édite les vraies tâches (Task) liées à l'événement
           tasks: Array.isArray(full.tasks) ? full.tasks : [],
         });
       } catch {
@@ -527,7 +493,7 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
   const handleAddTask = () => {
     setForm((prev) => ({
       ...prev,
-      tasks: [...(prev.tasks || []), { title: "", status: "pending", responsible_user_id: "" }],
+      tasks: [...(prev.tasks || []), { id: null, title: "", status: "todo", assigned_to: "", due_date: "", publication_date: "" }],
     }));
   };
 
@@ -562,14 +528,45 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
 
   const handleSave = async () => {
     try {
-      const payload = { ...form };
+      const { tasks = [], ...rest } = form;
+      const payload = { ...rest };
       if (!payload.end_date) payload.end_date = null;
       if (!payload.agency_id) delete payload.agency_id;
       if (!payload.direction_id) delete payload.direction_id;
-      payload.tasks = (payload.tasks || []).filter((t) => t.title?.trim());
-      const { data } = await calendarAPI.updateEvent(event.id, payload);
-      const updated = data?.data || data;
-      setCurrent(updated);
+
+      // Mise à jour de l'événement (sans toucher aux tâches)
+      await calendarAPI.updateEvent(event.id, payload);
+
+      // Synchronisation des tâches via l'API des tâches
+      const cleanTasks = (tasks || []).filter((t) => t.title?.trim());
+      await Promise.all(
+        cleanTasks.map(async (t) => {
+          const taskPayload = {
+            title: t.title,
+            due_date: t.due_date || null,
+            publication_date: t.publication_date || null,
+          };
+          if (t.assigned_to) taskPayload.assigned_to = t.assigned_to;
+
+          if (t.id) {
+            // Mise à jour d'une tâche existante
+            await tasksAPI.update(t.id, taskPayload);
+          } else {
+            // Création d'une nouvelle tâche liée à l'événement
+            await tasksAPI.create({
+              ...taskPayload,
+              context: "event",
+              event_id: event.id,
+              priority: "normal",
+            });
+          }
+        }),
+      );
+
+      // Recharge l'événement avec ses tâches à jour
+      const refreshed = await calendarAPI.getEventById(event.id);
+      const full = refreshed.data?.data || refreshed.data;
+      setCurrent(full);
       setEditMode(false);
       toast.success("Événement mis à jour");
       onUpdated?.();
@@ -587,7 +584,7 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
       open
       onClose={onClose}
       title="Détail de l'événement"
-      size="lg"
+      size="xl"
       footer={
         <div className="flex justify-between w-full">
           <div className="flex items-center gap-2">
@@ -696,8 +693,8 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
               <div className="space-y-2">
                 {(displayed.tasks || []).map((task, index) => {
                   const user =
-                    task.responsible_user_id &&
-                    assignableUsers.find((u) => u.id === task.responsible_user_id);
+                    task.assigned_to &&
+                    assignableUsers.find((u) => u.id === task.assigned_to);
                   const responsibleLabel = user
                     ? `${user.first_name} ${user.last_name}`
                     : "—";
@@ -711,6 +708,11 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
                         <p className="text-body-sm text-ink-500 mt-0.5">
                           Responsable : {responsibleLabel}
                         </p>
+                        {task.due_date && (
+                          <p className="text-body-xs text-ink-400 mt-0.5">
+                            Date cible : {formatDate(task.due_date)}
+                          </p>
+                        )}
                       </div>
                       <Badge color={getEventStatusColor(task.status)} size="sm">
                         {getEventStatusLabel(task.status)}
@@ -795,7 +797,7 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
             {(form.tasks || []).map((task, index) => (
               <div
                 key={index}
-                className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_auto] gap-2 items-center"
+                className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1.5fr)_minmax(0,1.4fr)_minmax(0,1.4fr)_auto] gap-2 items-center"
               >
                 <Input
                   label={index === 0 ? "Titre" : undefined}
@@ -811,15 +813,24 @@ function EventDetailModal({ event, onClose, onUpdated, onDeleted, assignableUser
                 />
                 <Select
                   label={index === 0 ? "Responsable" : undefined}
-                  value={task.responsible_user_id || ""}
-                  onChange={(e) => handleTaskChange(index, "responsible_user_id", e.target.value)}
-                  options={[
-                    { value: "", label: "Aucun responsable" },
-                    ...assignableUsers.map((u) => ({
-                      value: u.id,
-                      label: `${u.first_name} ${u.last_name}`,
-                    })),
-                  ]}
+                  value={task.assigned_to || ""}
+                  onChange={(e) => handleTaskChange(index, "assigned_to", e.target.value)}
+                  options={assignableUsers.map((u) => ({
+                    value: u.id,
+                    label: `${u.first_name} ${u.last_name}`,
+                  }))}
+                />
+                <Input
+                  label={index === 0 ? "Date cible" : undefined}
+                  type="date"
+                  value={task.due_date ? task.due_date.slice(0, 10) : ""}
+                  onChange={(e) => handleTaskChange(index, "due_date", e.target.value)}
+                />
+                <Input
+                  label={index === 0 ? "Date de publication" : undefined}
+                  type="date"
+                  value={task.publication_date ? task.publication_date.slice(0, 10) : ""}
+                  onChange={(e) => handleTaskChange(index, "publication_date", e.target.value)}
                 />
                 <button
                   type="button"

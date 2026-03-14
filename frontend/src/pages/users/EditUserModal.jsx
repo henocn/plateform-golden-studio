@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Input, Select } from '../../components/ui';
 import { usersAPI } from '../../api/services';
+import { useAuthStore } from '../../store/authStore';
 import { usePermissions } from '../../hooks';
 import { formatErrorMessage } from '../../utils/helpers';
 import toast from 'react-hot-toast';
@@ -31,12 +32,14 @@ const clientRolesOrg = [
  */
 export default function EditUserModal({ open, onClose, onSaved, user, userType }) {
   const { isClientAdmin, isSuperAdmin } = usePermissions();
+  const { user: me, fetchMe } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
     email: '',
     job_title: '',
+    contact: '',
     role: '',
     is_active: true,
   });
@@ -48,6 +51,7 @@ export default function EditUserModal({ open, onClose, onSaved, user, userType }
         last_name: user.last_name ?? '',
         email: user.email ?? '',
         job_title: user.job_title ?? '',
+        contact: user.contact ?? '',
         role: user.role ?? '',
         is_active: user.is_active ?? true,
       });
@@ -65,15 +69,21 @@ export default function EditUserModal({ open, onClose, onSaved, user, userType }
         first_name: form.first_name,
         last_name: form.last_name,
         job_title: form.job_title || null,
+        contact: form.contact || null,
       };
       if (isSuperAdmin && form.email?.trim()) {
         updatePayload.email = form.email.trim();
       }
-      await usersAPI.update(user.id, updatePayload);
+      const { data } = await usersAPI.update(user.id, updatePayload);
+      const updated = data?.data ?? data;
       const type = userType === 'internal' ? 'internal' : 'clients';
       await usersAPI.patchRole(type, user.id, { role: form.role });
       await usersAPI.patchStatus(user.id, { is_active: form.is_active });
       toast.success('Utilisateur mis à jour');
+      // Si l'utilisateur modifié est l'utilisateur courant, on rafraîchit le profil
+      if (me && me.id === user.id) {
+        await fetchMe();
+      }
       onSaved();
     } catch (err) {
       const details = formatErrorMessage(err);
@@ -123,6 +133,11 @@ export default function EditUserModal({ open, onClose, onSaved, user, userType }
           label="Poste"
           value={form.job_title}
           onChange={(e) => setForm({ ...form, job_title: e.target.value })}
+        />
+        <Input
+          label="Contact"
+          value={form.contact}
+          onChange={(e) => setForm({ ...form, contact: e.target.value })}
         />
         <Select
           label="Rôle"

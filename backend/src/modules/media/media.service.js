@@ -2,6 +2,8 @@
 
 const mediaRepository = require('./media.repository');
 const ApiError = require('../../utils/ApiError');
+const path = require('path');
+const env = require('../../config/env');
 
 class MediaService {
   async list(filters) {
@@ -17,7 +19,10 @@ class MediaService {
   async create(data, file, user) {
     return mediaRepository.create({
       ...data,
-      file_path: file.path,
+      file_path: path
+        .relative(env.UPLOAD_DIR, file.path)
+        .split(path.sep)
+        .join('/'),
       file_name: file.originalname,
       file_size: file.size,
       mime_type: file.mimetype,

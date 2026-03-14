@@ -53,6 +53,11 @@ const env = cleanEnv(process.env, {
   NOTIF_TASK_FIRST_WARNING_DAYS: num({ default: 3 }),
   NOTIF_TASK_LAST_WARNING_DAYS: num({ default: 1 }),
 
+  // WhatsApp
+  WHATSAPP_PHONE_NUMBER_ID: str({ default: '' }),
+  WHATSAPP_ACCESS_TOKEN: str({ default: '' }),
+  WHATSAPP_API_VERSION: str({ default: 'v22.0' }),
+
   // Email (optionnel — si non renseigné, les envois sont ignorés)
   EMAIL_BRAND_NAME: str({ default: 'Qidoo' }),
   EMAIL_HOST: str({ default: '' }),

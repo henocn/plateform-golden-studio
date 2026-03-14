@@ -1,89 +1,53 @@
 'use strict';
 
 const notificationRepository = require('./notification.repository');
-const ApiError = require('../../utils/ApiError');
 const PERMISSIONS = require('../../config/permissions');
+const NOTIFICATIONS_CONFIG = require('../../config/notifications');
 const logger = require('../../utils/logger');
 const sendEmail = require('../../utils/sendEmail');
-const { buildNotificationEmail } = require('../../utils/emailTemplates');
+const {
+  buildNotificationEmail,
+  buildTaskDeadlineEmail,
+  buildPublicationDeadlineEmail,
+} = require('../../utils/emailTemplates');
 
 
 // ═══════════════════════════════════════════════════
-//              NotificationService
+//              NotificationService (emails only)
 // ═══════════════════════════════════════════════════
 
 
 class NotificationService {
-  constructor() {
-    this.io = null;
-  }
-
-  /* Injecte l'instance Socket.IO pour les émissions temps réel */
-  setSocketIO(io) {
-    this.io = io;
-  }
-
-  /* Émet une notification temps réel via Socket.IO */
-  emitToUser(userId, notification) {
-    if (!this.io) return;
-    this.io.to(`user:${userId}`).emit('notification:new', notification);
-  }
-
-  /* Émet le compteur de non lus */
-  async emitUnreadCount(userId) {
-    if (!this.io) return;
-    const count = await notificationRepository.countUnread(userId);
-    this.io.to(`user:${userId}`).emit('notification:unread_count', count);
-  }
-
-  /* Crée et émet une notification à un utilisateur, et envoie un email */
+  /* Envoie une notification (email uniquement) à un utilisateur */
   async notify({ userId, type, title, message, referenceId, referenceType, link }) {
-    const notification = await notificationRepository.create({
-      user_id: userId,
+    await this._sendNotificationEmails([userId], {
       type,
       title,
       message,
-      reference_id: referenceId || null,
-      reference_type: referenceType || null,
-      link: link || null,
+      link,
+      referenceId,
+      referenceType,
+    })
+    .catch((err) => {
+      logger.error(`[Notification :] Email non envoyé ${JSON.stringify({ userId, error: err.message })}`);
     });
-
-    this.emitToUser(userId, notification);
-    this.emitUnreadCount(userId);
-
-    this._sendNotificationEmails([userId], { type, title, message, link, referenceId, referenceType }).catch((err) => {
-      logger.error('[Notification] Email non envoyé', { userId, error: err.message });
-    });
-
-    return notification;
+    return null;
   }
 
-  /* Crée et émet des notifications pour plusieurs utilisateurs, et envoie les emails */
+  /* Envoie une notification (email uniquement) à plusieurs utilisateurs */
   async notifyMany(userIds, { type, title, message, referenceId, referenceType, link }) {
     const uniqueIds = [...new Set(userIds)];
-    const items = uniqueIds.map((uid) => ({
-      user_id: uid,
+    await this._sendNotificationEmails(uniqueIds, {
       type,
       title,
       message,
-      reference_id: referenceId || null,
-      reference_type: referenceType || null,
-      link: link || null,
-    }));
-
-    const notifications = await notificationRepository.bulkCreate(items);
-
-    for (const uid of uniqueIds) {
-      const userNotif = notifications.find((n) => n.user_id === uid);
-      if (userNotif) this.emitToUser(uid, userNotif);
-      this.emitUnreadCount(uid);
-    }
-
-    this._sendNotificationEmails(uniqueIds, { type, title, message, link, referenceId, referenceType }).catch((err) => {
-      logger.error('[Notification] Emails non envoyés', { userIds: uniqueIds, error: err.message });
+      link,
+      referenceId,
+      referenceType,
+    }).catch((err) => {
+      logger.error(`[Notification :] Emails non envoyés ${JSON.stringify({ userIds: uniqueIds, error: err.message })}`);
     });
-
-    return notifications;
+    return null;
   }
 
   /* Envoie un email par destinataire pour une notification (template enrichi et stylé) */
@@ -92,18 +56,76 @@ class NotificationService {
     const env = require('../../config/env');
     const baseUrl = env.FRONTEND_URL || env.APP_URL || 'http://localhost:5173';
 
+    const config = NOTIFICATIONS_CONFIG[type] || { email: true };
+    if (!config.email) return;
+
     const details = await this._buildEmailDetails({ type, referenceId, referenceType });
-    const { html, text } = buildNotificationEmail({ title, message, link, details }, baseUrl);
+
+    let html;
+    let text;
+
+    if (type === 'task_deadline_warning' && referenceType === 'task' && referenceId && details.length > 0) {
+      const dateDetail = details.find((d) => d.label === 'Date limite');
+      const dueDate = dateDetail ? String(dateDetail.value) : '';
+      const daysDetail = details.find((d) => d.label === 'Jours restants');
+      const daysRemaining = daysDetail ? Number(daysDetail.value) || 0 : 0;
+
+      const rendered = buildTaskDeadlineEmail(
+        {
+          taskTitle: title?.replace(/^.*—\s*/, '') || 'Tâche',
+          dueDate,
+          daysRemaining,
+          link,
+          isLastWarning: title?.startsWith('Dernier') || false,
+        },
+        baseUrl
+      );
+      html = rendered.html;
+      text = rendered.text;
+    } else if (type === 'publication_deadline_warning' && referenceType === 'publication' && referenceId) {
+      const titleLabel = details.find((d) => d.label === 'Titre');
+      const dateLabel = details.find((d) => d.label === 'Date de publication');
+      const publicationTitle = titleLabel ? String(titleLabel.value) : 'Publication';
+      const publicationDate = dateLabel ? String(dateLabel.value) : '';
+      const daysDetail = details.find((d) => d.label === 'Jours restants');
+      const daysRemaining = daysDetail ? Number(daysDetail.value) || 0 : 0;
+
+      const rendered = buildPublicationDeadlineEmail(
+        {
+          publicationTitle,
+          publicationDate,
+          daysRemaining,
+          link,
+          isLastWarning: title?.startsWith('Dernier') || false,
+        },
+        baseUrl
+      );
+      html = rendered.html;
+      text = rendered.text;
+    } else {
+      const rendered = buildNotificationEmail({ title, message, link, details }, baseUrl);
+      html = rendered.html;
+      text = rendered.text;
+    }
 
     for (const user of users) {
-      if (user.email) {
-        await sendEmail({
-          to: user.email,
-          subject: title || 'Notification',
-          html,
-          text,
-        });
-      }
+      if (!user.email) continue;
+      const prefs = user.notification_settings || {};
+      const emailPrefKey = config.emailPreferenceKey || 'email_enabled';
+      const domainPrefKey = config.domainPreferenceKey;
+
+      // Global désactivation des emails
+      if (prefs[emailPrefKey] === false) continue;
+      // Désactivation par domaine (tâches, événements, etc.)
+      if (domainPrefKey && prefs[domainPrefKey] === false) continue;
+
+      await sendEmail({
+        to: user.email,
+        subject: title || 'Notification',
+        html,
+        text,
+        type: 'Notification',
+      });
     }
   }
 
@@ -167,35 +189,28 @@ class NotificationService {
 
   /* Liste les notifications d'un utilisateur */
   async list(userId, { page = 1, limit = 50, unreadOnly = false } = {}) {
-    const offset = (page - 1) * limit;
-    return notificationRepository.findByUser(userId, { limit, offset, unreadOnly });
+    // Système de notifications en base supprimé : toujours vide
+    return { data: [], total: 0 };
   }
 
   /* Compte les non lues */
   async countUnread(userId) {
-    return notificationRepository.countUnread(userId);
+    return 0;
   }
 
   /* Marque une notification comme lue */
   async markAsRead(notifId, userId) {
-    const notif = await notificationRepository.markAsRead(notifId, userId);
-    if (!notif) throw ApiError.notFound('Notification');
-    this.emitUnreadCount(userId);
-    return notif;
+    return null;
   }
 
   /* Marque toutes les notifications comme lues */
   async markAllAsRead(userId) {
-    await notificationRepository.markAllAsRead(userId);
-    this.emitUnreadCount(userId);
+    return null;
   }
 
   /* Supprime une notification */
   async delete(notifId, userId) {
-    const notif = await notificationRepository.delete(notifId, userId);
-    if (!notif) throw ApiError.notFound('Notification');
-    this.emitUnreadCount(userId);
-    return notif;
+    return null;
   }
 
   // ─── Méthodes métier spécialisées ─────────────────────────
@@ -222,21 +237,13 @@ class NotificationService {
   async onTaskDeadlineWarning(task, daysRemaining, isLastWarning) {
     if (!task.assigned_to) return;
 
-    const alreadySent = await notificationRepository.exists({
-      userId: task.assigned_to,
-      type: 'task_deadline_warning',
-      referenceId: task.id,
-      afterDate: this.startOfToday(),
-    });
-    if (alreadySent) return;
-
-    const urgency = isLastWarning ? 'Dernier avertissement' : 'Premier avertissement';
+    const urgency = isLastWarning ? 'Dernier rappel de deadline' : 'Rappel de deadline';
 
     await this.notify({
       userId: task.assigned_to,
       type: 'task_deadline_warning',
-      title: `${urgency} — Tâche "${task.title}"`,
-      message: `La tâche "${task.title}" est prévue dans ${daysRemaining} jour(s). Assurez-vous qu'elle soit finalisée à temps.`,
+      title: `${urgency} — ${task.title}`,
+      message: `Ceci est un rappel concernant la tâche « ${task.title} ». Il vous reste ${daysRemaining} jour(s) pour la finaliser.`,
       referenceId: task.id,
       referenceType: 'task',
       link: `/tasks/${task.id}`,
@@ -255,14 +262,14 @@ class NotificationService {
     });
     if (alreadySent) return;
 
-    const urgency = isLastWarning ? 'Dernier avertissement' : 'Premier avertissement';
+    const urgency = isLastWarning ? 'Dernier rappel de publication' : 'Rappel de publication';
     const title = publication.publication_title || 'Publication';
 
     await this.notify({
       userId: publication.created_by,
       type: 'publication_deadline_warning',
-      title: `${urgency} — "${title}"`,
-      message: `La publication "${title}" est prévue dans ${daysRemaining} jour(s) et n'est pas encore publiée ou archivée.`,
+      title: `${urgency} — ${title}`,
+      message: `La publication « ${title} » est prévue prochainement. Il reste ${daysRemaining} jour(s) avant la date de publication.`,
       referenceId: publication.id,
       referenceType: 'publication',
       link: '/calendar/editorial',

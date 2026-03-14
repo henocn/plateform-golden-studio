@@ -11,7 +11,11 @@ module.exports = (sequelize) => {
     },
     project_id: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
+    },
+    event_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
     },
     title: {
       type: DataTypes.STRING,
@@ -40,14 +44,27 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: 'normal',
     },
-    visibility: {
-      type: DataTypes.ENUM('internal_only', 'client_visible'),
-      allowNull: false,
-      defaultValue: 'client_visible',
-    },
     created_by: {
       type: DataTypes.UUID,
       allowNull: true,
+    },
+    supervisor_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
+    publication_date: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    context: {
+      type: DataTypes.ENUM('project', 'event'),
+      allowNull: false,
+      defaultValue: 'project',
+    },
+    is_configured: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
   }, {
     tableName: 'tasks',
@@ -59,9 +76,10 @@ module.exports = (sequelize) => {
     Task.belongsTo(models.Project, { as: 'project', foreignKey: 'project_id' });
     Task.belongsTo(models.User, { as: 'assignee', foreignKey: 'assigned_to' });
     Task.belongsTo(models.User, { as: 'creator', foreignKey: 'created_by' });
+    Task.belongsTo(models.User, { as: 'supervisor', foreignKey: 'supervisor_id' });
+    Task.belongsTo(models.CalendarEvent, { as: 'event', foreignKey: 'event_id' });
     Task.hasMany(models.TaskComment, { as: 'comments', foreignKey: 'task_id' });
     Task.hasMany(models.Proposal, { as: 'proposals', foreignKey: 'task_id' });
-
   };
 
   return Task;

@@ -105,6 +105,7 @@ export default function UsersPage() {
               <thead>
                 <tr className="border-b border-surface-200">
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Utilisateur</th>
+                  <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Contact</th>
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Rôle</th>
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Statut</th>
                   <th className="text-left text-label text-ink-500 font-medium px-5 py-3">Dernière connexion</th>
@@ -123,6 +124,7 @@ export default function UsersPage() {
                         </div>
                       </div>
                     </td>
+                    <td className="px-5 py-3">{u.contact}</td>
                     <td className="px-5 py-3">{getRoleBadge(u.role)}</td>
                     <td className="px-5 py-3">
                       <Badge color={u.is_active ? 'success' : 'neutral'} dot size="sm">
@@ -182,6 +184,7 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
     email: '', password: '', first_name: '', last_name: '',
     role: effectiveType === 'internal' ? 'contributor' : 'client_reader',
     job_title: '',
+    contact: '',
   });
 
   useEffect(() => {
@@ -190,6 +193,7 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
         email: '', password: '', first_name: '', last_name: '',
         role: effectiveType === 'internal' ? 'contributor' : 'client_reader',
         job_title: '',
+        contact: '',
       });
     }
   }, [open, effectiveType, isClientAdmin]);
@@ -246,6 +250,7 @@ function CreateUserModal({ open, onClose, onCreated, type }) {
         <Input label="Mot de passe" type="password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} hint="Min. 8 caractères" />
         <Select label="Rôle" required value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} options={effectiveType === 'internal' ? internalRoles : clientRoles} />
         <Input label="Poste" value={form.job_title} onChange={(e) => setForm({ ...form, job_title: e.target.value })} />
+        <Input label="Contact" value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} />
       </form>
     </Modal>
   );

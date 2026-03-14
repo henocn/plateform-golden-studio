@@ -12,11 +12,14 @@ const logger = require('../../utils/logger');
 
 class ProposalService {
   /**
-   * Liste les propositions d'un projet
+   * Liste les propositions (filtrage par projet, tâche, statut possible)
    */
-  async listByProject(projectId, user) {
+  async list(filters, user) {
     const isClient = user.user_type === 'client';
-    return proposalRepository.findByProject(projectId, { isClient });
+    const projectId = filters?.project_id || filters?.projectId || null;
+    const taskId = filters?.task_id || filters?.taskId || null;
+    const status = filters?.status || null;
+    return proposalRepository.findAll({ projectId, taskId, status, isClient });
   }
 
   /**
@@ -36,16 +39,22 @@ class ProposalService {
    * Create proposal — internal contributor+, versioning automatique par tâche ou par projet.
    * Si task_id est fourni : version par tâche (pas de doublon de version pour la même tâche).
    */
-  async create(projectId, data, user, filesMeta = []) {
-    const project = await Project.findByPk(projectId);
-    if (!project) throw ApiError.notFound('Project');
-
+  async create(data, user, filesMeta = []) {
     const taskId = data.task_id || null;
+    if (!taskId) {
+      throw ApiError.badRequest('Une tâche est requise pour créer une proposition');
+    }
+
+    const task = await Task.findByPk(taskId, { attributes: ['id', 'project_id', 'title'] });
+    if (!task) {
+      throw ApiError.notFound('Tâche');
+    }
+
+    const projectId = task.project_id || null;
     const versionNumber = await proposalRepository.getNextVersion(projectId, taskId);
 
     const proposal = await proposalRepository.create({
       ...data,
-      project_id: projectId,
       task_id: taskId,
       author_id: user.id,
       version_number: versionNumber,
@@ -62,33 +71,24 @@ class ProposalService {
     return proposalRepository.findById(proposal.id);
   }
 
-  /* Notifie les validateurs lors de la création d'une proposition */
+  /* Notifie le superviseur de la tâche lors de la création d'une proposition */
   async _notifyNewProposal(proposal, taskId, projectId) {
-    const PERMISSIONS = require('../../config/permissions');
-    const validatorRoles = PERMISSIONS['proposals.validate'] || [];
-    const notifRepo = require('../notifications/notification.repository');
-    const validators = await notifRepo.findUsersByRoles(validatorRoles);
-    const recipientIds = new Set(validators.map((v) => v.id));
+    if (!taskId) return;
 
-    if (taskId) {
-      const task = await Task.findByPk(taskId, { attributes: ['id', 'created_by', 'title'] });
-      if (task && task.created_by) recipientIds.add(task.created_by);
-    }
+    const task = await Task.findByPk(taskId, { attributes: ['id', 'title', 'supervisor_id'] });
+    if (!task || !task.supervisor_id) return;
 
-    recipientIds.delete(proposal.author_id);
+    // Évite de notifier l'auteur lui-même si c'est aussi le superviseur
+    if (task.supervisor_id === proposal.author_id) return;
 
-    if (!recipientIds.size) return;
-
-    const project = await Project.findByPk(projectId, { attributes: ['id', 'title'] });
-    const projectTitle = project?.title || 'Projet';
-
-    await notificationService.notifyMany([...recipientIds], {
+    await notificationService.notify({
+      userId: task.supervisor_id,
       type: 'task_pending_validation',
-      title: `Nouvelle proposition — "${projectTitle}"`,
-      message: `Une nouvelle proposition (v${proposal.version_number}) a été soumise pour le projet "${projectTitle}".`,
-      referenceId: taskId || projectId,
-      referenceType: taskId ? 'task' : 'project',
-      link: taskId ? `/tasks/${taskId}` : `/projects/${projectId}`,
+      title: `Validation de proposition de tâche — ${task.title}`,
+      message: `Vous avez une proposition de tâche à valider : « ${task.title} ». Cette proposition (v${proposal.version_number}) a été envoyée le ${new Date(proposal.created_at || new Date()).toLocaleDateString('fr-FR')}.`,
+      referenceId: task.id,
+      referenceType: 'task',
+      link: `/tasks/${task.id}`,
     });
   }
 
@@ -162,7 +162,21 @@ class ProposalService {
 
     await proposalRepository.update(proposalId, { status });
 
-    this._notifyValidationResult(proposal, status, user).catch((err) => {
+    // Si la proposition est approuvée, on passe automatiquement la tâche en "done"
+    if (status === 'approved' && proposal.task_id) {
+      try {
+        const taskService = require('../tasks/task.service');
+        await taskService.updateStatus(proposal.task_id, 'done');
+      } catch (err) {
+        logger.error('[Proposal] Échec de la mise à jour du statut de la tâche après approbation de proposition', {
+          proposalId,
+          taskId: proposal.task_id,
+          error: err?.message,
+        });
+      }
+    }
+
+    this._notifyValidationResult(proposal, status, user, comments).catch((err) => {
       logger.error('[NOTIF] onValidationResult error:', err);
     });
 
@@ -170,7 +184,7 @@ class ProposalService {
   }
 
   /* Notifie le chargé de la tâche et l'auteur de la proposition (si différents du validateur et entre eux) */
-  async _notifyValidationResult(proposal, status, validator) {
+  async _notifyValidationResult(proposal, status, validator, comments) {
     if (!proposal.task_id) return;
 
     const task = await Task.findByPk(proposal.task_id, {
@@ -195,10 +209,12 @@ class ProposalService {
 
     if (recipientIds.size === 0) return;
 
+    const commentText = comments || '(Aucun commentaire fourni)';
+
     await notificationService.notifyMany([...recipientIds], {
       type: 'task_pending_validation',
-      title: `Proposition ${label} — "${task.title}"`,
-      message: `La proposition (v${proposal.version_number}) pour la tâche "${task.title}" a été ${label}.`,
+      title: `Statut de votre proposition — ${task.title}`,
+      message: `Votre proposition (v${proposal.version_number}) pour la tâche « ${task.title} » a été ${label}.\n\nCommentaire du validateur :\n${commentText}`,
       referenceId: task.id,
       referenceType: 'task',
       link: `/tasks/${task.id}`,

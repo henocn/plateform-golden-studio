@@ -231,7 +231,10 @@ export default function TaskDetailsTab({
   commentsEndRef,
   handleAddComment,
 }) {
-  const { assignee, project, creator } = task;
+  const { assignee, project, creator, supervisor, event } = task;
+  const isEventTask = task.context === "event";
+  const containerLabel = isEventTask ? "Événement" : "Projet";
+  const containerName = isEventTask ? event?.title || "—" : project?.title || "—";
 
   return (
     <div className="space-y-6">
@@ -254,25 +257,36 @@ export default function TaskDetailsTab({
                   Échéance :{" "}
                   <span className="font-medium text-ink-700">{formatDate(task.due_date)}</span>
                 </span>
+              </>
+            )}
+            {task.publication_date && (
+              <>
                 <span className="text-surface-400">|</span>
                 <span>
-                  Jours restants :{" "}
+                  Date de publication :{" "}
                   <span className="font-medium text-ink-700">
-                    {deltaTime(task.createdAt, task.due_date)}
+                    {formatDate(task.publication_date)}
                   </span>
                 </span>
               </>
             )}
+            <span className="text-surface-400">|</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+              <span className="font-medium text-ink-700">
+                {task.context === "event" ? "Tâche d’événement" : "Tâche de projet"}
+              </span>
+            </span>
           </div>
 
           {/* Grille infos */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div>
               <p className="text-label text-ink-400 uppercase tracking-wide text-xs mb-1">
-                Projet
+                {containerLabel}
               </p>
               <p className="text-body-md text-ink-800 font-medium">
-                {project?.title || "—"}
+                {containerName}
               </p>
             </div>
             <div>
@@ -316,7 +330,7 @@ export default function TaskDetailsTab({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <UserCard label="Créateur" user={creator} />
             <UserCard label="Chargé de la tâche" user={assignee} />
-            <UserCard label="Superviseur" user={project?.clientContact} />
+            <UserCard label="Superviseur" user={supervisor} />
           </div>
         </div>
       </Card>

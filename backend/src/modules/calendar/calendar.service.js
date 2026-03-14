@@ -5,6 +5,10 @@ const ApiError = require('../../utils/ApiError');
 const { parseEventsImport, buildEventsExport } = require('./calendar.excel.utils');
 const notificationRepository = require('../notifications/notification.repository');
 const notificationService = require('../notifications/notification.service');
+const taskRepository = require('../tasks/task.repository');
+const taskService = require('../tasks/task.service');
+const whatsapp = require('../../config/whatsapp');
+const logger = require('../../utils/logger');
 
 // Alias pour les statuts d'événements dans les imports Excel
 const EVENT_STATUS_ALIASES = {
@@ -51,24 +55,47 @@ class CalendarService {
       ...data,
       created_by: user.id,
     });
-    // Notifie super_admin, admin et client_admin à la création d'un événement
+
+    // Crée des tâches (model Task) pour les tâches d'événement éventuelles (templates)
     try {
-      const rolesToNotify = ['super_admin', 'admin', 'client_admin'];
-      const recipients = await notificationRepository.findUsersByRoles(rolesToNotify);
-      const ids = recipients.map((u) => u.id);
-      if (ids.length) {
-        await notificationService.notifyMany(ids, {
-          type: 'task_deadline_warning',
-          title: `Nouvel événement : "${event.title}"`,
-          message: `Un nouvel événement a été créé pour le ${event.start_date?.toISOString().slice(0, 10) || ''}.`,
-          referenceId: event.id,
-          referenceType: 'calendar_event',
-          link: '/calendar/events',
-        });
+      const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+      const payloads = tasks
+        .filter((t) => t && t.title)
+        .map((t) => ({
+          title: `${event.title} - ${t.title}`,
+          description: t.description || null,
+          assigned_to: t.responsible_user_id || null,
+          supervisor_id: t.supervisor_id || null,
+          due_date: t.due_date || null,
+          publication_date: t.publication_date || event.start_date || null,
+          priority: t.priority || 'normal',
+          status: 'todo',
+          context: 'event',
+          event_id: event.id,
+          created_by: user.id,
+          is_configured: Boolean(t.supervisor_id && t.due_date),
+        }));
+
+      for (const payload of payloads) {
+        await taskService.create(payload, user);
       }
     } catch (err) {
-      console.error('Erreur lors de la notification de création d’événement', err);
+      logger.error('[Calendar] Erreur lors de la création des tâches liées à un événement', {
+        eventId: event.id,
+        error: err.message,
+      });
     }
+
+    // Envoie un message WhatsApp aux numéros configurés pour signaler la création de l'événement
+    try {
+      await whatsapp.sendEventCreatedNotification(event);
+    } catch (err) {
+      logger.error('[Calendar :] Erreur lors de l’envoi WhatsApp pour la création d’événement', {
+        eventId: event.id,
+        error: err.message,
+      });
+    }
+
     return event;
   }
 

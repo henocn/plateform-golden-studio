@@ -22,6 +22,10 @@ module.exports = (sequelize) => {
         notEmpty: true,
       },
     },
+    contact: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     password_hash: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -74,6 +78,10 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       allowNull: true,
     },
+    notification_settings: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
   }, {
     tableName: 'users',
     timestamps: true,
@@ -93,10 +101,10 @@ module.exports = (sequelize) => {
       roleMatchesType() {
         const isClientRole = this.role && this.role.startsWith('client_');
         if (this.user_type === 'internal' && isClientRole) {
-          throw new Error('Internal users cannot have client roles');
+          throw new Error('Les utilisateurs internes ne peuvent pas avoir des rôles clients');
         }
         if (this.user_type === 'client' && !isClientRole) {
-          throw new Error('Client users must have client_* roles');
+          throw new Error('Les utilisateurs clients doivent avoir des rôles client_*');
         }
       },
     },
